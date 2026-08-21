@@ -3,13 +3,17 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+<meta name="theme-color" content="#05060a" />
 <title>🎧 Revers Викторина: Neon Stage</title>
-  <link rel="manifest" href="manifest.json">
+
+<!-- PWA Manifest и Service Worker -->
+<link rel="manifest" href="manifest.json">
 <script>
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('sw.js').catch(console.warn);
   }
 </script>
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Syne:wght@700;800&family=Ubuntu+Mono:wght@700&display=swap" rel="stylesheet">
@@ -840,10 +844,10 @@ button:active {
   </div>
 </div>
 
-<audio id="audio-revers" style="display:none;"></audio>
-<audio id="audio-normal" style="display:none;"></audio>
-<audio id="audio-winner" style="display:none;"></audio>
-<audio id="audio-lost" style="display:none;"></audio>
+<audio id="audio-revers" preload="auto" playsinline style="display:none;"></audio>
+<audio id="audio-normal" preload="auto" playsinline style="display:none;"></audio>
+<audio id="audio-winner" preload="auto" playsinline style="display:none;"></audio>
+<audio id="audio-lost" preload="auto" playsinline style="display:none;"></audio>
 
 <div id="settings-btn" onclick="openSettings()">
   <i class="fas fa-sliders-h"></i>
@@ -867,648 +871,668 @@ button:active {
 </div>
 
 <script>
-const PUBLIC_KEY = "https://yadi.sk/d/WuP3cXvzcoZxVg";
-let team1Name = "Команда А";
-let team2Name = "Команда Б";
-let score1 = 0, score2 = 0;
-let files = {};
-let playedTracks = new Set();
-let currentTrackName = null;
-let selectedFolder = "";
-let winnerUrl = null, lostUrl = null;
-let timerDuration = 10;
-let mixMode = false;
-let timerValue = 0;
-let timerInterval = null;
-let isTimerActive = false;
-let audioContext = null;
-let activeTeam = null;
-let shouldAutoSwitch = true;
-let lastPlayedTrack = null;
-let timeStartBuffer = null;
-let timeFinalBuffer = null;
-let winnerBuffer = null;
-let lostBuffer = null;
-let ringScoreBuffer = null;
-let startSource = null;
-let finalSource = null;
-let startGainNode = null;
-let finalGainNode = null;
-let ringScoreSource = null;
-let soundsPreloaded = false;
-let trackOrder = {};
+const PUBLIC_KEY = "https://yadi.sk/d/WuP3cXvzcoZxVg";[cite: 2]
+let team1Name = "Команда А";[cite: 2]
+let team2Name = "Команда Б";[cite: 2]
+let score1 = 0, score2 = 0;[cite: 2]
+let files = {};[cite: 2]
+let playedTracks = new Set();[cite: 2]
+let currentTrackName = null;[cite: 2]
+let selectedFolder = "";[cite: 2]
+let winnerUrl = null, lostUrl = null;[cite: 2]
+let timerDuration = 10;[cite: 2]
+let mixMode = false;[cite: 2]
+let timerValue = 0;[cite: 2]
+let timerInterval = null;[cite: 2]
+let isTimerActive = false;[cite: 2]
+let audioContext = null;[cite: 2]
+let activeTeam = null;[cite: 2]
+let shouldAutoSwitch = true;[cite: 2]
+let lastPlayedTrack = null;[cite: 2]
+let timeStartBuffer = null;[cite: 2]
+let timeFinalBuffer = null;[cite: 2]
+let winnerBuffer = null;[cite: 2]
+let lostBuffer = null;[cite: 2]
+let ringScoreBuffer = null;[cite: 2]
+let startSource = null;[cite: 2]
+let finalSource = null;[cite: 2]
+let startGainNode = null;[cite: 2]
+let finalGainNode = null;[cite: 2]
+let ringScoreSource = null;[cite: 2]
+let soundsPreloaded = false;[cite: 2]
+let trackOrder = {};[cite: 2]
 
 function initAudio() {
-  if (audioContext) return;
-  audioContext = new (window.AudioContext || window.webkitAudioContext)();
+  if (!audioContext) {
+    audioContext = new (window.AudioContext || window.webkitAudioContext)();[cite: 2]
+  }
+  if (audioContext && audioContext.state === 'suspended') {
+    audioContext.resume();
+  }
 }
-document.addEventListener('click', initAudio, { once: true });
-document.addEventListener('touchstart', initAudio, { once: true });
+document.addEventListener('click', initAudio, { passive: true });
+document.addEventListener('touchstart', initAudio, { passive: true });
 
 async function preloadAllSounds() {
-  if (soundsPreloaded) return;
+  if (soundsPreloaded) return;[cite: 2]
   try {
-    const rootUrl = `https://cloud-api.yandex.net/v1/disk/public/resources?public_key=${encodeURIComponent(PUBLIC_KEY)}&limit=100`;
-    const response = await fetch(rootUrl);
-    const data = await response.json();
-    const items = data._embedded?.items || [];
-    const startFile = items.find(f => f.name.toLowerCase().includes('time_start') && f.name.endsWith('.mp3'));
-    const finalFile = items.find(f => f.name.toLowerCase().includes('time_final') && f.name.endsWith('.mp3'));
-    const winnerFile = items.find(f => f.name.toLowerCase().includes('winner') && f.name.toLowerCase().endsWith('.mp3'));
-    const lostFile = items.find(f => f.name.toLowerCase().includes('lost') && f.name.toLowerCase().endsWith('.mp3'));
-    const ringFile = items.find(f => f.name.toLowerCase().includes('ring_score') && f.name.toLowerCase().endsWith('.mp3'));
-    if (startFile?.file) timeStartBuffer = await loadAudioFile(startFile.file);
-    if (finalFile?.file) timeFinalBuffer = await loadAudioFile(finalFile.file);
-    if (winnerFile?.file) winnerBuffer = await loadAudioFile(winnerFile.file);
-    if (lostFile?.file) lostBuffer = await loadAudioFile(lostFile.file);
-    if (ringFile?.file) ringScoreBuffer = await loadAudioFile(ringFile.file);
-    soundsPreloaded = true;
+    const rootUrl = `https://cloud-api.yandex.net/v1/disk/public/resources?public_key=${encodeURIComponent(PUBLIC_KEY)}&limit=100`;[cite: 2]
+    const response = await fetch(rootUrl);[cite: 2]
+    const data = await response.json();[cite: 2]
+    const items = data._embedded?.items || [];[cite: 2]
+    const startFile = items.find(f => f.name.toLowerCase().includes('time_start') && f.name.endsWith('.mp3'));[cite: 2]
+    const finalFile = items.find(f => f.name.toLowerCase().includes('time_final') && f.name.endsWith('.mp3'));[cite: 2]
+    const winnerFile = items.find(f => f.name.toLowerCase().includes('winner') && f.name.toLowerCase().endsWith('.mp3'));[cite: 2]
+    const lostFile = items.find(f => f.name.toLowerCase().includes('lost') && f.name.toLowerCase().endsWith('.mp3'));[cite: 2]
+    const ringFile = items.find(f => f.name.toLowerCase().includes('ring_score') && f.name.toLowerCase().endsWith('.mp3'));[cite: 2]
+    if (startFile?.file) timeStartBuffer = await loadAudioFile(startFile.file);[cite: 2]
+    if (finalFile?.file) timeFinalBuffer = await loadAudioFile(finalFile.file);[cite: 2]
+    if (winnerFile?.file) winnerBuffer = await loadAudioFile(winnerFile.file);[cite: 2]
+    if (lostFile?.file) lostBuffer = await loadAudioFile(lostFile.file);[cite: 2]
+    if (ringFile?.file) ringScoreBuffer = await loadAudioFile(ringFile.file);[cite: 2]
+    soundsPreloaded = true;[cite: 2]
   } catch (e) {
-    console.error("Ошибка предзагрузки звуков:", e);
+    console.error("Ошибка предзагрузки звуков:", e);[cite: 2]
   }
 }
 
 async function loadAudioFile(url) {
   try {
-    const response = await fetch(url);
-    if (!response.ok) throw new Error(`Ошибка загрузки: ${url}`);
-    const arrayBuffer = await response.arrayBuffer();
-    return await audioContext.decodeAudioData(arrayBuffer);
+    initAudio();
+    const response = await fetch(url);[cite: 2]
+    if (!response.ok) throw new Error(`Ошибка загрузки: ${url}`);[cite: 2]
+    const arrayBuffer = await response.arrayBuffer();[cite: 2]
+    return await audioContext.decodeAudioData(arrayBuffer);[cite: 2]
   } catch (e) {
-    console.warn("Не удалось загрузить аудио:", e);
-    return null;
+    console.warn("Не удалось декодировать аудио:", e);[cite: 2]
+    return null;[cite: 2]
   }
 }
 
 function playTimeStart() {
-  if (!audioContext || !timeStartBuffer || isTimerActive === false) return;
-  stopCurrentTimerSounds();
-  startSource = audioContext.createBufferSource();
-  startSource.buffer = timeStartBuffer;
-  startGainNode = audioContext.createGain();
-  startGainNode.gain.setValueAtTime(0, audioContext.currentTime);
-  startSource.connect(startGainNode);
-  startGainNode.connect(audioContext.destination);
-  startGainNode.gain.linearRampToValueAtTime(1, audioContext.currentTime + 0.5);
-  startSource.start();
+  if (!audioContext || !timeStartBuffer || isTimerActive === false) return;[cite: 2]
+  initAudio();
+  stopCurrentTimerSounds();[cite: 2]
+  startSource = audioContext.createBufferSource();[cite: 2]
+  startSource.buffer = timeStartBuffer;[cite: 2]
+  startGainNode = audioContext.createGain();[cite: 2]
+  startGainNode.gain.setValueAtTime(0, audioContext.currentTime);[cite: 2]
+  startSource.connect(startGainNode);[cite: 2]
+  startGainNode.connect(audioContext.destination);[cite: 2]
+  startGainNode.gain.linearRampToValueAtTime(1, audioContext.currentTime + 0.5);[cite: 2]
+  startSource.start();[cite: 2]
 }
 
 function crossfadeToFinal() {
-  if (!audioContext || !timeFinalBuffer) return;
+  if (!audioContext || !timeFinalBuffer) return;[cite: 2]
+  initAudio();
   if (finalSource && finalSource.playbackState !== 2) {
-    try { finalSource.stop(); } catch (e) {}
+    try { finalSource.stop(); } catch (e) {}[cite: 2]
   }
-  finalSource = null;
-  finalGainNode = null;
+  finalSource = null;[cite: 2]
+  finalGainNode = null;[cite: 2]
 
   if (startGainNode) {
-    startGainNode.gain.cancelScheduledValues(audioContext.currentTime);
-    startGainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 1.5);
+    startGainNode.gain.cancelScheduledValues(audioContext.currentTime);[cite: 2]
+    startGainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 1.5);[cite: 2]
   }
 
-  finalSource = audioContext.createBufferSource();
-  finalSource.buffer = timeFinalBuffer;
-  finalGainNode = audioContext.createGain();
-  finalGainNode.gain.setValueAtTime(0, audioContext.currentTime);
-  finalSource.connect(finalGainNode);
-  finalGainNode.connect(audioContext.destination);
-  finalGainNode.gain.linearRampToValueAtTime(1, audioContext.currentTime + 1.5);
-  finalSource.start();
+  finalSource = audioContext.createBufferSource();[cite: 2]
+  finalSource.buffer = timeFinalBuffer;[cite: 2]
+  finalGainNode = audioContext.createGain();[cite: 2]
+  finalGainNode.gain.setValueAtTime(0, audioContext.currentTime);[cite: 2]
+  finalSource.connect(finalGainNode);[cite: 2]
+  finalGainNode.connect(audioContext.destination);[cite: 2]
+  finalGainNode.gain.linearRampToValueAtTime(1, audioContext.currentTime + 1.5);[cite: 2]
+  finalSource.start();[cite: 2]
 
   finalSource.onended = () => {
-    stopCurrentTimerSounds();
+    stopCurrentTimerSounds();[cite: 2]
     if (timerInterval) {
-      clearInterval(timerInterval);
-      timerInterval = null;
+      clearInterval(timerInterval);[cite: 2]
+      timerInterval = null;[cite: 2]
     }
-    isTimerActive = false;
-    document.getElementById("timer-circle").classList.remove("active");
+    isTimerActive = false;[cite: 2]
+    document.getElementById("timer-circle").classList.remove("active");[cite: 2]
   };
 }
 
 function stopCurrentTimerSounds() {
   if (startSource && startSource.playbackState !== 2) {
-    try { startSource.stop(); } catch (e) {}
+    try { startSource.stop(); } catch (e) {}[cite: 2]
   }
-  if (startGainNode) startGainNode.gain.cancelScheduledValues(audioContext.currentTime);
-  startSource = null;
-  startGainNode = null;
+  if (startGainNode) startGainNode.gain.cancelScheduledValues(audioContext.currentTime);[cite: 2]
+  startSource = null;[cite: 2]
+  startGainNode = null;[cite: 2]
 
   if (finalSource && finalSource.playbackState !== 2) {
-    try { finalSource.stop(); } catch (e) {}
+    try { finalSource.stop(); } catch (e) {}[cite: 2]
   }
-  finalSource = null;
-  finalGainNode = null;
+  finalSource = null;[cite: 2]
+  finalGainNode = null;[cite: 2]
 }
 
 function playRingScore() {
-  if (!audioContext || !ringScoreBuffer) return;
-  const source = audioContext.createBufferSource();
-  source.buffer = ringScoreBuffer;
-  source.connect(audioContext.destination);
-  source.start();
+  if (!audioContext || !ringScoreBuffer) return;[cite: 2]
+  initAudio();
+  const source = audioContext.createBufferSource();[cite: 2]
+  source.buffer = ringScoreBuffer;[cite: 2]
+  source.connect(audioContext.destination);[cite: 2]
+  source.start();[cite: 2]
 }
 
 function playSound(type) {
-  stopAllSounds();
-  const buffer = type === 'winner' ? winnerBuffer : lostBuffer;
+  stopAllSounds();[cite: 2]
+  initAudio();
+  const buffer = type === 'winner' ? winnerBuffer : lostBuffer;[cite: 2]
   if (buffer) {
-    const source = audioContext.createBufferSource();
-    source.buffer = buffer;
-    source.connect(audioContext.destination);
-    source.start();
+    const source = audioContext.createBufferSource();[cite: 2]
+    source.buffer = buffer;[cite: 2]
+    source.connect(audioContext.destination);[cite: 2]
+    source.start();[cite: 2]
   } else {
-    alert(`Файл ${type.toUpperCase()} не найден`);
+    alert(`Файл ${type.toUpperCase()} не найден`);[cite: 2]
   }
 }
 
 function formatTime(seconds) {
-  seconds = Math.floor(seconds || 0);
-  const mins = Math.floor(seconds / 60);
-  const secs = seconds % 60;
-  return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  seconds = Math.floor(seconds || 0);[cite: 2]
+  const mins = Math.floor(seconds / 60);[cite: 2]
+  const secs = seconds % 60;[cite: 2]
+  return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;[cite: 2]
 }
 
 window.addEventListener('load', () => {
-  const saved = localStorage.getItem('reversQuiz');
+  const saved = localStorage.getItem('reversQuiz');[cite: 2]
   if (saved) {
-    const data = JSON.parse(saved);
-    team1Name = data.team1 || "Команда А";
-    team2Name = data.team2 || "Команда Б";
-    score1 = parseFloat(data.score1) || 0;
-    score2 = parseFloat(data.score2) || 0;
-    playedTracks = new Set(data.playedTracks || []);
-    selectedFolder = data.selectedFolder || "";
-    timerDuration = data.timerDuration || 10;
-    mixMode = data.mixMode || false;
-    activeTeam = data.activeTeam || null;
-    shouldAutoSwitch = data.shouldAutoSwitch !== false;
-    lastPlayedTrack = data.lastPlayedTrack || null;
-    trackOrder = data.trackOrder || {};
-    document.getElementById("team1-label").textContent = team1Name;
-    document.getElementById("team2-label").textContent = team2Name;
-    document.getElementById("score1").textContent = score1.toFixed(1);
-    document.getElementById("score2").textContent = score2.toFixed(1);
-    updateFolderSection();
+    const data = JSON.parse(saved);[cite: 2]
+    team1Name = data.team1 || "Команда А";[cite: 2]
+    team2Name = data.team2 || "Команда Б";[cite: 2]
+    score1 = parseFloat(data.score1) || 0;[cite: 2]
+    score2 = parseFloat(data.score2) || 0;[cite: 2]
+    playedTracks = new Set(data.playedTracks || []);[cite: 2]
+    selectedFolder = data.selectedFolder || "";[cite: 2]
+    timerDuration = data.timerDuration || 10;[cite: 2]
+    mixMode = data.mixMode || false;[cite: 2]
+    activeTeam = data.activeTeam || null;[cite: 2]
+    shouldAutoSwitch = data.shouldAutoSwitch !== false;[cite: 2]
+    lastPlayedTrack = data.lastPlayedTrack || null;[cite: 2]
+    trackOrder = data.trackOrder || {};[cite: 2]
+    document.getElementById("team1-label").textContent = team1Name;[cite: 2]
+    document.getElementById("team2-label").textContent = team2Name;[cite: 2]
+    document.getElementById("score1").textContent = score1.toFixed(1);[cite: 2]
+    document.getElementById("score2").textContent = score2.toFixed(1);[cite: 2]
+    updateFolderSection();[cite: 2]
     if (Object.keys(trackOrder).length > 0) {
-      document.getElementById("quiz-area").style.display = "block";
-      generateSongButtons();
-      updateTrackCounter();
-      activateTeam(activeTeam);
-      updateShuffleButtonState();
-      updateNextTrackButton();
+      document.getElementById("quiz-area").style.display = "block";[cite: 2]
+      generateSongButtons();[cite: 2]
+      updateTrackCounter();[cite: 2]
+      activateTeam(activeTeam);[cite: 2]
+      updateShuffleButtonState();[cite: 2]
+      updateNextTrackButton();[cite: 2]
     }
   }
 });
 
 function setTeams() {
-  const t1 = document.getElementById("team1").value.trim();
-  const t2 = document.getElementById("team2").value.trim();
+  const t1 = document.getElementById("team1").value.trim();[cite: 2]
+  const t2 = document.getElementById("team2").value.trim();[cite: 2]
   if (!t1 || !t2) {
-    alert("Введите оба названия команд!");
-    return;
+    alert("Введите оба названия команд!");[cite: 2]
+    return;[cite: 2]
   }
-  team1Name = t1;
-  team2Name = t2;
-  document.getElementById("team1-label").textContent = t1;
-  document.getElementById("team2-label").textContent = t2;
-  saveState();
-  showActionNotification('✅ Составы обновлены!');
+  team1Name = t1;[cite: 2]
+  team2Name = t2;[cite: 2]
+  document.getElementById("team1-label").textContent = t1;[cite: 2]
+  document.getElementById("team2-label").textContent = t2;[cite: 2]
+  saveState();[cite: 2]
+  showActionNotification('✅ Составы обновлены!');[cite: 2]
 }
 
 function updateFolderSection() {
-  const folderSection = document.getElementById("folder-section");
-  folderSection.style.display = mixMode ? "none" : "block";
+  const folderSection = document.getElementById("folder-section");[cite: 2]
+  folderSection.style.display = mixMode ? "none" : "block";[cite: 2]
 }
 
 async function fetchFolderFiles(path) {
-  const limit = 100;
-  let offset = 0;
-  let allItems = [];
-  let files = {};
+  const limit = 100;[cite: 2]
+  let offset = 0;[cite: 2]
+  let allItems = [];[cite: 2]
+  let files = {};[cite: 2]
   try {
     while (true) {
-      const url = `https://cloud-api.yandex.net/v1/disk/public/resources?public_key=${encodeURIComponent(PUBLIC_KEY)}&path=${encodeURIComponent(path)}&limit=${limit}&offset=${offset}`;
-      const response = await fetch(url);
-      if (!response.ok) break;
-      const data = await response.json();
-      const items = data._embedded?.items;
-      if (!items || items.length === 0) break;
-      allItems.push(...items);
-      if (items.length < limit) break;
-      offset += limit;
+      const url = `https://cloud-api.yandex.net/v1/disk/public/resources?public_key=${encodeURIComponent(PUBLIC_KEY)}&path=${encodeURIComponent(path)}&limit=${limit}&offset=${offset}`;[cite: 2]
+      const response = await fetch(url);[cite: 2]
+      if (!response.ok) break;[cite: 2]
+      const data = await response.json();[cite: 2]
+      const items = data._embedded?.items;[cite: 2]
+      if (!items || items.length === 0) break;[cite: 2]
+      allItems.push(...items);[cite: 2]
+      if (items.length < limit) break;[cite: 2]
+      offset += limit;[cite: 2]
     }
-    const mp3Files = allItems.filter(f => f.name?.toLowerCase().endsWith('.mp3'));
+    const mp3Files = allItems.filter(f => f.name?.toLowerCase().endsWith('.mp3'));[cite: 2]
     mp3Files.forEach(file => {
-      const cleanName = file.name.replace(/_(REVERS|NORMAL)\.mp3$/i, "");
-      if (!files[cleanName]) files[cleanName] = {};
-      if (file.name.includes("_REVERS")) files[cleanName].revers = file.file;
-      if (file.name.includes("_NORMAL")) files[cleanName].normal = file.file;
+      const cleanName = file.name.replace(/_(REVERS|NORMAL)\.mp3$/i, "");[cite: 2]
+      if (!files[cleanName]) files[cleanName] = {};[cite: 2]
+      if (file.name.includes("_REVERS")) files[cleanName].revers = file.file;[cite: 2]
+      if (file.name.includes("_NORMAL")) files[cleanName].normal = file.file;[cite: 2]
     });
-    return files;
+    return files;[cite: 2]
   } catch (e) {
-    console.error("Ошибка загрузки папки:", e);
-    return {};
+    console.error("Ошибка загрузки папки:", e);[cite: 2]
+    return {};[cite: 2]
   }
 }
 
 function isTrackOrderValid(files) {
-  const fileNames = new Set(Object.keys(files));
-  const orderNames = new Set(Object.keys(trackOrder));
-  if (fileNames.size !== orderNames.size) return false;
+  const fileNames = new Set(Object.keys(files));[cite: 2]
+  const orderNames = new Set(Object.keys(trackOrder));[cite: 2]
+  if (fileNames.size !== orderNames.size) return false;[cite: 2]
   for (let name of fileNames) {
-    if (!orderNames.has(name)) return false;
+    if (!orderNames.has(name)) return false;[cite: 2]
   }
-  return true;
+  return true;[cite: 2]
 }
 
 async function loadFiles() {
   try {
-    let allFiles = {};
+    initAudio();
+    let allFiles = {};[cite: 2]
     if (mixMode) {
-      const rPromise = fetchFolderFiles("/Русские").catch(e => ({ }));
-      const fPromise = fetchFolderFiles("/Зарубежные").catch(e => ({ }));
-      const [rFiles, fFiles] = await Promise.all([rPromise, fPromise]);
-      const rNames = Object.keys(rFiles).sort(() => Math.random() - 0.5);
-      const fNames = Object.keys(fFiles).sort(() => Math.random() - 0.5);
-      const maxLength = Math.max(rNames.length, fNames.length);
-      const mixedFiles = {};
-      const newTrackOrder = {};
-      let index = 0;
+      const rPromise = fetchFolderFiles("/Русские").catch(e => ({ }));[cite: 2]
+      const fPromise = fetchFolderFiles("/Зарубежные").catch(e => ({ }));[cite: 2]
+      const [rFiles, fFiles] = await Promise.all([rPromise, fPromise]);[cite: 2]
+      const rNames = Object.keys(rFiles).sort(() => Math.random() - 0.5);[cite: 2]
+      const fNames = Object.keys(fFiles).sort(() => Math.random() - 0.5);[cite: 2]
+      const maxLength = Math.max(rNames.length, fNames.length);[cite: 2]
+      const mixedFiles = {};[cite: 2]
+      const newTrackOrder = {};[cite: 2]
+      let index = 0;[cite: 2]
       for (let i = 0; i < maxLength; i++) {
         if (rNames[i]) {
-          const name = rNames[i];
-          mixedFiles[name] = { ...rFiles[name] };
-          newTrackOrder[name] = ++index;
+          const name = rNames[i];[cite: 2]
+          mixedFiles[name] = { ...rFiles[name] };[cite: 2]
+          newTrackOrder[name] = ++index;[cite: 2]
         }
         if (fNames[i]) {
-          const name = fNames[i];
-          mixedFiles[name] = { ...(mixedFiles[name] || {}), ...fFiles[name] };
-          if (!newTrackOrder[name]) newTrackOrder[name] = ++index;
+          const name = fNames[i];[cite: 2]
+          mixedFiles[name] = { ...(mixedFiles[name] || {}), ...fFiles[name] };[cite: 2]
+          if (!newTrackOrder[name]) newTrackOrder[name] = ++index;[cite: 2]
         }
       }
-      allFiles = mixedFiles;
-      trackOrder = newTrackOrder;
-      const shuffleBtn = document.getElementById("shuffle-btn");
-      shuffleBtn.disabled = true;
-      shuffleBtn.textContent = '🔁 Чередование';
-      shuffleBtn.title = "В смешанном режиме порядок определяется автоматически";
+      allFiles = mixedFiles;[cite: 2]
+      trackOrder = newTrackOrder;[cite: 2]
+      const shuffleBtn = document.getElementById("shuffle-btn");[cite: 2]
+      shuffleBtn.disabled = true;[cite: 2]
+      shuffleBtn.textContent = '🔁 Чередование';[cite: 2]
+      shuffleBtn.title = "В смешанном режиме порядок определяется автоматически";[cite: 2]
     } else {
-      const path = document.getElementById("folder-select").value;
+      const path = document.getElementById("folder-select").value;[cite: 2]
       if (!path) {
-        return alert("Выберите категорию!");
+        return alert("Выберите категорию!");[cite: 2]
       }
-      allFiles = await fetchFolderFiles(path);
+      allFiles = await fetchFolderFiles(path);[cite: 2]
       if (Object.keys(trackOrder).length === 0 || !isTrackOrderValid(allFiles)) {
-        const names = Object.keys(allFiles).sort();
-        trackOrder = {};
+        const names = Object.keys(allFiles).sort();[cite: 2]
+        trackOrder = {};[cite: 2]
         names.forEach((name, idx) => {
-          trackOrder[name] = idx + 1;
+          trackOrder[name] = idx + 1;[cite: 2]
         });
       }
-      updateShuffleButtonState();
+      updateShuffleButtonState();[cite: 2]
     }
     if (Object.keys(allFiles).length === 0) {
-      return alert("Файлы не найдены.");
+      return alert("Файлы не найдены.");[cite: 2]
     }
-    files = allFiles;
-    updateTrackCounter();
-    document.getElementById("quiz-area").style.display = "block";
-    generateSongButtons();
-    saveState();
+    files = allFiles;[cite: 2]
+    updateTrackCounter();[cite: 2]
+    document.getElementById("quiz-area").style.display = "block";[cite: 2]
+    generateSongButtons();[cite: 2]
+    saveState();[cite: 2]
     if (!soundsPreloaded) {
-      setTimeout(() => preloadAllSounds(), 100);
+      setTimeout(() => preloadAllSounds(), 100);[cite: 2]
     }
-    updateNextTrackButton();
+    updateNextTrackButton();[cite: 2]
   } catch (e) {
-    console.error("КРИТИЧЕСКАЯ ОШИБКА ЗАГРУЗКИ:", e);
-    alert("Ошибка загрузки: проверьте интернет или структуру папок.");
+    console.error("КРИТИЧЕСКАЯ ОШИБКА ЗАГРУЗКИ:", e);[cite: 2]
+    alert("Ошибка загрузки: проверьте интернет или структуру папок.");[cite: 2]
   }
 }
 
 function updateShuffleButtonState() {
-  const shuffleBtn = document.getElementById("shuffle-btn");
-  const hasStarted = lastPlayedTrack !== null;
-  shuffleBtn.disabled = hasStarted;
-  shuffleBtn.style.opacity = hasStarted ? 0.4 : 1;
-  shuffleBtn.style.cursor = hasStarted ? "not-allowed" : "pointer";
-  shuffleBtn.textContent = hasStarted ? '❌ Игра начата (порядок зафиксирован)' : '🔄 Перемешать треки';
-  shuffleBtn.title = hasStarted ? "Нельзя перемешивать после начала игры" : "Перемешать треки в случайном порядке";
+  const shuffleBtn = document.getElementById("shuffle-btn");[cite: 2]
+  const hasStarted = lastPlayedTrack !== null;[cite: 2]
+  shuffleBtn.disabled = hasStarted;[cite: 2]
+  shuffleBtn.style.opacity = hasStarted ? 0.4 : 1;[cite: 2]
+  shuffleBtn.style.cursor = hasStarted ? "not-allowed" : "pointer";[cite: 2]
+  shuffleBtn.textContent = hasStarted ? '❌ Игра начата (порядок зафиксирован)' : '🔄 Перемешать треки';[cite: 2]
+  shuffleBtn.title = hasStarted ? "Нельзя перемешивать после начала игры" : "Перемешать треки в случайном порядке";[cite: 2]
 }
 
 function shuffleTracks() {
   if (lastPlayedTrack !== null) {
-    showActionNotification('❌ Нельзя перемешивать после начала!');
-    return;
+    showActionNotification('❌ Нельзя перемешивать после начала!');[cite: 2]
+    return;[cite: 2]
   }
-  const names = Object.keys(files);
-  const shuffled = [...names].sort(() => Math.random() - 0.5);
-  trackOrder = {};
+  const names = Object.keys(files);[cite: 2]
+  const shuffled = [...names].sort(() => Math.random() - 0.5);[cite: 2]
+  trackOrder = {};[cite: 2]
   shuffled.forEach((name, index) => {
-    trackOrder[name] = index + 1;
+    trackOrder[name] = index + 1;[cite: 2]
   });
-  generateSongButtons();
-  saveState();
-  showActionNotification('✅ Треки перемешаны!');
-  updateNextTrackButton();
+  generateSongButtons();[cite: 2]
+  saveState();[cite: 2]
+  showActionNotification('✅ Треки перемешаны!');[cite: 2]
+  updateNextTrackButton();[cite: 2]
 }
 
 function showActionNotification(text) {
-  const notif = document.getElementById("action-notification");
-  notif.textContent = text;
-  notif.classList.add("show");
+  const notif = document.getElementById("action-notification");[cite: 2]
+  notif.textContent = text;[cite: 2]
+  notif.classList.add("show");[cite: 2]
   setTimeout(() => {
-    notif.classList.remove("show");
-  }, 2000);
+    notif.classList.remove("show");[cite: 2]
+  }, 2000);[cite: 2]
 }
 
 function generateSongButtons() {
-  const container = document.getElementById("song-buttons");
-  container.innerHTML = "";
-  const sortedNames = Object.keys(files).sort((a, b) => (trackOrder[a] || 0) - (trackOrder[b] || 0));
+  const container = document.getElementById("song-buttons");[cite: 2]
+  container.innerHTML = "";[cite: 2]
+  const sortedNames = Object.keys(files).sort((a, b) => (trackOrder[a] || 0) - (trackOrder[b] || 0));[cite: 2]
   sortedNames.forEach(name => {
-    const btn = document.createElement("button");
-    btn.setAttribute("data-song", name);
+    const btn = document.createElement("button");[cite: 2]
+    btn.setAttribute("data-song", name);[cite: 2]
     btn.onclick = () => {
-      playTrack(name);
+      playTrack(name);[cite: 2]
     };
-    if (playedTracks.has(name)) btn.classList.add("played");
-    const number = document.createElement("span");
-    number.className = "song-number";
-    number.textContent = trackOrder[name] || "?";
-    const title = document.createElement("span");
-    title.className = "song-name";
-    title.textContent = name;
-    btn.appendChild(number);
-    btn.appendChild(title);
-    container.appendChild(btn);
+    if (playedTracks.has(name)) btn.classList.add("played");[cite: 2]
+    const number = document.createElement("span");[cite: 2]
+    number.className = "song-number";[cite: 2]
+    number.textContent = trackOrder[name] || "?";[cite: 2]
+    const title = document.createElement("span");[cite: 2]
+    title.className = "song-name";[cite: 2]
+    title.textContent = name;[cite: 2]
+    btn.appendChild(number);[cite: 2]
+    btn.appendChild(title);[cite: 2]
+    container.appendChild(btn);[cite: 2]
   });
-  updateNextTrackButton();
+  updateNextTrackButton();[cite: 2]
 }
 
 function playTrack(name) {
-  hideOriginal();
-  stopAllSounds();
-  hideTrackPopup();
-  currentTrackName = name;
-  const track = files[name];
+  initAudio();
+  hideOriginal();[cite: 2]
+  stopAllSounds();[cite: 2]
+  hideTrackPopup();[cite: 2]
+  currentTrackName = name;[cite: 2]
+  const track = files[name];[cite: 2]
   if (track?.revers) {
-    const audio = document.getElementById("audio-revers");
-    audio.src = track.revers;
-    audio.load();
+    const audio = document.getElementById("audio-revers");[cite: 2]
+    audio.src = track.revers;[cite: 2]
+    audio.load();[cite: 2]
     audio.onended = () => {
-      if (timerDuration > 0) startTimer();
-      hideTrackPopup();
+      if (timerDuration > 0) startTimer();[cite: 2]
+      hideTrackPopup();[cite: 2]
     };
     audio.onloadedmetadata = () => {
-      document.getElementById("revers-duration").textContent = formatTime(audio.duration);
+      document.getElementById("revers-duration").textContent = formatTime(audio.duration);[cite: 2]
     };
-    toggleRevers();
+    toggleRevers();[cite: 2]
   }
-  updateShuffleButtonState();
-  updateNextTrackButton();
+  updateShuffleButtonState();[cite: 2]
+  updateNextTrackButton();[cite: 2]
 }
 
 function playNextTrack() {
-  const allNames = Object.keys(files).sort((a, b) => (trackOrder[a] || 0) - (trackOrder[b] || 0));
-  const unplayed = allNames.filter(name => !playedTracks.has(name));
+  const allNames = Object.keys(files).sort((a, b) => (trackOrder[a] || 0) - (trackOrder[b] || 0));[cite: 2]
+  const unplayed = allNames.filter(name => !playedTracks.has(name));[cite: 2]
   if (unplayed.length === 0) {
-    showActionNotification('❗ Все треки сыграны');
-    return;
+    showActionNotification('❗ Все треки сыграны');[cite: 2]
+    return;[cite: 2]
   }
-  const nextTrack = unplayed[0];
-  playTrack(nextTrack);
+  const nextTrack = unplayed[0];[cite: 2]
+  playTrack(nextTrack);[cite: 2]
 }
 
 function updateNextTrackButton() {
-  const btn = document.getElementById("next-track-btn");
-  const allNames = Object.keys(files);
-  const unplayed = allNames.filter(name => !playedTracks.has(name));
-  btn.disabled = unplayed.length === 0;
+  const btn = document.getElementById("next-track-btn");[cite: 2]
+  const allNames = Object.keys(files);[cite: 2]
+  const unplayed = allNames.filter(name => !playedTracks.has(name));[cite: 2]
+  btn.disabled = unplayed.length === 0;[cite: 2]
 }
 
 function showTrackPopup(name) {
-  const popup = document.getElementById("track-name-popup");
-  popup.textContent = name;
-  popup.style.opacity = 1;
+  const popup = document.getElementById("track-name-popup");[cite: 2]
+  popup.textContent = name;[cite: 2]
+  popup.style.opacity = 1;[cite: 2]
 }
 
 function hideTrackPopup() {
-  document.getElementById("track-name-popup").style.opacity = 0;
+  document.getElementById("track-name-popup").style.opacity = 0;[cite: 2]
 }
 
 function toggleRevers() {
-  const audio = document.getElementById("audio-revers");
-  const normal = document.getElementById("audio-normal");
-  const icon = document.getElementById("revers-play-icon");
+  initAudio();
+  const audio = document.getElementById("audio-revers");[cite: 2]
+  const normal = document.getElementById("audio-normal");[cite: 2]
+  const icon = document.getElementById("revers-play-icon");[cite: 2]
   if (!normal.paused) {
-    normal.pause();
-    document.getElementById("normal-play-icon").classList.replace("fa-pause", "fa-play");
+    normal.pause();[cite: 2]
+    document.getElementById("normal-play-icon").classList.replace("fa-pause", "fa-play");[cite: 2]
   }
   if (audio.paused) {
-    stopTimer();
-    audio.play();
-    icon.classList.replace("fa-play", "fa-pause");
-    showTrackPopup(currentTrackName);
-    updateReversProgress();
-    if (currentTrackName !== lastPlayedTrack) {
-      if (shouldAutoSwitch && activeTeam !== null) {
-        const next = activeTeam === 1 ? 2 : 1;
-        activateTeam(next);
+    stopTimer();[cite: 2]
+    audio.play().then(() => {
+      icon.classList.replace("fa-play", "fa-pause");[cite: 2]
+      showTrackPopup(currentTrackName);[cite: 2]
+      updateReversProgress();[cite: 2]
+      if (currentTrackName !== lastPlayedTrack) {
+        if (shouldAutoSwitch && activeTeam !== null) {
+          const next = activeTeam === 1 ? 2 : 1;[cite: 2]
+          activateTeam(next);[cite: 2]
+        }
+        shouldAutoSwitch = true;[cite: 2]
+        lastPlayedTrack = currentTrackName;[cite: 2]
       }
-      shouldAutoSwitch = true;
-      lastPlayedTrack = currentTrackName;
-    }
+    }).catch(err => {
+      console.warn("Автовоспроизведение заблокировано браузером:", err);
+    });
   } else {
-    audio.pause();
-    icon.classList.replace("fa-play", "fa-pause");
-    hideTrackPopup();
+    audio.pause();[cite: 2]
+    icon.classList.replace("fa-pause", "fa-play");[cite: 2]
+    hideTrackPopup();[cite: 2]
   }
-  updateShuffleButtonState();
-  updateNextTrackButton();
+  updateShuffleButtonState();[cite: 2]
+  updateNextTrackButton();[cite: 2]
 }
 
 function manualActivateTeam(team) {
-  activateTeam(team);
-  shouldAutoSwitch = false;
+  activateTeam(team);[cite: 2]
+  shouldAutoSwitch = false;[cite: 2]
 }
 
 function activateTeam(team) {
-  document.getElementById("score-group-1").classList.remove("active");
-  document.getElementById("score-group-2").classList.remove("active");
+  document.getElementById("score-group-1").classList.remove("active");[cite: 2]
+  document.getElementById("score-group-2").classList.remove("active");[cite: 2]
   if (team === 1) {
-    document.getElementById("score-group-1").classList.add("active");
+    document.getElementById("score-group-1").classList.add("active");[cite: 2]
   } else if (team === 2) {
-    document.getElementById("score-group-2").classList.add("active");
+    document.getElementById("score-group-2").classList.add("active");[cite: 2]
   }
-  activeTeam = team;
-  saveState();
+  activeTeam = team;[cite: 2]
+  saveState();[cite: 2]
 }
 
 function showOriginal() {
-  const p = document.getElementById("original-player");
-  const b = document.getElementById("normal-toggle");
-  p.style.display = p.style.display === "none" ? "block" : "none";
-  b.textContent = p.style.display === "none" ? "Показать оригинал" : "Скрыть оригинал";
-  if (p.style.display === "none") document.getElementById("audio-normal").pause();
+  const p = document.getElementById("original-player");[cite: 2]
+  const b = document.getElementById("normal-toggle");[cite: 2]
+  p.style.display = p.style.display === "none" ? "block" : "none";[cite: 2]
+  b.textContent = p.style.display === "none" ? "Показать оригинал" : "Скрыть оригинал";[cite: 2]
+  if (p.style.display === "none") document.getElementById("audio-normal").pause();[cite: 2]
 }
 
 function hideOriginal() {
-  const p = document.getElementById("original-player");
-  p.style.display = "none";
-  document.getElementById("normal-toggle").textContent = "Показать оригинал";
-  document.getElementById("audio-normal").pause();
-  document.getElementById("normal-play-icon").classList.replace("fa-pause", "fa-play");
+  const p = document.getElementById("original-player");[cite: 2]
+  p.style.display = "none";[cite: 2]
+  document.getElementById("normal-toggle").textContent = "Показать оригинал";[cite: 2]
+  document.getElementById("audio-normal").pause();[cite: 2]
+  document.getElementById("normal-play-icon").classList.replace("fa-pause", "fa-play");[cite: 2]
 }
 
 function toggleNormal() {
-  const a = document.getElementById("audio-normal");
-  const r = document.getElementById("audio-revers");
-  const i = document.getElementById("normal-play-icon");
+  initAudio();
+  const a = document.getElementById("audio-normal");[cite: 2]
+  const r = document.getElementById("audio-revers");[cite: 2]
+  const i = document.getElementById("normal-play-icon");[cite: 2]
   if (a.paused) {
-    stopTimer();
-    r.pause();
-    document.getElementById("revers-play-icon").classList.replace("fa-pause", "fa-play");
-    a.src = files[currentTrackName]?.normal;
-    a.load();
-    a.play();
-    i.classList.replace("fa-play", "fa-pause");
-    updateNormalProgress();
+    stopTimer();[cite: 2]
+    r.pause();[cite: 2]
+    document.getElementById("revers-play-icon").classList.replace("fa-pause", "fa-play");[cite: 2]
+    a.src = files[currentTrackName]?.normal;[cite: 2]
+    a.load();[cite: 2]
+    a.play().then(() => {
+      i.classList.replace("fa-play", "fa-pause");[cite: 2]
+      updateNormalProgress();[cite: 2]
+    }).catch(err => {
+      console.warn("Воспроизведение оригинала заблокировано:", err);
+    });
     a.onloadedmetadata = () => {
-      document.getElementById("normal-duration").textContent = formatTime(a.duration);
+      document.getElementById("normal-duration").textContent = formatTime(a.duration);[cite: 2]
     };
   } else {
-    a.pause();
-    i.classList.replace("fa-play", "fa-pause");
+    a.pause();[cite: 2]
+    i.classList.replace("fa-pause", "fa-play");[cite: 2]
   }
 }
 
 function updateReversProgress() {
-  const a = document.getElementById("audio-revers");
-  const fill = document.getElementById("revers-progress-fill");
-  const currentTimeEl = document.getElementById("revers-current-time");
-  const duration = isNaN(a.duration) ? 0 : a.duration;
-  const progress = a.currentTime / duration;
-  fill.style.width = `${progress * 100 || 0}%`;
-  currentTimeEl.textContent = formatTime(a.currentTime);
-  if (!a.paused) requestAnimationFrame(updateReversProgress);
+  const a = document.getElementById("audio-revers");[cite: 2]
+  const fill = document.getElementById("revers-progress-fill");[cite: 2]
+  const currentTimeEl = document.getElementById("revers-current-time");[cite: 2]
+  const duration = isNaN(a.duration) ? 0 : a.duration;[cite: 2]
+  const progress = a.currentTime / duration;[cite: 2]
+  fill.style.width = `${progress * 100 || 0}%`;[cite: 2]
+  currentTimeEl.textContent = formatTime(a.currentTime);[cite: 2]
+  if (!a.paused) requestAnimationFrame(updateReversProgress);[cite: 2]
 }
 
 function updateNormalProgress() {
-  const a = document.getElementById("audio-normal");
-  const fill = document.getElementById("normal-progress-fill");
-  const currentTimeEl = document.getElementById("normal-current-time");
-  const duration = isNaN(a.duration) ? 0 : a.duration;
-  const progress = a.currentTime / duration;
-  fill.style.width = `${progress * 100 || 0}%`;
-  currentTimeEl.textContent = formatTime(a.currentTime);
-  if (!a.paused) requestAnimationFrame(updateNormalProgress);
+  const a = document.getElementById("audio-normal");[cite: 2]
+  const fill = document.getElementById("normal-progress-fill");[cite: 2]
+  const currentTimeEl = document.getElementById("normal-current-time");[cite: 2]
+  const duration = isNaN(a.duration) ? 0 : a.duration;[cite: 2]
+  const progress = a.currentTime / duration;[cite: 2]
+  fill.style.width = `${progress * 100 || 0}%`;[cite: 2]
+  currentTimeEl.textContent = formatTime(a.currentTime);[cite: 2]
+  if (!a.paused) requestAnimationFrame(updateNormalProgress);[cite: 2]
 }
 
 function seekRevers(e) {
-  const bar = document.getElementById("revers-progress-bar");
-  const audio = document.getElementById("audio-revers");
-  const percent = e.offsetX / bar.offsetWidth;
-  audio.currentTime = percent * audio.duration;
+  const bar = document.getElementById("revers-progress-bar");[cite: 2]
+  const audio = document.getElementById("audio-revers");[cite: 2]
+  const percent = e.offsetX / bar.offsetWidth;[cite: 2]
+  audio.currentTime = percent * audio.duration;[cite: 2]
 }
 
 function seekNormal(e) {
-  const bar = document.getElementById("normal-progress-bar");
-  const audio = document.getElementById("audio-normal");
-  const percent = e.offsetX / bar.offsetWidth;
-  audio.currentTime = percent * audio.duration;
+  const bar = document.getElementById("normal-progress-bar");[cite: 2]
+  const audio = document.getElementById("audio-normal");[cite: 2]
+  const percent = e.offsetX / bar.offsetWidth;[cite: 2]
+  audio.currentTime = percent * audio.duration;[cite: 2]
 }
 
 function markAsPlayed() {
   if (currentTrackName && !playedTracks.has(currentTrackName)) {
-    playedTracks.add(currentTrackName);
-    updateTrackCounter();
-    saveState();
+    playedTracks.add(currentTrackName);[cite: 2]
+    updateTrackCounter();[cite: 2]
+    saveState();[cite: 2]
     document.querySelectorAll(`[data-song="${currentTrackName}"]`).forEach(btn => {
-      btn.classList.add("played");
-      btn.disabled = true;
+      btn.classList.add("played");[cite: 2]
+      btn.disabled = true;[cite: 2]
     });
-    updateNextTrackButton();
+    updateNextTrackButton();[cite: 2]
   }
 }
 
-document.getElementById("audio-revers").addEventListener("playing", markAsPlayed);
+document.getElementById("audio-revers").addEventListener("playing", markAsPlayed);[cite: 2]
 
 function showNotification(text, isAddition = true) {
-  const notif = document.getElementById("score-notification");
-  notif.innerHTML = text;
-  notif.style.color = isAddition ? 'var(--neon-lime)' : 'var(--neon-pink)';
-  notif.style.borderColor = isAddition ? 'var(--neon-lime)' : 'var(--neon-pink)';
-  notif.classList.add("show");
+  const notif = document.getElementById("score-notification");[cite: 2]
+  notif.innerHTML = text;[cite: 2]
+  notif.style.color = isAddition ? 'var(--neon-lime)' : 'var(--neon-pink)';[cite: 2]
+  notif.style.borderColor = isAddition ? 'var(--neon-lime)' : 'var(--neon-pink)';[cite: 2]
+  notif.classList.add("show");[cite: 2]
   setTimeout(() => {
-    notif.classList.remove("show");
-  }, 1200);
+    notif.classList.remove("show");[cite: 2]
+  }, 1200);[cite: 2]
 }
 
 function addScore(team, points) {
-  if (team === 1) score1 += points;
-  else if (team === 2) score2 += points;
-  document.getElementById("score1").textContent = score1.toFixed(1);
-  document.getElementById("score2").textContent = score2.toFixed(1);
-  saveState();
-  playRingScore();
-  showNotification(`+${points} (${team === 1 ? team1Name : team2Name})`, true);
+  if (team === 1) score1 += points;[cite: 2]
+  else if (team === 2) score2 += points;[cite: 2]
+  document.getElementById("score1").textContent = score1.toFixed(1);[cite: 2]
+  document.getElementById("score2").textContent = score2.toFixed(1);[cite: 2]
+  saveState();[cite: 2]
+  playRingScore();[cite: 2]
+  showNotification(`+${points} (${team === 1 ? team1Name : team2Name})`, true);[cite: 2]
 }
 
 function removeScore(team, points) {
-  if (team === 1) score1 = Math.max(0, score1 - points);
-  else if (team === 2) score2 = Math.max(0, score2 - points);
-  document.getElementById("score1").textContent = score1.toFixed(1);
-  document.getElementById("score2").textContent = score2.toFixed(1);
-  saveState();
-  showNotification(`-${points} (${team === 1 ? team1Name : team2Name})`, false);
+  if (team === 1) score1 = Math.max(0, score1 - points);[cite: 2]
+  else if (team === 2) score2 = Math.max(0, score2 - points);[cite: 2]
+  document.getElementById("score1").textContent = score1.toFixed(1);[cite: 2]
+  document.getElementById("score2").textContent = score2.toFixed(1);[cite: 2]
+  saveState();[cite: 2]
+  showNotification(`-${points} (${team === 1 ? team1Name : team2Name})`, false);[cite: 2]
 }
 
 function stopAllSounds() {
-  ["audio-revers", "audio-normal"].forEach(id =>
-    document.getElementById(id).pause()
-  );
-  stopTimer();
+  ["audio-revers", "audio-normal"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.pause();
+  });
+  stopTimer();[cite: 2]
 }
 
 function updateTrackCounter() {
-  document.getElementById("track-counter").textContent = Object.keys(files).length - playedTracks.size;
-  updateNextTrackButton();
+  document.getElementById("track-counter").textContent = Object.keys(files).length - playedTracks.size;[cite: 2]
+  updateNextTrackButton();[cite: 2]
 }
 
 function saveState() {
   localStorage.setItem('reversQuiz', JSON.stringify({
-    team1: team1Name,
-    team2: team2Name,
-    score1, score2,
-    playedTracks: Array.from(playedTracks),
-    selectedFolder,
-    timerDuration,
-    mixMode,
-    activeTeam,
-    shouldAutoSwitch,
-    lastPlayedTrack,
-    trackOrder
-  }));
+    team1: team1Name,[cite: 2]
+    team2: team2Name,[cite: 2]
+    score1, score2,[cite: 2]
+    playedTracks: Array.from(playedTracks),[cite: 2]
+    selectedFolder,[cite: 2]
+    timerDuration,[cite: 2]
+    mixMode,[cite: 2]
+    activeTeam,[cite: 2]
+    shouldAutoSwitch,[cite: 2]
+    lastPlayedTrack,[cite: 2]
+    trackOrder[cite: 2]
+  }));[cite: 2]
 }
 
 function endQuiz() {
-  localStorage.removeItem('reversQuiz');
-  stopAllSounds();
-  const quizArea = document.getElementById("quiz-area");
-  quizArea.innerHTML = '';
-  const resultDiv = document.createElement('div');
-  resultDiv.className = 'winner-screen';
+  localStorage.removeItem('reversQuiz');[cite: 2]
+  stopAllSounds();[cite: 2]
+  const quizArea = document.getElementById("quiz-area");[cite: 2]
+  quizArea.innerHTML = '';[cite: 2]
+  const resultDiv = document.createElement('div');[cite: 2]
+  resultDiv.className = 'winner-screen';[cite: 2]
   resultDiv.innerHTML = `
     <h2>🏆 Итоги битвы:<br><strong>${score1 > score2 ? team1Name : score2 > score1 ? team2Name : "Ничья!"}</strong></h2>
     <div class="final-scores">
       <div>${team1Name}: <strong>${score1.toFixed(1)}</strong></div>
       <div>${team2Name}: <strong>${score2.toFixed(1)}</strong></div>
     </div>
-  `;
-  quizArea.appendChild(resultDiv);
-  const restartBtn = document.createElement("button");
-  restartBtn.innerHTML = '<i class="fas fa-redo"></i> Новая игра';
+  `;[cite: 2]
+  quizArea.appendChild(resultDiv);[cite: 2]
+  const restartBtn = document.createElement("button");[cite: 2]
+  restartBtn.innerHTML = '<i class="fas fa-redo"></i> Новая игра';[cite: 2]
   restartBtn.style.cssText = `
     width: 100%;
     padding: 16px;
@@ -1518,71 +1542,71 @@ function endQuiz() {
     font-size: 15px;
     text-transform: uppercase;
     letter-spacing: 1px;
-  `;
-  restartBtn.onclick = () => location.reload();
-  quizArea.appendChild(restartBtn);
+  `;[cite: 2]
+  restartBtn.onclick = () => location.reload();[cite: 2]
+  quizArea.appendChild(restartBtn);[cite: 2]
 }
 
 function openSettings() {
-  document.getElementById("timer-input").value = timerDuration;
-  document.getElementById("mix-mode").value = mixMode ? "mixed" : "normal";
-  document.getElementById("settings-modal").classList.add("active");
+  document.getElementById("timer-input").value = timerDuration;[cite: 2]
+  document.getElementById("mix-mode").value = mixMode ? "mixed" : "normal";[cite: 2]
+  document.getElementById("settings-modal").classList.add("active");[cite: 2]
 }
 
 function closeSettings() {
-  document.getElementById("settings-modal").classList.remove("active");
+  document.getElementById("settings-modal").classList.remove("active");[cite: 2]
 }
 
 function setSettings() {
-  const input = document.getElementById("timer-input");
-  const mode = document.getElementById("mix-mode").value;
-  const value = parseInt(input.value);
-  if (isNaN(value) || value < 1 || value > 300) return alert("Таймер: от 1 до 300 сек.");
-  timerDuration = value;
-  mixMode = mode === "mixed";
-  closeSettings();
-  updateFolderSection();
-  saveState();
-  showActionNotification('⚙️ Настройки применены');
+  const input = document.getElementById("timer-input");[cite: 2]
+  const mode = document.getElementById("mix-mode").value;[cite: 2]
+  const value = parseInt(input.value);[cite: 2]
+  if (isNaN(value) || value < 1 || value > 300) return alert("Таймер: от 1 до 300 сек.");[cite: 2]
+  timerDuration = value;[cite: 2]
+  mixMode = mode === "mixed";[cite: 2]
+  closeSettings();[cite: 2]
+  updateFolderSection();[cite: 2]
+  saveState();[cite: 2]
+  showActionNotification('⚙️ Настройки применены');[cite: 2]
 }
 
 function startTimer() {
-  if (isTimerActive) return;
-  isTimerActive = true;
-  timerValue = timerDuration;
-  document.getElementById("timer-circle").classList.add("active");
-  updateTimerDisplay();
-  playTimeStart();
+  if (isTimerActive) return;[cite: 2]
+  isTimerActive = true;[cite: 2]
+  timerValue = timerDuration;[cite: 2]
+  document.getElementById("timer-circle").classList.add("active");[cite: 2]
+  updateTimerDisplay();[cite: 2]
+  playTimeStart();[cite: 2]
   timerInterval = setInterval(() => {
-    timerValue--;
-    updateTimerDisplay();
+    timerValue--;[cite: 2]
+    updateTimerDisplay();[cite: 2]
     if (timerValue === 1) {
-      crossfadeToFinal();
+      crossfadeToFinal();[cite: 2]
     }
     if (timerValue <= 0) {
-      clearInterval(timerInterval);
-      timerInterval = null;
+      clearInterval(timerInterval);[cite: 2]
+      timerInterval = null;[cite: 2]
     }
-  }, 1000);
+  }, 1000);[cite: 2]
 }
 
 function stopTimer() {
   if (timerInterval) {
-    clearInterval(timerInterval);
-    timerInterval = null;
+    clearInterval(timerInterval);[cite: 2]
+    timerInterval = null;[cite: 2]
   }
-  isTimerActive = false;
-  document.getElementById("timer-circle").classList.remove("active");
-  stopCurrentTimerSounds();
+  isTimerActive = false;[cite: 2]
+  document.getElementById("timer-circle").classList.remove("active");[cite: 2]
+  stopCurrentTimerSounds();[cite: 2]
 }
 
 function updateTimerDisplay() {
-  const el = document.getElementById("timer-circle");
-  el.textContent = timerValue;
-  const isUrgent = timerValue <= 5;
-  el.style.borderColor = isUrgent ? "var(--neon-pink)" : "var(--neon-cyan)";
-  el.style.color = isUrgent ? "var(--neon-pink)" : "var(--neon-cyan)";
-  el.style.boxShadow = isUrgent ? "0 0 20px rgba(255, 0, 85, 0.5)" : "0 0 20px rgba(0, 229, 255, 0.4)";
+  const el = document.getElementById("timer-circle");[cite: 2]
+  el.textContent = timerValue;[cite: 2]
+  const isUrgent = timerValue <= 5;[cite: 2]
+  el.style.borderColor = isUrgent ? "var(--neon-pink)" : "var(--neon-cyan)";[cite: 2]
+  el.style.color = isUrgent ? "var(--neon-pink)" : "var(--neon-cyan)";[cite: 2]
+  el.style.boxShadow = isUrgent ? "0 0 20px rgba(255, 0, 85, 0.5)" : "0 0 20px rgba(0, 229, 255, 0.4)";[cite: 2]
 }
 </script>
 </body>
