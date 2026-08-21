@@ -848,6 +848,9 @@ button:active {
 <audio id="audio-normal" preload="auto" playsinline style="display:none;"></audio>
 <audio id="audio-winner" preload="auto" playsinline style="display:none;"></audio>
 <audio id="audio-lost" preload="auto" playsinline style="display:none;"></audio>
+<audio id="audio-ring" preload="auto" playsinline style="display:none;"></audio>
+<audio id="audio-start" preload="auto" playsinline style="display:none;"></audio>
+<audio id="audio-final" preload="auto" playsinline style="display:none;"></audio>
 
 <div id="settings-btn" onclick="openSettings()">
   <i class="fas fa-sliders-h"></i>
@@ -879,168 +882,23 @@ var files = {};
 var playedTracks = new Set();
 var currentTrackName = null;
 var selectedFolder = "";
-var winnerUrl = null, lostUrl = null;
 var timerDuration = 10;
 var mixMode = false;
 var timerValue = 0;
 var timerInterval = null;
 var isTimerActive = false;
-var audioContext = null;
 var activeTeam = null;
 var shouldAutoSwitch = true;
 var lastPlayedTrack = null;
-var timeStartBuffer = null;
-var timeFinalBuffer = null;
-var winnerBuffer = null;
-var lostBuffer = null;
-var ringScoreBuffer = null;
-var startSource = null;
-var finalSource = null;
-var startGainNode = null;
-var finalGainNode = null;
-var ringScoreSource = null;
-var soundsPreloaded = false;
 var trackOrder = {};
 
-function initAudio() {
-  if (!audioContext) {
-    audioContext = new (window.AudioContext || window.webkitAudioContext)();
-  }
-  if (audioContext && audioContext.state === 'suspended') {
-    audioContext.resume();
-  }
-}
-document.addEventListener('click', initAudio, { passive: true });
-document.addEventListener('touchstart', initAudio, { passive: true });
-
-async function preloadAllSounds() {
-  if (soundsPreloaded) return;
-  try {
-    var rootUrl = "https://cloud-api.yandex.net/v1/disk/public/resources?public_key=" + encodeURIComponent(PUBLIC_KEY) + "&limit=100";
-    var response = await fetch(rootUrl);
-    var data = await response.json();
-    var items = (data._embedded && data._embedded.items) || [];
-    var startFile = items.find(function(f) { return f.name.toLowerCase().indexOf('time_start') !== -1 && f.name.endsWith('.mp3'); });
-    var finalFile = items.find(function(f) { return f.name.toLowerCase().indexOf('time_final') !== -1 && f.name.endsWith('.mp3'); });
-    var winnerFile = items.find(function(f) { return f.name.toLowerCase().indexOf('winner') !== -1 && f.name.endsWith('.mp3'); });
-    var lostFile = items.find(function(f) { return f.name.toLowerCase().indexOf('lost') !== -1 && f.name.endsWith('.mp3'); });
-    var ringFile = items.find(function(f) { return f.name.toLowerCase().indexOf('ring_score') !== -1 && f.name.endsWith('.mp3'); });
-    if (startFile && startFile.file) timeStartBuffer = await loadAudioFile(startFile.file);
-    if (finalFile && finalFile.file) timeFinalBuffer = await loadAudioFile(finalFile.file);
-    if (winnerFile && winnerFile.file) winnerBuffer = await loadAudioFile(winnerFile.file);
-    if (lostFile && lostFile.file) lostBuffer = await loadAudioFile(lostFile.file);
-    if (ringFile && ringFile.file) ringScoreBuffer = await loadAudioFile(ringFile.file);
-    soundsPreloaded = true;
-  } catch (e) {
-    console.error("Ошибка предзагрузки звуков:", e);
-  }
-}
-
-async function loadAudioFile(url) {
-  try {
-    initAudio();
-    var response = await fetch(url);
-    if (!response.ok) throw new Error("Ошибка загрузки: " + url);
-    var arrayBuffer = await response.arrayBuffer();
-    return await audioContext.decodeAudioData(arrayBuffer);
-  } catch (e) {
-    console.warn("Не удалось декодировать аудио:", e);
-    return null;
-  }
-}
-
-function playTimeStart() {
-  if (!audioContext || !timeStartBuffer || isTimerActive === false) return;
-  initAudio();
-  stopCurrentTimerSounds();
-  startSource = audioContext.createBufferSource();
-  startSource.buffer = timeStartBuffer;
-  startGainNode = audioContext.createGain();
-  startGainNode.gain.setValueAtTime(0, audioContext.currentTime);
-  startSource.connect(startGainNode);
-  startGainNode.connect(audioContext.destination);
-  startGainNode.gain.linearRampToValueAtTime(1, audioContext.currentTime + 0.5);
-  startSource.start();
-}
-
-function crossfadeToFinal() {
-  if (!audioContext || !timeFinalBuffer) return;
-  initAudio();
-  if (finalSource && finalSource.playbackState !== 2) {
-    try { finalSource.stop(); } catch (e) {}
-  }
-  finalSource = null;
-  finalGainNode = null;
-
-  if (startGainNode) {
-    startGainNode.gain.cancelScheduledValues(audioContext.currentTime);
-    startGainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 1.5);
-  }
-
-  finalSource = audioContext.createBufferSource();
-  finalSource.buffer = timeFinalBuffer;
-  finalGainNode = audioContext.createGain();
-  finalGainNode.gain.setValueAtTime(0, audioContext.currentTime);
-  finalSource.connect(finalGainNode);
-  finalGainNode.connect(audioContext.destination);
-  finalGainNode.gain.linearRampToValueAtTime(1, audioContext.currentTime + 1.5);
-  finalSource.start();
-
-  finalSource.onended = function() {
-    stopCurrentTimerSounds();
-    if (timerInterval) {
-      clearInterval(timerInterval);
-      timerInterval = null;
-    }
-    isTimerActive = false;
-    document.getElementById("timer-circle").classList.remove("active");
-  };
-}
-
-function stopCurrentTimerSounds() {
-  if (startSource && startSource.playbackState !== 2) {
-    try { startSource.stop(); } catch (e) {}
-  }
-  if (startGainNode) startGainNode.gain.cancelScheduledValues(audioContext.currentTime);
-  startSource = null;
-  startGainNode = null;
-
-  if (finalSource && finalSource.playbackState !== 2) {
-    try { finalSource.stop(); } catch (e) {}
-  }
-  finalSource = null;
-  finalGainNode = null;
-}
-
-function playRingScore() {
-  if (!audioContext || !ringScoreBuffer) return;
-  initAudio();
-  var source = audioContext.createBufferSource();
-  source.buffer = ringScoreBuffer;
-  source.connect(audioContext.destination);
-  source.start();
-}
-
-function playSound(type) {
-  stopAllSounds();
-  initAudio();
-  var buffer = type === 'winner' ? winnerBuffer : lostBuffer;
-  if (buffer) {
-    var source = audioContext.createBufferSource();
-    source.buffer = buffer;
-    source.connect(audioContext.destination);
-    source.start();
-  } else {
-    alert("Файл " + type.toUpperCase() + " не найден");
-  }
-}
-
-function formatTime(seconds) {
-  seconds = Math.floor(seconds || 0);
-  var mins = Math.floor(seconds / 60);
-  var secs = seconds % 60;
-  return String(mins).padStart(2, '0') + ":" + String(secs).padStart(2, '0');
-}
+var soundUrls = {
+  winner: null,
+  lost: null,
+  ring: null,
+  start: null,
+  final: null
+};
 
 window.addEventListener('load', function() {
   var saved = localStorage.getItem('reversQuiz');
@@ -1059,6 +917,7 @@ window.addEventListener('load', function() {
       shouldAutoSwitch = data.shouldAutoSwitch !== false;
       lastPlayedTrack = data.lastPlayedTrack || null;
       trackOrder = data.trackOrder || {};
+      
       document.getElementById("team1-label").textContent = team1Name;
       document.getElementById("team2-label").textContent = team2Name;
       document.getElementById("score1").textContent = score1.toFixed(1);
@@ -1077,6 +936,44 @@ window.addEventListener('load', function() {
     }
   }
 });
+
+async function preloadAllSounds() {
+  try {
+    var rootUrl = "https://cloud-api.yandex.net/v1/disk/public/resources?public_key=" + encodeURIComponent(PUBLIC_KEY) + "&limit=100";
+    var response = await fetch(rootUrl);
+    var data = await response.json();
+    var items = (data._embedded && data._embedded.items) || [];
+    items.forEach(function(f) {
+      var n = f.name.toLowerCase();
+      if (n.indexOf("time_start") !== -1 && n.endsWith(".mp3")) soundUrls.start = f.file;
+      if (n.indexOf("time_final") !== -1 && n.endsWith(".mp3")) soundUrls.final = f.file;
+      if (n.indexOf("winner") !== -1 && n.endsWith(".mp3")) soundUrls.winner = f.file;
+      if (n.indexOf("lost") !== -1 && n.endsWith(".mp3")) soundUrls.lost = f.file;
+      if (n.indexOf("ring_score") !== -1 && n.endsWith(".mp3")) soundUrls.ring = f.file;
+    });
+  } catch (e) {
+    console.error("Ошибка загрузки системных звуков:", e);
+  }
+}
+
+function playSound(type) {
+  stopAllSounds();
+  var url = type === 'winner' ? soundUrls.winner : soundUrls.lost;
+  var audio = document.getElementById(type === 'winner' ? 'audio-winner' : 'audio-lost');
+  if (url && audio) {
+    audio.src = url;
+    audio.play().catch(function(e) { console.warn(e); });
+  } else {
+    showActionNotification(type === 'winner' ? '🎉 Правильно!' : '😢 Мимо!');
+  }
+}
+
+function formatTime(seconds) {
+  seconds = Math.floor(seconds || 0);
+  var mins = Math.floor(seconds / 60);
+  var secs = seconds % 60;
+  return String(mins).padStart(2, '0') + ":" + String(secs).padStart(2, '0');
+}
 
 function setTeams() {
   var t1 = document.getElementById("team1").value.trim();
@@ -1144,7 +1041,6 @@ async function loadFiles() {
   var loadBtn = document.getElementById("load-songs-btn");
   loadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Загрузка...';
   try {
-    initAudio();
     var allFiles = {};
     if (mixMode) {
       var rPromise = fetchFolderFiles("/Русские").catch(function() { return {}; });
@@ -1201,9 +1097,7 @@ async function loadFiles() {
     document.getElementById("quiz-area").style.display = "block";
     generateSongButtons();
     saveState();
-    if (!soundsPreloaded) {
-      setTimeout(function() { preloadAllSounds(); }, 100);
-    }
+    preloadAllSounds();
     updateNextTrackButton();
   } catch (e) {
     console.error("КРИТИЧЕСКАЯ ОШИБКА ЗАГРУЗКИ:", e);
@@ -1275,7 +1169,6 @@ function generateSongButtons() {
 }
 
 function playTrack(name) {
-  initAudio();
   hideOriginal();
   stopAllSounds();
   hideTrackPopup();
@@ -1329,7 +1222,6 @@ function hideTrackPopup() {
 }
 
 function toggleRevers() {
-  initAudio();
   var audio = document.getElementById("audio-revers");
   var normal = document.getElementById("audio-normal");
   var icon = document.getElementById("revers-play-icon");
@@ -1397,7 +1289,6 @@ function hideOriginal() {
 }
 
 function toggleNormal() {
-  initAudio();
   var a = document.getElementById("audio-normal");
   var r = document.getElementById("audio-revers");
   var i = document.getElementById("normal-play-icon");
@@ -1491,7 +1382,11 @@ function addScore(team, points) {
   document.getElementById("score1").textContent = score1.toFixed(1);
   document.getElementById("score2").textContent = score2.toFixed(1);
   saveState();
-  playRingScore();
+  if (soundUrls.ring) {
+    var a = document.getElementById("audio-ring");
+    a.src = soundUrls.ring;
+    a.play().catch(function() {});
+  }
   showNotification('+' + points + ' (' + (team === 1 ? team1Name : team2Name) + ')', true);
 }
 
@@ -1505,7 +1400,7 @@ function removeScore(team, points) {
 }
 
 function stopAllSounds() {
-  ["audio-revers", "audio-normal"].forEach(function(id) {
+  ["audio-revers", "audio-normal", "audio-winner", "audio-lost", "audio-ring", "audio-start", "audio-final"].forEach(function(id) {
     var el = document.getElementById(id);
     if (el) el.pause();
   });
@@ -1579,16 +1474,25 @@ function startTimer() {
   timerValue = timerDuration;
   document.getElementById("timer-circle").classList.add("active");
   updateTimerDisplay();
-  playTimeStart();
+  
+  if (soundUrls.start) {
+    var a = document.getElementById("audio-start");
+    a.src = soundUrls.start;
+    a.play().catch(function() {});
+  }
+
   timerInterval = setInterval(function() {
     timerValue--;
     updateTimerDisplay();
-    if (timerValue === 1) {
-      crossfadeToFinal();
+    if (timerValue === 1 && soundUrls.final) {
+      var f = document.getElementById("audio-final");
+      f.src = soundUrls.final;
+      f.play().catch(function() {});
     }
     if (timerValue <= 0) {
       clearInterval(timerInterval);
       timerInterval = null;
+      setTimeout(stopTimer, 1500);
     }
   }, 1000);
 }
@@ -1600,7 +1504,6 @@ function stopTimer() {
   }
   isTimerActive = false;
   document.getElementById("timer-circle").classList.remove("active");
-  stopCurrentTimerSounds();
 }
 
 function updateTimerDisplay() {
