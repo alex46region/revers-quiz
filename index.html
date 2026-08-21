@@ -844,14 +844,10 @@ button:active {
   </div>
 </div>
 
-<!-- HTML5 Audio элементы -->
 <audio id="audio-revers" preload="auto" playsinline style="display:none;"></audio>
 <audio id="audio-normal" preload="auto" playsinline style="display:none;"></audio>
 <audio id="audio-winner" preload="auto" playsinline style="display:none;"></audio>
 <audio id="audio-lost" preload="auto" playsinline style="display:none;"></audio>
-<audio id="audio-ring" preload="auto" playsinline style="display:none;"></audio>
-<audio id="audio-start" preload="auto" playsinline style="display:none;"></audio>
-<audio id="audio-final" preload="auto" playsinline style="display:none;"></audio>
 
 <div id="settings-btn" onclick="openSettings()">
   <i class="fas fa-sliders-h"></i>
@@ -883,50 +879,167 @@ var files = {};
 var playedTracks = new Set();
 var currentTrackName = null;
 var selectedFolder = "";
+var winnerUrl = null, lostUrl = null;
 var timerDuration = 10;
 var mixMode = false;
 var timerValue = 0;
 var timerInterval = null;
 var isTimerActive = false;
+var audioContext = null;
 var activeTeam = null;
 var shouldAutoSwitch = true;
 var lastPlayedTrack = null;
+var timeStartBuffer = null;
+var timeFinalBuffer = null;
+var winnerBuffer = null;
+var lostBuffer = null;
+var ringScoreBuffer = null;
+var startSource = null;
+var finalSource = null;
+var startGainNode = null;
+var finalGainNode = null;
+var ringScoreSource = null;
+var soundsPreloaded = false;
 var trackOrder = {};
 
-var soundUrls = {
-  winner: null,
-  lost: null,
-  ring: null,
-  start: null,
-  final: null
-};
-
-// Разблокировка медиа-контекста мобильного браузера
-function unlockMobileAudio() {
-  var audios = ['audio-revers', 'audio-normal', 'audio-winner', 'audio-lost', 'audio-ring', 'audio-start', 'audio-final'];
-  audios.forEach(function(id) {
-    var a = document.getElementById(id);
-    if (a) {
-      a.play().catch(function() {});
-      a.pause();
-    }
-  });
+function initAudio() {
+  if (!audioContext) {
+    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  if (audioContext && audioContext.state === 'suspended') {
+    audioContext.resume();
+  }
 }
-document.addEventListener('click', unlockMobileAudio, { once: true });
-document.addEventListener('touchstart', unlockMobileAudio, { once: true });
+document.addEventListener('click', initAudio, { passive: true });
+document.addEventListener('touchstart', initAudio, { passive: true });
 
-// Запрос свежей прямой ссылки на скачивание/воспроизведение с Яндекс.Диска
-async function getFreshDirectUrl(path) {
+async function preloadAllSounds() {
+  if (soundsPreloaded) return;
   try {
-    var url = "https://cloud-api.yandex.net/v1/disk/public/resources/download?public_key=" + encodeURIComponent(PUBLIC_KEY) + "&path=" + encodeURIComponent(path);
-    var res = await fetch(url);
-    if (!res.ok) throw new Error("Status: " + res.status);
-    var data = await res.json();
-    return data.href;
+    var rootUrl = "https://cloud-api.yandex.net/v1/disk/public/resources?public_key=" + encodeURIComponent(PUBLIC_KEY) + "&limit=100";
+    var response = await fetch(rootUrl);
+    var data = await response.json();
+    var items = (data._embedded && data._embedded.items) || [];
+    var startFile = items.find(function(f) { return f.name.toLowerCase().indexOf('time_start') !== -1 && f.name.endsWith('.mp3'); });
+    var finalFile = items.find(function(f) { return f.name.toLowerCase().indexOf('time_final') !== -1 && f.name.endsWith('.mp3'); });
+    var winnerFile = items.find(function(f) { return f.name.toLowerCase().indexOf('winner') !== -1 && f.name.endsWith('.mp3'); });
+    var lostFile = items.find(function(f) { return f.name.toLowerCase().indexOf('lost') !== -1 && f.name.endsWith('.mp3'); });
+    var ringFile = items.find(function(f) { return f.name.toLowerCase().indexOf('ring_score') !== -1 && f.name.endsWith('.mp3'); });
+    if (startFile && startFile.file) timeStartBuffer = await loadAudioFile(startFile.file);
+    if (finalFile && finalFile.file) timeFinalBuffer = await loadAudioFile(finalFile.file);
+    if (winnerFile && winnerFile.file) winnerBuffer = await loadAudioFile(winnerFile.file);
+    if (lostFile && lostFile.file) lostBuffer = await loadAudioFile(lostFile.file);
+    if (ringFile && ringFile.file) ringScoreBuffer = await loadAudioFile(ringFile.file);
+    soundsPreloaded = true;
   } catch (e) {
-    console.error("Ошибка получения ссылки:", e);
+    console.error("Ошибка предзагрузки звуков:", e);
+  }
+}
+
+async function loadAudioFile(url) {
+  try {
+    initAudio();
+    var response = await fetch(url);
+    if (!response.ok) throw new Error("Ошибка загрузки: " + url);
+    var arrayBuffer = await response.arrayBuffer();
+    return await audioContext.decodeAudioData(arrayBuffer);
+  } catch (e) {
+    console.warn("Не удалось декодировать аудио:", e);
     return null;
   }
+}
+
+function playTimeStart() {
+  if (!audioContext || !timeStartBuffer || isTimerActive === false) return;
+  initAudio();
+  stopCurrentTimerSounds();
+  startSource = audioContext.createBufferSource();
+  startSource.buffer = timeStartBuffer;
+  startGainNode = audioContext.createGain();
+  startGainNode.gain.setValueAtTime(0, audioContext.currentTime);
+  startSource.connect(startGainNode);
+  startGainNode.connect(audioContext.destination);
+  startGainNode.gain.linearRampToValueAtTime(1, audioContext.currentTime + 0.5);
+  startSource.start();
+}
+
+function crossfadeToFinal() {
+  if (!audioContext || !timeFinalBuffer) return;
+  initAudio();
+  if (finalSource && finalSource.playbackState !== 2) {
+    try { finalSource.stop(); } catch (e) {}
+  }
+  finalSource = null;
+  finalGainNode = null;
+
+  if (startGainNode) {
+    startGainNode.gain.cancelScheduledValues(audioContext.currentTime);
+    startGainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 1.5);
+  }
+
+  finalSource = audioContext.createBufferSource();
+  finalSource.buffer = timeFinalBuffer;
+  finalGainNode = audioContext.createGain();
+  finalGainNode.gain.setValueAtTime(0, audioContext.currentTime);
+  finalSource.connect(finalGainNode);
+  finalGainNode.connect(audioContext.destination);
+  finalGainNode.gain.linearRampToValueAtTime(1, audioContext.currentTime + 1.5);
+  finalSource.start();
+
+  finalSource.onended = function() {
+    stopCurrentTimerSounds();
+    if (timerInterval) {
+      clearInterval(timerInterval);
+      timerInterval = null;
+    }
+    isTimerActive = false;
+    document.getElementById("timer-circle").classList.remove("active");
+  };
+}
+
+function stopCurrentTimerSounds() {
+  if (startSource && startSource.playbackState !== 2) {
+    try { startSource.stop(); } catch (e) {}
+  }
+  if (startGainNode) startGainNode.gain.cancelScheduledValues(audioContext.currentTime);
+  startSource = null;
+  startGainNode = null;
+
+  if (finalSource && finalSource.playbackState !== 2) {
+    try { finalSource.stop(); } catch (e) {}
+  }
+  finalSource = null;
+  finalGainNode = null;
+}
+
+function playRingScore() {
+  if (!audioContext || !ringScoreBuffer) return;
+  initAudio();
+  var source = audioContext.createBufferSource();
+  source.buffer = ringScoreBuffer;
+  source.connect(audioContext.destination);
+  source.start();
+}
+
+function playSound(type) {
+  stopAllSounds();
+  initAudio();
+  var buffer = type === 'winner' ? winnerBuffer : lostBuffer;
+  if (buffer) {
+    var source = audioContext.createBufferSource();
+    source.buffer = buffer;
+    source.connect(audioContext.destination);
+    source.start();
+  } else {
+    alert("Файл " + type.toUpperCase() + " не найден");
+  }
+}
+
+function formatTime(seconds) {
+  seconds = Math.floor(seconds || 0);
+  var mins = Math.floor(seconds / 60);
+  var secs = seconds % 60;
+  return String(mins).padStart(2, '0') + ":" + String(secs).padStart(2, '0');
 }
 
 window.addEventListener('load', function() {
@@ -946,7 +1059,6 @@ window.addEventListener('load', function() {
       shouldAutoSwitch = data.shouldAutoSwitch !== false;
       lastPlayedTrack = data.lastPlayedTrack || null;
       trackOrder = data.trackOrder || {};
-      
       document.getElementById("team1-label").textContent = team1Name;
       document.getElementById("team2-label").textContent = team2Name;
       document.getElementById("score1").textContent = score1.toFixed(1);
@@ -961,51 +1073,10 @@ window.addEventListener('load', function() {
         updateNextTrackButton();
       }
     } catch(e) {
-      console.warn("Ошибка загрузки состояния:", e);
+      console.warn("Ошибка восстановления:", e);
     }
   }
 });
-
-async function preloadAllSounds() {
-  try {
-    var rootUrl = "https://cloud-api.yandex.net/v1/disk/public/resources?public_key=" + encodeURIComponent(PUBLIC_KEY) + "&limit=100";
-    var response = await fetch(rootUrl);
-    var data = await response.json();
-    var items = (data._embedded && data._embedded.items) || [];
-    items.forEach(function(f) {
-      var n = f.name.toLowerCase();
-      if (n.indexOf("time_start") !== -1 && n.endsWith(".mp3")) soundUrls.start = f.path;
-      if (n.indexOf("time_final") !== -1 && n.endsWith(".mp3")) soundUrls.final = f.path;
-      if (n.indexOf("winner") !== -1 && n.endsWith(".mp3")) soundUrls.winner = f.path;
-      if (n.indexOf("lost") !== -1 && n.endsWith(".mp3")) soundUrls.lost = f.path;
-      if (n.indexOf("ring_score") !== -1 && n.endsWith(".mp3")) soundUrls.ring = f.path;
-    });
-  } catch (e) {
-    console.error("Ошибка загрузки системных звуков:", e);
-  }
-}
-
-async function playSound(type) {
-  stopAllSounds();
-  var path = type === 'winner' ? soundUrls.winner : soundUrls.lost;
-  var audio = document.getElementById(type === 'winner' ? 'audio-winner' : 'audio-lost');
-  if (path && audio) {
-    var directUrl = await getFreshDirectUrl(path);
-    if (directUrl) {
-      audio.src = directUrl;
-      audio.play().catch(function(e) { console.warn(e); });
-    }
-  } else {
-    showActionNotification(type === 'winner' ? '🎉 Правильно!' : '😢 Мимо!');
-  }
-}
-
-function formatTime(seconds) {
-  seconds = Math.floor(seconds || 0);
-  var mins = Math.floor(seconds / 60);
-  var secs = seconds % 60;
-  return String(mins).padStart(2, '0') + ":" + String(secs).padStart(2, '0');
-}
 
 function setTeams() {
   var t1 = document.getElementById("team1").value.trim();
@@ -1048,8 +1119,8 @@ async function fetchFolderFiles(path) {
     mp3Files.forEach(function(file) {
       var cleanName = file.name.replace(/_(REVERS|NORMAL)\.mp3$/i, "");
       if (!filesMap[cleanName]) filesMap[cleanName] = {};
-      if (file.name.indexOf("_REVERS") !== -1) filesMap[cleanName].reversPath = file.path;
-      if (file.name.indexOf("_NORMAL") !== -1) filesMap[cleanName].normalPath = file.path;
+      if (file.name.indexOf("_REVERS") !== -1) filesMap[cleanName].revers = file.file;
+      if (file.name.indexOf("_NORMAL") !== -1) filesMap[cleanName].normal = file.file;
     });
     return filesMap;
   } catch (e) {
@@ -1073,6 +1144,7 @@ async function loadFiles() {
   var loadBtn = document.getElementById("load-songs-btn");
   loadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Загрузка...';
   try {
+    initAudio();
     var allFiles = {};
     if (mixMode) {
       var rPromise = fetchFolderFiles("/Русские").catch(function() { return {}; });
@@ -1129,7 +1201,9 @@ async function loadFiles() {
     document.getElementById("quiz-area").style.display = "block";
     generateSongButtons();
     saveState();
-    preloadAllSounds();
+    if (!soundsPreloaded) {
+      setTimeout(function() { preloadAllSounds(); }, 100);
+    }
     updateNextTrackButton();
   } catch (e) {
     console.error("КРИТИЧЕСКАЯ ОШИБКА ЗАГРУЗКИ:", e);
@@ -1200,21 +1274,16 @@ function generateSongButtons() {
   updateNextTrackButton();
 }
 
-async function playTrack(name) {
+function playTrack(name) {
+  initAudio();
   hideOriginal();
   stopAllSounds();
   hideTrackPopup();
   currentTrackName = name;
   var track = files[name];
-  if (track && track.reversPath) {
+  if (track && track.revers) {
     var audio = document.getElementById("audio-revers");
-    showActionNotification('⏳ Буферизация трека...');
-    var streamUrl = await getFreshDirectUrl(track.reversPath);
-    if (!streamUrl) {
-      alert("Не удалось загрузить аудиопоток. Проверьте интернет.");
-      return;
-    }
-    audio.src = streamUrl;
+    audio.src = track.revers;
     audio.load();
     audio.onended = function() {
       if (timerDuration > 0) startTimer();
@@ -1260,6 +1329,7 @@ function hideTrackPopup() {
 }
 
 function toggleRevers() {
+  initAudio();
   var audio = document.getElementById("audio-revers");
   var normal = document.getElementById("audio-normal");
   var icon = document.getElementById("revers-play-icon");
@@ -1326,7 +1396,8 @@ function hideOriginal() {
   document.getElementById("normal-play-icon").classList.replace("fa-pause", "fa-play");
 }
 
-async function toggleNormal() {
+function toggleNormal() {
+  initAudio();
   var a = document.getElementById("audio-normal");
   var r = document.getElementById("audio-revers");
   var i = document.getElementById("normal-play-icon");
@@ -1334,23 +1405,17 @@ async function toggleNormal() {
     stopTimer();
     r.pause();
     document.getElementById("revers-play-icon").classList.replace("fa-pause", "fa-play");
-    var track = files[currentTrackName];
-    if (track && track.normalPath) {
-      var directUrl = await getFreshDirectUrl(track.normalPath);
-      if (directUrl) {
-        a.src = directUrl;
-        a.load();
-        a.play().then(function() {
-          i.classList.replace("fa-play", "fa-pause");
-          updateNormalProgress();
-        }).catch(function(err) {
-          console.warn("Воспроизведение оригинала заблокировано:", err);
-        });
-        a.onloadedmetadata = function() {
-          document.getElementById("normal-duration").textContent = formatTime(a.duration);
-        };
-      }
-    }
+    a.src = (files[currentTrackName] && files[currentTrackName].normal) ? files[currentTrackName].normal : "";
+    a.load();
+    a.play().then(function() {
+      i.classList.replace("fa-play", "fa-pause");
+      updateNormalProgress();
+    }).catch(function(err) {
+      console.warn("Воспроизведение оригинала заблокировано:", err);
+    });
+    a.onloadedmetadata = function() {
+      document.getElementById("normal-duration").textContent = formatTime(a.duration);
+    };
   } else {
     a.pause();
     i.classList.replace("fa-play", "fa-pause");
@@ -1420,20 +1485,13 @@ function showNotification(text, isAddition) {
   }, 1200);
 }
 
-async function addScore(team, points) {
+function addScore(team, points) {
   if (team === 1) score1 += points;
   else if (team === 2) score2 += points;
   document.getElementById("score1").textContent = score1.toFixed(1);
   document.getElementById("score2").textContent = score2.toFixed(1);
   saveState();
-  if (soundUrls.ring) {
-    var directUrl = await getFreshDirectUrl(soundUrls.ring);
-    if (directUrl) {
-      var a = document.getElementById("audio-ring");
-      a.src = directUrl;
-      a.play().catch(function() {});
-    }
-  }
+  playRingScore();
   showNotification('+' + points + ' (' + (team === 1 ? team1Name : team2Name) + ')', true);
 }
 
@@ -1447,7 +1505,7 @@ function removeScore(team, points) {
 }
 
 function stopAllSounds() {
-  ["audio-revers", "audio-normal", "audio-winner", "audio-lost", "audio-ring", "audio-start", "audio-final"].forEach(function(id) {
+  ["audio-revers", "audio-normal"].forEach(function(id) {
     var el = document.getElementById(id);
     if (el) el.pause();
   });
@@ -1515,37 +1573,22 @@ function setSettings() {
   showActionNotification('⚙️ Настройки применены');
 }
 
-async function startTimer() {
+function startTimer() {
   if (isTimerActive) return;
   isTimerActive = true;
   timerValue = timerDuration;
   document.getElementById("timer-circle").classList.add("active");
   updateTimerDisplay();
-  
-  if (soundUrls.start) {
-    var directUrl = await getFreshDirectUrl(soundUrls.start);
-    if (directUrl) {
-      var a = document.getElementById("audio-start");
-      a.src = directUrl;
-      a.play().catch(function() {});
-    }
-  }
-
-  timerInterval = setInterval(async function() {
+  playTimeStart();
+  timerInterval = setInterval(function() {
     timerValue--;
     updateTimerDisplay();
-    if (timerValue === 1 && soundUrls.final) {
-      var directFinalUrl = await getFreshDirectUrl(soundUrls.final);
-      if (directFinalUrl) {
-        var f = document.getElementById("audio-final");
-        f.src = directFinalUrl;
-        f.play().catch(function() {});
-      }
+    if (timerValue === 1) {
+      crossfadeToFinal();
     }
     if (timerValue <= 0) {
       clearInterval(timerInterval);
       timerInterval = null;
-      setTimeout(stopTimer, 1500);
     }
   }, 1000);
 }
@@ -1557,6 +1600,7 @@ function stopTimer() {
   }
   isTimerActive = false;
   document.getElementById("timer-circle").classList.remove("active");
+  stopCurrentTimerSounds();
 }
 
 function updateTimerDisplay() {
