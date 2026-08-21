@@ -844,14 +844,14 @@ button:active {
   </div>
 </div>
 
-<!-- HTML5 Audio элементы со снятыми ограничениями кросс-доменов -->
-<audio id="audio-revers" preload="auto" playsinline crossorigin="anonymous" style="display:none;"></audio>
-<audio id="audio-normal" preload="auto" playsinline crossorigin="anonymous" style="display:none;"></audio>
-<audio id="audio-winner" preload="auto" playsinline crossorigin="anonymous" style="display:none;"></audio>
-<audio id="audio-lost" preload="auto" playsinline crossorigin="anonymous" style="display:none;"></audio>
-<audio id="audio-ring" preload="auto" playsinline crossorigin="anonymous" style="display:none;"></audio>
-<audio id="audio-start" preload="auto" playsinline crossorigin="anonymous" style="display:none;"></audio>
-<audio id="audio-final" preload="auto" playsinline crossorigin="anonymous" style="display:none;"></audio>
+<!-- HTML5 Audio элементы -->
+<audio id="audio-revers" preload="auto" playsinline style="display:none;"></audio>
+<audio id="audio-normal" preload="auto" playsinline style="display:none;"></audio>
+<audio id="audio-winner" preload="auto" playsinline style="display:none;"></audio>
+<audio id="audio-lost" preload="auto" playsinline style="display:none;"></audio>
+<audio id="audio-ring" preload="auto" playsinline style="display:none;"></audio>
+<audio id="audio-start" preload="auto" playsinline style="display:none;"></audio>
+<audio id="audio-final" preload="auto" playsinline style="display:none;"></audio>
 
 <div id="settings-btn" onclick="openSettings()">
   <i class="fas fa-sliders-h"></i>
@@ -901,8 +901,8 @@ var soundUrls = {
   final: null
 };
 
-// Разблокировка медиа-контекста по первому нажатию
-function unlockAudio() {
+// Разблокировка медиа-контекста мобильного браузера
+function unlockMobileAudio() {
   var audios = ['audio-revers', 'audio-normal', 'audio-winner', 'audio-lost', 'audio-ring', 'audio-start', 'audio-final'];
   audios.forEach(function(id) {
     var a = document.getElementById(id);
@@ -912,8 +912,22 @@ function unlockAudio() {
     }
   });
 }
-document.addEventListener('click', unlockAudio, { once: true });
-document.addEventListener('touchstart', unlockAudio, { once: true });
+document.addEventListener('click', unlockMobileAudio, { once: true });
+document.addEventListener('touchstart', unlockMobileAudio, { once: true });
+
+// Запрос свежей прямой ссылки на скачивание/воспроизведение с Яндекс.Диска
+async function getFreshDirectUrl(path) {
+  try {
+    var url = "https://cloud-api.yandex.net/v1/disk/public/resources/download?public_key=" + encodeURIComponent(PUBLIC_KEY) + "&path=" + encodeURIComponent(path);
+    var res = await fetch(url);
+    if (!res.ok) throw new Error("Status: " + res.status);
+    var data = await res.json();
+    return data.href;
+  } catch (e) {
+    console.error("Ошибка получения ссылки:", e);
+    return null;
+  }
+}
 
 window.addEventListener('load', function() {
   var saved = localStorage.getItem('reversQuiz');
@@ -960,24 +974,27 @@ async function preloadAllSounds() {
     var items = (data._embedded && data._embedded.items) || [];
     items.forEach(function(f) {
       var n = f.name.toLowerCase();
-      if (n.indexOf("time_start") !== -1 && n.endsWith(".mp3")) soundUrls.start = f.file;
-      if (n.indexOf("time_final") !== -1 && n.endsWith(".mp3")) soundUrls.final = f.file;
-      if (n.indexOf("winner") !== -1 && n.endsWith(".mp3")) soundUrls.winner = f.file;
-      if (n.indexOf("lost") !== -1 && n.endsWith(".mp3")) soundUrls.lost = f.file;
-      if (n.indexOf("ring_score") !== -1 && n.endsWith(".mp3")) soundUrls.ring = f.file;
+      if (n.indexOf("time_start") !== -1 && n.endsWith(".mp3")) soundUrls.start = f.path;
+      if (n.indexOf("time_final") !== -1 && n.endsWith(".mp3")) soundUrls.final = f.path;
+      if (n.indexOf("winner") !== -1 && n.endsWith(".mp3")) soundUrls.winner = f.path;
+      if (n.indexOf("lost") !== -1 && n.endsWith(".mp3")) soundUrls.lost = f.path;
+      if (n.indexOf("ring_score") !== -1 && n.endsWith(".mp3")) soundUrls.ring = f.path;
     });
   } catch (e) {
     console.error("Ошибка загрузки системных звуков:", e);
   }
 }
 
-function playSound(type) {
+async function playSound(type) {
   stopAllSounds();
-  var url = type === 'winner' ? soundUrls.winner : soundUrls.lost;
+  var path = type === 'winner' ? soundUrls.winner : soundUrls.lost;
   var audio = document.getElementById(type === 'winner' ? 'audio-winner' : 'audio-lost');
-  if (url && audio) {
-    audio.src = url;
-    audio.play().catch(function(e) { console.warn(e); });
+  if (path && audio) {
+    var directUrl = await getFreshDirectUrl(path);
+    if (directUrl) {
+      audio.src = directUrl;
+      audio.play().catch(function(e) { console.warn(e); });
+    }
   } else {
     showActionNotification(type === 'winner' ? '🎉 Правильно!' : '😢 Мимо!');
   }
@@ -1031,8 +1048,8 @@ async function fetchFolderFiles(path) {
     mp3Files.forEach(function(file) {
       var cleanName = file.name.replace(/_(REVERS|NORMAL)\.mp3$/i, "");
       if (!filesMap[cleanName]) filesMap[cleanName] = {};
-      if (file.name.indexOf("_REVERS") !== -1) filesMap[cleanName].revers = file.file;
-      if (file.name.indexOf("_NORMAL") !== -1) filesMap[cleanName].normal = file.file;
+      if (file.name.indexOf("_REVERS") !== -1) filesMap[cleanName].reversPath = file.path;
+      if (file.name.indexOf("_NORMAL") !== -1) filesMap[cleanName].normalPath = file.path;
     });
     return filesMap;
   } catch (e) {
@@ -1183,15 +1200,21 @@ function generateSongButtons() {
   updateNextTrackButton();
 }
 
-function playTrack(name) {
+async function playTrack(name) {
   hideOriginal();
   stopAllSounds();
   hideTrackPopup();
   currentTrackName = name;
   var track = files[name];
-  if (track && track.revers) {
+  if (track && track.reversPath) {
     var audio = document.getElementById("audio-revers");
-    audio.src = track.revers;
+    showActionNotification('⏳ Буферизация трека...');
+    var streamUrl = await getFreshDirectUrl(track.reversPath);
+    if (!streamUrl) {
+      alert("Не удалось загрузить аудиопоток. Проверьте интернет.");
+      return;
+    }
+    audio.src = streamUrl;
     audio.load();
     audio.onended = function() {
       if (timerDuration > 0) startTimer();
@@ -1303,7 +1326,7 @@ function hideOriginal() {
   document.getElementById("normal-play-icon").classList.replace("fa-pause", "fa-play");
 }
 
-function toggleNormal() {
+async function toggleNormal() {
   var a = document.getElementById("audio-normal");
   var r = document.getElementById("audio-revers");
   var i = document.getElementById("normal-play-icon");
@@ -1311,17 +1334,23 @@ function toggleNormal() {
     stopTimer();
     r.pause();
     document.getElementById("revers-play-icon").classList.replace("fa-pause", "fa-play");
-    a.src = (files[currentTrackName] && files[currentTrackName].normal) ? files[currentTrackName].normal : "";
-    a.load();
-    a.play().then(function() {
-      i.classList.replace("fa-play", "fa-pause");
-      updateNormalProgress();
-    }).catch(function(err) {
-      console.warn("Воспроизведение оригинала заблокировано:", err);
-    });
-    a.onloadedmetadata = function() {
-      document.getElementById("normal-duration").textContent = formatTime(a.duration);
-    };
+    var track = files[currentTrackName];
+    if (track && track.normalPath) {
+      var directUrl = await getFreshDirectUrl(track.normalPath);
+      if (directUrl) {
+        a.src = directUrl;
+        a.load();
+        a.play().then(function() {
+          i.classList.replace("fa-play", "fa-pause");
+          updateNormalProgress();
+        }).catch(function(err) {
+          console.warn("Воспроизведение оригинала заблокировано:", err);
+        });
+        a.onloadedmetadata = function() {
+          document.getElementById("normal-duration").textContent = formatTime(a.duration);
+        };
+      }
+    }
   } else {
     a.pause();
     i.classList.replace("fa-play", "fa-pause");
@@ -1391,16 +1420,19 @@ function showNotification(text, isAddition) {
   }, 1200);
 }
 
-function addScore(team, points) {
+async function addScore(team, points) {
   if (team === 1) score1 += points;
   else if (team === 2) score2 += points;
   document.getElementById("score1").textContent = score1.toFixed(1);
   document.getElementById("score2").textContent = score2.toFixed(1);
   saveState();
   if (soundUrls.ring) {
-    var a = document.getElementById("audio-ring");
-    a.src = soundUrls.ring;
-    a.play().catch(function() {});
+    var directUrl = await getFreshDirectUrl(soundUrls.ring);
+    if (directUrl) {
+      var a = document.getElementById("audio-ring");
+      a.src = directUrl;
+      a.play().catch(function() {});
+    }
   }
   showNotification('+' + points + ' (' + (team === 1 ? team1Name : team2Name) + ')', true);
 }
@@ -1483,7 +1515,7 @@ function setSettings() {
   showActionNotification('⚙️ Настройки применены');
 }
 
-function startTimer() {
+async function startTimer() {
   if (isTimerActive) return;
   isTimerActive = true;
   timerValue = timerDuration;
@@ -1491,18 +1523,24 @@ function startTimer() {
   updateTimerDisplay();
   
   if (soundUrls.start) {
-    var a = document.getElementById("audio-start");
-    a.src = soundUrls.start;
-    a.play().catch(function() {});
+    var directUrl = await getFreshDirectUrl(soundUrls.start);
+    if (directUrl) {
+      var a = document.getElementById("audio-start");
+      a.src = directUrl;
+      a.play().catch(function() {});
+    }
   }
 
-  timerInterval = setInterval(function() {
+  timerInterval = setInterval(async function() {
     timerValue--;
     updateTimerDisplay();
     if (timerValue === 1 && soundUrls.final) {
-      var f = document.getElementById("audio-final");
-      f.src = soundUrls.final;
-      f.play().catch(function() {});
+      var directFinalUrl = await getFreshDirectUrl(soundUrls.final);
+      if (directFinalUrl) {
+        var f = document.getElementById("audio-final");
+        f.src = directFinalUrl;
+        f.play().catch(function() {});
+      }
     }
     if (timerValue <= 0) {
       clearInterval(timerInterval);
