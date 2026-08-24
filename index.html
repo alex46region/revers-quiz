@@ -4,7 +4,6 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
 <meta name="theme-color" content="#05060a" />
-<!-- Отключаем передачу Referer для обхода блокировок хостинга Яндекса -->
 <meta name="referrer" content="no-referrer" />
 <title>🎧 Revers Викторина: Neon Stage</title>
 
@@ -942,7 +941,7 @@ function restoreSession() {
       lastPlayedTrack = data.lastPlayedTrack || null;
       trackOrder = data.trackOrder || {};
       files = data.files || {};
-      
+
       var t1 = document.getElementById("team1");
       var t2 = document.getElementById("team2");
       var t1L = document.getElementById("team1-label");
@@ -950,7 +949,7 @@ function restoreSession() {
       var s1 = document.getElementById("score1");
       var s2 = document.getElementById("score2");
       var fSel = document.getElementById("folder-select");
-      
+
       if (t1) t1.value = team1Name;
       if (t2) t2.value = team2Name;
       if (t1L) t1L.textContent = team1Name;
@@ -958,7 +957,7 @@ function restoreSession() {
       if (s1) s1.textContent = formatScore(score1);
       if (s2) s2.textContent = formatScore(score2);
       if (fSel) fSel.value = selectedFolder;
-      
+
       updateFolderSection();
       if (Object.keys(files).length > 0) {
         var qArea = document.getElementById("quiz-area");
@@ -977,22 +976,26 @@ function restoreSession() {
 }
 
 function saveState() {
-  var state = {
-    team1: team1Name,
-    team2: team2Name,
-    score1: score1,
-    score2: score2,
-    playedTracks: Array.from(playedTracks),
-    selectedFolder: selectedFolder,
-    timerDuration: timerDuration,
-    mixMode: mixMode,
-    activeTeam: activeTeam,
-    shouldAutoSwitch: shouldAutoSwitch,
-    lastPlayedTrack: lastPlayedTrack,
-    trackOrder: trackOrder,
-    files: files
-  };
-  localStorage.setItem('reversQuiz', JSON.stringify(state));
+  try {
+    var state = {
+      team1: team1Name,
+      team2: team2Name,
+      score1: score1,
+      score2: score2,
+      playedTracks: Array.from(playedTracks),
+      selectedFolder: selectedFolder,
+      timerDuration: timerDuration,
+      mixMode: mixMode,
+      activeTeam: activeTeam,
+      shouldAutoSwitch: shouldAutoSwitch,
+      lastPlayedTrack: lastPlayedTrack,
+      trackOrder: trackOrder,
+      files: files
+    };
+    localStorage.setItem('reversQuiz', JSON.stringify(state));
+  } catch(e) {
+    console.warn("Ошибка сохранения:", e);
+  }
 }
 
 async function preloadAllSounds() {
@@ -1458,6 +1461,7 @@ function addScore(team, points) {
   if (soundUrls.ring) {
     var a = document.getElementById("audio-ring");
     a.src = soundUrls.ring;
+    a.currentTime = 0;
     a.play().catch(function() {});
   }
   showNotification('+' + points + ' (' + (team === 1 ? team1Name : team2Name) + ')', true);
@@ -1475,7 +1479,10 @@ function removeScore(team, points) {
 function stopAllSounds() {
   ["audio-revers", "audio-normal", "audio-winner", "audio-lost", "audio-ring", "audio-start", "audio-final"].forEach(function(id) {
     var el = document.getElementById(id);
-    if (el) el.pause();
+    if (el) {
+      el.pause();
+      el.currentTime = 0;
+    }
   });
   stopTimer();
 }
@@ -1533,31 +1540,66 @@ function setSettings() {
 
 function startTimer() {
   if (isTimerActive) return;
+  stopTimerSounds();
   isTimerActive = true;
   timerValue = timerDuration;
-  document.getElementById("timer-circle").classList.add("active");
-  updateTimerDisplay();
   
-  if (soundUrls.start) {
-    var a = document.getElementById("audio-start");
-    a.src = soundUrls.start;
-    a.play().catch(function() {});
+  var circle = document.getElementById("timer-circle");
+  if (circle) circle.classList.add("active");
+  updateTimerDisplay();
+
+  var aStart = document.getElementById("audio-start");
+  var aFinal = document.getElementById("audio-final");
+
+  if (soundUrls.start && aStart) {
+    aStart.src = soundUrls.start;
+    aStart.currentTime = 0;
+    aStart.play().catch(function() {});
   }
 
   timerInterval = setInterval(function() {
     timerValue--;
     updateTimerDisplay();
-    if (timerValue === 1 && soundUrls.final) {
-      var f = document.getElementById("audio-final");
-      f.src = soundUrls.final;
-      f.play().catch(function() {});
+
+    if (timerValue === 1) {
+      if (aStart) {
+        aStart.pause();
+        aStart.currentTime = 0;
+      }
+      if (soundUrls.final && aFinal) {
+        aFinal.src = soundUrls.final;
+        aFinal.currentTime = 0;
+        aFinal.onended = function() {
+          isTimerActive = false;
+          if (circle) circle.classList.remove("active");
+        };
+        aFinal.play().catch(function() {});
+      }
     }
+
     if (timerValue <= 0) {
       clearInterval(timerInterval);
       timerInterval = null;
-      setTimeout(stopTimer, 1500);
+      if (!soundUrls.final && circle) {
+        isTimerActive = false;
+        circle.classList.remove("active");
+      }
     }
   }, 1000);
+}
+
+function stopTimerSounds() {
+  var aStart = document.getElementById("audio-start");
+  var aFinal = document.getElementById("audio-final");
+  if (aStart) {
+    aStart.pause();
+    aStart.currentTime = 0;
+  }
+  if (aFinal) {
+    aFinal.onended = null;
+    aFinal.pause();
+    aFinal.currentTime = 0;
+  }
 }
 
 function stopTimer() {
@@ -1566,7 +1608,11 @@ function stopTimer() {
     timerInterval = null;
   }
   isTimerActive = false;
-  document.getElementById("timer-circle").classList.remove("active");
+  stopTimerSounds();
+  var circle = document.getElementById("timer-circle");
+  if (circle) {
+    circle.classList.remove("active");
+  }
 }
 
 function updateTimerDisplay() {
