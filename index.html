@@ -848,6 +848,11 @@ button:active {
 
 <audio id="audio-revers" preload="auto" playsinline style="display:none;"></audio>
 <audio id="audio-normal" preload="auto" playsinline style="display:none;"></audio>
+<audio id="audio-winner" preload="auto" playsinline style="display:none;"></audio>
+<audio id="audio-lost" preload="auto" playsinline style="display:none;"></audio>
+<audio id="audio-ring" preload="auto" playsinline style="display:none;"></audio>
+<audio id="audio-start" preload="auto" playsinline style="display:none;"></audio>
+<audio id="audio-final" preload="auto" playsinline style="display:none;"></audio>
 
 <div id="settings-btn" onclick="openSettings()">
   <i class="fas fa-sliders-h"></i>
@@ -884,164 +889,42 @@ var mixMode = false;
 var timerValue = 0;
 var timerInterval = null;
 var isTimerActive = false;
-var audioContext = null;
 var activeTeam = null;
 var shouldAutoSwitch = true;
 var lastPlayedTrack = null;
-var timeStartBuffer = null;
-var timeFinalBuffer = null;
-var winnerBuffer = null;
-var lostBuffer = null;
-var ringScoreBuffer = null;
-var startSource = null;
-var finalSource = null;
-var startGainNode = null;
-var finalGainNode = null;
-var soundsPreloaded = false;
 var trackOrder = {};
 
-function initAudio() {
-  if (!audioContext) {
-    audioContext = new (window.AudioContext || window.webkitAudioContext)();
-  }
-  if (audioContext && audioContext.state === 'suspended') {
-    audioContext.resume();
-  }
-}
-document.addEventListener('click', initAudio, { passive: true });
-document.addEventListener('touchstart', initAudio, { passive: true });
+var soundUrls = {
+  winner: null,
+  lost: null,
+  ring: null,
+  start: null,
+  final: null
+};
 
-async function loadAudioFile(url) {
-  try {
-    initAudio();
-    var response = await fetch(url);
-    if (!response.ok) throw new Error("Status: " + response.status);
-    var arrayBuffer = await response.arrayBuffer();
-    return await audioContext.decodeAudioData(arrayBuffer);
-  } catch (e) {
-    console.warn("Ошибка декодирования аудио:", e);
-    return null;
-  }
+function formatScore(val) {
+  var num = parseFloat(val) || 0;
+  return Number.isInteger(num) ? num.toString() : num.toFixed(1);
 }
 
-async function preloadAllSounds() {
-  if (soundsPreloaded) return;
-  try {
-    var rootUrl = "https://cloud-api.yandex.net/v1/disk/public/resources?public_key=" + encodeURIComponent(PUBLIC_KEY) + "&limit=100";
-    var response = await fetch(rootUrl);
-    var data = await response.json();
-    var items = (data._embedded && data._embedded.items) || [];
-    var startFile = items.find(function(f) { return f.name.toLowerCase().indexOf('time_start') !== -1 && f.name.endsWith('.mp3'); });
-    var finalFile = items.find(function(f) { return f.name.toLowerCase().indexOf('time_final') !== -1 && f.name.endsWith('.mp3'); });
-    var winnerFile = items.find(function(f) { return f.name.toLowerCase().indexOf('winner') !== -1 && f.name.endsWith('.mp3'); });
-    var lostFile = items.find(function(f) { return f.name.toLowerCase().indexOf('lost') !== -1 && f.name.endsWith('.mp3'); });
-    var ringFile = items.find(function(f) { return f.name.toLowerCase().indexOf('ring_score') !== -1 && f.name.endsWith('.mp3'); });
-    
-    if (startFile && startFile.file) timeStartBuffer = await loadAudioFile(startFile.file);
-    if (finalFile && finalFile.file) timeFinalBuffer = await loadAudioFile(finalFile.file);
-    if (winnerFile && winnerFile.file) winnerBuffer = await loadAudioFile(winnerFile.file);
-    if (lostFile && lostFile.file) lostBuffer = await loadAudioFile(lostFile.file);
-    if (ringFile && ringFile.file) ringScoreBuffer = await loadAudioFile(ringFile.file);
-    soundsPreloaded = true;
-  } catch (e) {
-    console.error("Ошибка предзагрузки звуков:", e);
-  }
-}
-
-function playTimeStart() {
-  if (!audioContext || !timeStartBuffer || isTimerActive === false) return;
-  initAudio();
-  stopCurrentTimerSounds();
-  startSource = audioContext.createBufferSource();
-  startSource.buffer = timeStartBuffer;
-  startGainNode = audioContext.createGain();
-  startGainNode.gain.setValueAtTime(0, audioContext.currentTime);
-  startSource.connect(startGainNode);
-  startGainNode.connect(audioContext.destination);
-  startGainNode.gain.linearRampToValueAtTime(1, audioContext.currentTime + 0.5);
-  startSource.start();
-}
-
-function crossfadeToFinal() {
-  if (!audioContext || !timeFinalBuffer) return;
-  initAudio();
-  if (finalSource && finalSource.playbackState !== 2) {
-    try { finalSource.stop(); } catch (e) {}
-  }
-  finalSource = null;
-  finalGainNode = null;
-
-  if (startGainNode) {
-    startGainNode.gain.cancelScheduledValues(audioContext.currentTime);
-    startGainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 1.5);
-  }
-
-  finalSource = audioContext.createBufferSource();
-  finalSource.buffer = timeFinalBuffer;
-  finalGainNode = audioContext.createGain();
-  finalGainNode.gain.setValueAtTime(0, audioContext.currentTime);
-  finalSource.connect(finalGainNode);
-  finalGainNode.connect(audioContext.destination);
-  finalGainNode.gain.linearRampToValueAtTime(1, audioContext.currentTime + 1.5);
-  finalSource.start();
-
-  finalSource.onended = function() {
-    stopCurrentTimerSounds();
-    if (timerInterval) {
-      clearInterval(timerInterval);
-      timerInterval = null;
+function unlockMobileAudio() {
+  var audios = ['audio-revers', 'audio-normal', 'audio-winner', 'audio-lost', 'audio-ring', 'audio-start', 'audio-final'];
+  audios.forEach(function(id) {
+    var a = document.getElementById(id);
+    if (a) {
+      a.play().catch(function() {});
+      a.pause();
     }
-    isTimerActive = false;
-    document.getElementById("timer-circle").classList.remove("active");
-  };
+  });
 }
-
-function stopCurrentTimerSounds() {
-  if (startSource && startSource.playbackState !== 2) {
-    try { startSource.stop(); } catch (e) {}
-  }
-  if (startGainNode) startGainNode.gain.cancelScheduledValues(audioContext.currentTime);
-  startSource = null;
-  startGainNode = null;
-
-  if (finalSource && finalSource.playbackState !== 2) {
-    try { finalSource.stop(); } catch (e) {}
-  }
-  finalSource = null;
-  finalGainNode = null;
-}
-
-function playRingScore() {
-  if (!audioContext || !ringScoreBuffer) return;
-  initAudio();
-  var source = audioContext.createBufferSource();
-  source.buffer = ringScoreBuffer;
-  source.connect(audioContext.destination);
-  source.start();
-}
-
-function playSound(type) {
-  stopAllSounds();
-  initAudio();
-  var buffer = type === 'winner' ? winnerBuffer : lostBuffer;
-  if (buffer) {
-    var source = audioContext.createBufferSource();
-    source.buffer = buffer;
-    source.connect(audioContext.destination);
-    source.start();
-  } else {
-    showActionNotification(type === 'winner' ? '🎉 Правильно!' : '😢 Мимо!');
-  }
-}
-
-function formatTime(seconds) {
-  seconds = Math.floor(seconds || 0);
-  var mins = Math.floor(seconds / 60);
-  var secs = seconds % 60;
-  return String(mins).padStart(2, '0') + ":" + String(secs).padStart(2, '0');
-}
+document.addEventListener('click', unlockMobileAudio, { once: true });
+document.addEventListener('touchstart', unlockMobileAudio, { once: true });
 
 window.addEventListener('load', function() {
+  restoreSession();
+});
+
+function restoreSession() {
   var saved = localStorage.getItem('reversQuiz');
   if (saved) {
     try {
@@ -1058,25 +941,97 @@ window.addEventListener('load', function() {
       shouldAutoSwitch = data.shouldAutoSwitch !== false;
       lastPlayedTrack = data.lastPlayedTrack || null;
       trackOrder = data.trackOrder || {};
+      files = data.files || {};
       
-      document.getElementById("team1-label").textContent = team1Name;
-      document.getElementById("team2-label").textContent = team2Name;
-      document.getElementById("score1").textContent = score1.toFixed(1);
-      document.getElementById("score2").textContent = score2.toFixed(1);
+      var t1 = document.getElementById("team1");
+      var t2 = document.getElementById("team2");
+      var t1L = document.getElementById("team1-label");
+      var t2L = document.getElementById("team2-label");
+      var s1 = document.getElementById("score1");
+      var s2 = document.getElementById("score2");
+      var fSel = document.getElementById("folder-select");
+      
+      if (t1) t1.value = team1Name;
+      if (t2) t2.value = team2Name;
+      if (t1L) t1L.textContent = team1Name;
+      if (t2L) t2L.textContent = team2Name;
+      if (s1) s1.textContent = formatScore(score1);
+      if (s2) s2.textContent = formatScore(score2);
+      if (fSel) fSel.value = selectedFolder;
+      
       updateFolderSection();
-      if (Object.keys(trackOrder).length > 0) {
-        document.getElementById("quiz-area").style.display = "block";
+      if (Object.keys(files).length > 0) {
+        var qArea = document.getElementById("quiz-area");
+        if (qArea) qArea.style.display = "block";
         generateSongButtons();
         updateTrackCounter();
         activateTeam(activeTeam);
         updateShuffleButtonState();
         updateNextTrackButton();
+        preloadAllSounds();
       }
     } catch(e) {
-      console.warn("Ошибка загрузки состояния:", e);
+      console.warn("Ошибка восстановления сессии:", e);
     }
   }
-});
+}
+
+function saveState() {
+  var state = {
+    team1: team1Name,
+    team2: team2Name,
+    score1: score1,
+    score2: score2,
+    playedTracks: Array.from(playedTracks),
+    selectedFolder: selectedFolder,
+    timerDuration: timerDuration,
+    mixMode: mixMode,
+    activeTeam: activeTeam,
+    shouldAutoSwitch: shouldAutoSwitch,
+    lastPlayedTrack: lastPlayedTrack,
+    trackOrder: trackOrder,
+    files: files
+  };
+  localStorage.setItem('reversQuiz', JSON.stringify(state));
+}
+
+async function preloadAllSounds() {
+  try {
+    var rootUrl = "https://cloud-api.yandex.net/v1/disk/public/resources?public_key=" + encodeURIComponent(PUBLIC_KEY) + "&limit=100";
+    var response = await fetch(rootUrl);
+    var data = await response.json();
+    var items = (data._embedded && data._embedded.items) || [];
+    items.forEach(function(f) {
+      var n = f.name.toLowerCase();
+      if (n.indexOf("time_start") !== -1 && n.endsWith(".mp3")) soundUrls.start = f.file;
+      if (n.indexOf("time_final") !== -1 && n.endsWith(".mp3")) soundUrls.final = f.file;
+      if (n.indexOf("winner") !== -1 && n.endsWith(".mp3")) soundUrls.winner = f.file;
+      if (n.indexOf("lost") !== -1 && n.endsWith(".mp3")) soundUrls.lost = f.file;
+      if (n.indexOf("ring_score") !== -1 && n.endsWith(".mp3")) soundUrls.ring = f.file;
+    });
+  } catch (e) {
+    console.error("Ошибка загрузки системных звуков:", e);
+  }
+}
+
+function playSound(type) {
+  stopAllSounds();
+  var url = type === 'winner' ? soundUrls.winner : soundUrls.lost;
+  var audio = document.getElementById(type === 'winner' ? 'audio-winner' : 'audio-lost');
+  if (url && audio) {
+    audio.src = url;
+    audio.play().catch(function(e) { console.warn(e); });
+  } else {
+    showActionNotification(type === 'winner' ? '🎉 Правильно!' : '😢 Мимо!');
+  }
+}
+
+function formatTime(seconds) {
+  seconds = Math.floor(seconds || 0);
+  var mins = Math.floor(seconds / 60);
+  var secs = seconds % 60;
+  return String(mins).padStart(2, '0') + ":" + String(secs).padStart(2, '0');
+}
 
 function setTeams() {
   var t1 = document.getElementById("team1").value.trim();
@@ -1095,7 +1050,9 @@ function setTeams() {
 
 function updateFolderSection() {
   var folderSection = document.getElementById("folder-section");
-  folderSection.style.display = mixMode ? "none" : "block";
+  if (folderSection) {
+    folderSection.style.display = mixMode ? "none" : "block";
+  }
 }
 
 async function fetchFolderFiles(path) {
@@ -1144,7 +1101,6 @@ async function loadFiles() {
   var loadBtn = document.getElementById("load-songs-btn");
   loadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Загрузка...';
   try {
-    initAudio();
     var allFiles = {};
     if (mixMode) {
       var rPromise = fetchFolderFiles("/Русские").catch(function() { return {}; });
@@ -1182,6 +1138,7 @@ async function loadFiles() {
         loadBtn.innerHTML = '<i class="fas fa-cloud-download-alt"></i> Загрузить треки';
         return alert("Выберите категорию!");
       }
+      selectedFolder = path;
       allFiles = await fetchFolderFiles(path);
       if (Object.keys(trackOrder).length === 0 || !isTrackOrderValid(allFiles)) {
         var names = Object.keys(allFiles).sort();
@@ -1213,11 +1170,13 @@ async function loadFiles() {
 function updateShuffleButtonState() {
   var shuffleBtn = document.getElementById("shuffle-btn");
   var hasStarted = lastPlayedTrack !== null;
-  shuffleBtn.disabled = hasStarted;
-  shuffleBtn.style.opacity = hasStarted ? 0.4 : 1;
-  shuffleBtn.style.cursor = hasStarted ? "not-allowed" : "pointer";
-  shuffleBtn.textContent = hasStarted ? '❌ Игра начата (порядок зафиксирован)' : '🔄 Перемешать треки';
-  shuffleBtn.title = hasStarted ? "Нельзя перемешивать после начала игры" : "Перемешать треки в случайном порядке";
+  if (shuffleBtn) {
+    shuffleBtn.disabled = hasStarted;
+    shuffleBtn.style.opacity = hasStarted ? 0.4 : 1;
+    shuffleBtn.style.cursor = hasStarted ? "not-allowed" : "pointer";
+    shuffleBtn.textContent = hasStarted ? '❌ Игра начата (порядок зафиксирован)' : '🔄 Перемешать треки';
+    shuffleBtn.title = hasStarted ? "Нельзя перемешивать после начала игры" : "Перемешать треки в случайном порядке";
+  }
 }
 
 function shuffleTracks() {
@@ -1239,15 +1198,18 @@ function shuffleTracks() {
 
 function showActionNotification(text) {
   var notif = document.getElementById("action-notification");
-  notif.textContent = text;
-  notif.classList.add("show");
-  setTimeout(function() {
-    notif.classList.remove("show");
-  }, 2000);
+  if (notif) {
+    notif.textContent = text;
+    notif.classList.add("show");
+    setTimeout(function() {
+      notif.classList.remove("show");
+    }, 2000);
+  }
 }
 
 function generateSongButtons() {
   var container = document.getElementById("song-buttons");
+  if (!container) return;
   container.innerHTML = "";
   var sortedNames = Object.keys(files).sort(function(a, b) {
     return (trackOrder[a] || 0) - (trackOrder[b] || 0);
@@ -1273,7 +1235,6 @@ function generateSongButtons() {
 }
 
 function playTrack(name) {
-  initAudio();
   hideOriginal();
   stopAllSounds();
   hideTrackPopup();
@@ -1294,6 +1255,7 @@ function playTrack(name) {
   }
   updateShuffleButtonState();
   updateNextTrackButton();
+  saveState();
 }
 
 function playNextTrack() {
@@ -1311,6 +1273,7 @@ function playNextTrack() {
 
 function updateNextTrackButton() {
   var btn = document.getElementById("next-track-btn");
+  if (!btn) return;
   var allNames = Object.keys(files);
   var unplayed = allNames.filter(function(name) { return !playedTracks.has(name); });
   btn.disabled = unplayed.length === 0;
@@ -1318,16 +1281,18 @@ function updateNextTrackButton() {
 
 function showTrackPopup(name) {
   var popup = document.getElementById("track-name-popup");
-  popup.textContent = name;
-  popup.style.opacity = 1;
+  if (popup) {
+    popup.textContent = name;
+    popup.style.opacity = 1;
+  }
 }
 
 function hideTrackPopup() {
-  document.getElementById("track-name-popup").style.opacity = 0;
+  var popup = document.getElementById("track-name-popup");
+  if (popup) popup.style.opacity = 0;
 }
 
 function toggleRevers() {
-  initAudio();
   var audio = document.getElementById("audio-revers");
   var normal = document.getElementById("audio-normal");
   var icon = document.getElementById("revers-play-icon");
@@ -1348,6 +1313,7 @@ function toggleRevers() {
         }
         shouldAutoSwitch = true;
         lastPlayedTrack = currentTrackName;
+        saveState();
       }
     }).catch(function(err) {
       console.warn("Воспроизведение заблокировано браузером:", err);
@@ -1364,16 +1330,16 @@ function toggleRevers() {
 function manualActivateTeam(team) {
   activateTeam(team);
   shouldAutoSwitch = false;
+  saveState();
 }
 
 function activateTeam(team) {
-  document.getElementById("score-group-1").classList.remove("active");
-  document.getElementById("score-group-2").classList.remove("active");
-  if (team === 1) {
-    document.getElementById("score-group-1").classList.add("active");
-  } else if (team === 2) {
-    document.getElementById("score-group-2").classList.add("active");
-  }
+  var g1 = document.getElementById("score-group-1");
+  var g2 = document.getElementById("score-group-2");
+  if (g1) g1.classList.remove("active");
+  if (g2) g2.classList.remove("active");
+  if (team === 1 && g1) g1.classList.add("active");
+  if (team === 2 && g2) g2.classList.add("active");
   activeTeam = team;
   saveState();
 }
@@ -1395,7 +1361,6 @@ function hideOriginal() {
 }
 
 function toggleNormal() {
-  initAudio();
   var a = document.getElementById("audio-normal");
   var r = document.getElementById("audio-revers");
   var i = document.getElementById("normal-play-icon");
@@ -1468,69 +1433,59 @@ function markAsPlayed() {
     updateNextTrackButton();
   }
 }
-
 document.getElementById("audio-revers").addEventListener("playing", markAsPlayed);
 
 function showNotification(text, isAddition) {
   if (typeof isAddition === 'undefined') isAddition = true;
   var notif = document.getElementById("score-notification");
-  notif.innerHTML = text;
-  notif.style.color = isAddition ? 'var(--neon-lime)' : 'var(--neon-pink)';
-  notif.style.borderColor = isAddition ? 'var(--neon-lime)' : 'var(--neon-pink)';
-  notif.classList.add("show");
-  setTimeout(function() {
-    notif.classList.remove("show");
-  }, 1200);
+  if (notif) {
+    notif.innerHTML = text;
+    notif.style.color = isAddition ? 'var(--neon-lime)' : 'var(--neon-pink)';
+    notif.style.borderColor = isAddition ? 'var(--neon-lime)' : 'var(--neon-pink)';
+    notif.classList.add("show");
+    setTimeout(function() {
+      notif.classList.remove("show");
+    }, 1200);
+  }
 }
 
 function addScore(team, points) {
   if (team === 1) score1 += points;
   else if (team === 2) score2 += points;
-  document.getElementById("score1").textContent = score1.toFixed(1);
-  document.getElementById("score2").textContent = score2.toFixed(1);
+  document.getElementById("score1").textContent = formatScore(score1);
+  document.getElementById("score2").textContent = formatScore(score2);
   saveState();
-  playRingScore();
+  if (soundUrls.ring) {
+    var a = document.getElementById("audio-ring");
+    a.src = soundUrls.ring;
+    a.play().catch(function() {});
+  }
   showNotification('+' + points + ' (' + (team === 1 ? team1Name : team2Name) + ')', true);
 }
 
 function removeScore(team, points) {
   if (team === 1) score1 = Math.max(0, score1 - points);
   else if (team === 2) score2 = Math.max(0, score2 - points);
-  document.getElementById("score1").textContent = score1.toFixed(1);
-  document.getElementById("score2").textContent = score2.toFixed(1);
+  document.getElementById("score1").textContent = formatScore(score1);
+  document.getElementById("score2").textContent = formatScore(score2);
   saveState();
   showNotification('-' + points + ' (' + (team === 1 ? team1Name : team2Name) + ')', false);
 }
 
 function stopAllSounds() {
-  ["audio-revers", "audio-normal"].forEach(function(id) {
+  ["audio-revers", "audio-normal", "audio-winner", "audio-lost", "audio-ring", "audio-start", "audio-final"].forEach(function(id) {
     var el = document.getElementById(id);
     if (el) el.pause();
   });
-  stopCurrentTimerSounds();
   stopTimer();
 }
 
 function updateTrackCounter() {
-  document.getElementById("track-counter").textContent = Object.keys(files).length - playedTracks.size;
+  var counter = document.getElementById("track-counter");
+  if (counter) {
+    counter.textContent = Object.keys(files).length - playedTracks.size;
+  }
   updateNextTrackButton();
-}
-
-function saveState() {
-  localStorage.setItem('reversQuiz', JSON.stringify({
-    team1: team1Name,
-    team2: team2Name,
-    score1: score1,
-    score2: score2,
-    playedTracks: Array.from(playedTracks),
-    selectedFolder: selectedFolder,
-    timerDuration: timerDuration,
-    mixMode: mixMode,
-    activeTeam: activeTeam,
-    shouldAutoSwitch: shouldAutoSwitch,
-    lastPlayedTrack: lastPlayedTrack,
-    trackOrder: trackOrder
-  }));
 }
 
 function endQuiz() {
@@ -1540,7 +1495,7 @@ function endQuiz() {
   quizArea.innerHTML = '';
   var resultDiv = document.createElement('div');
   resultDiv.className = 'winner-screen';
-  resultDiv.innerHTML = '<h2>🏆 Итоги битвы:<br><strong>' + (score1 > score2 ? team1Name : score2 > score1 ? team2Name : "Ничья!") + '</strong></h2><div class="final-scores"><div>' + team1Name + ': <strong>' + score1.toFixed(1) + '</strong></div><div>' + team2Name + ': <strong>' + score2.toFixed(1) + '</strong></div></div>';
+  resultDiv.innerHTML = '<h2>🏆 Итоги битвы:<br><strong>' + (score1 > score2 ? team1Name : score2 > score1 ? team2Name : "Ничья!") + '</strong></h2><div class="final-scores"><div>' + team1Name + ': <strong>' + formatScore(score1) + '</strong></div><div>' + team2Name + ': <strong>' + formatScore(score2) + '</strong></div></div>';
   quizArea.appendChild(resultDiv);
   var restartBtn = document.createElement("button");
   restartBtn.innerHTML = '<i class="fas fa-redo"></i> Новая игра';
@@ -1550,13 +1505,17 @@ function endQuiz() {
 }
 
 function openSettings() {
-  document.getElementById("timer-input").value = timerDuration;
-  document.getElementById("mix-mode").value = mixMode ? "mixed" : "normal";
-  document.getElementById("settings-modal").classList.add("active");
+  var tIn = document.getElementById("timer-input");
+  var mIn = document.getElementById("mix-mode");
+  var sMod = document.getElementById("settings-modal");
+  if (tIn) tIn.value = timerDuration;
+  if (mIn) mIn.value = mixMode ? "mixed" : "normal";
+  if (sMod) sMod.classList.add("active");
 }
 
 function closeSettings() {
-  document.getElementById("settings-modal").classList.remove("active");
+  var sMod = document.getElementById("settings-modal");
+  if (sMod) sMod.classList.remove("active");
 }
 
 function setSettings() {
@@ -1578,16 +1537,25 @@ function startTimer() {
   timerValue = timerDuration;
   document.getElementById("timer-circle").classList.add("active");
   updateTimerDisplay();
-  playTimeStart();
+  
+  if (soundUrls.start) {
+    var a = document.getElementById("audio-start");
+    a.src = soundUrls.start;
+    a.play().catch(function() {});
+  }
+
   timerInterval = setInterval(function() {
     timerValue--;
     updateTimerDisplay();
-    if (timerValue === 1) {
-      crossfadeToFinal();
+    if (timerValue === 1 && soundUrls.final) {
+      var f = document.getElementById("audio-final");
+      f.src = soundUrls.final;
+      f.play().catch(function() {});
     }
     if (timerValue <= 0) {
       clearInterval(timerInterval);
       timerInterval = null;
+      setTimeout(stopTimer, 1500);
     }
   }, 1000);
 }
@@ -1599,11 +1567,11 @@ function stopTimer() {
   }
   isTimerActive = false;
   document.getElementById("timer-circle").classList.remove("active");
-  stopCurrentTimerSounds();
 }
 
 function updateTimerDisplay() {
   var el = document.getElementById("timer-circle");
+  if (!el) return;
   el.textContent = timerValue;
   var isUrgent = timerValue <= 5;
   el.style.borderColor = isUrgent ? "var(--neon-pink)" : "var(--neon-cyan)";
