@@ -4,7 +4,8 @@
   "webDir": "www",
   "bundledWebRuntime": false,
   "server": {
-    "androidScheme": "https",
-    "cleartext": true
+    "url": "https://alex46region.github.io/revers-quiz/",
+    "cleartext": true,
+    "androidScheme": "https"
   }
 }
