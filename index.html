@@ -694,7 +694,7 @@ button:active {
   color: #fff;
 }
 
-/* Стили неонового прогресс-бара обновления */
+/* Прогресс-бар загрузчика */
 .update-progress-container {
   width: 100%;
   height: 12px;
@@ -976,7 +976,7 @@ function closeUpdateModal() {
   if (modal) modal.classList.remove("active");
 }
 
-async function startInAppDownload() {
+function startInAppDownload() {
   if (!pendingUpdateData || !pendingUpdateData.apkUrl) return;
 
   var btn = document.getElementById("start-update-btn");
@@ -989,76 +989,57 @@ async function startInAppDownload() {
   cancelBtn.style.display = "none";
   barWrap.style.display = "block";
   statusText.style.display = "block";
-  statusText.textContent = "Подключение к серверу...";
+  statusText.textContent = "Подключение...";
 
-  try {
-    var response = await fetch(pendingUpdateData.apkUrl);
-    if (!response.ok) throw new Error("HTTP error " + response.status);
+  localStorage.setItem('installed_native_version', pendingUpdateData.nativeVersion);
 
-    var contentLength = response.headers.get('content-length');
-    var total = contentLength ? parseInt(contentLength, 10) : 0;
-    var loaded = 0;
+  var xhr = new XMLHttpRequest();
+  xhr.open("GET", pendingUpdateData.apkUrl, true);
+  xhr.responseType = "blob";
 
-    var reader = response.body.getReader();
-    var chunks = [];
-
-    while (true) {
-      var result = await reader.read();
-      if (result.done) break;
-      chunks.push(result.value);
-      loaded += result.value.length;
-      if (total > 0) {
-        var percent = Math.round((loaded / total) * 100);
-        fill.style.width = percent + "%";
-        statusText.textContent = percent + "% (" + (loaded / 1048576).toFixed(1) + " / " + (total / 1048576).toFixed(1) + " MB)";
-      } else {
-        statusText.textContent = (loaded / 1048576).toFixed(1) + " MB скачано";
-      }
+  xhr.onprogress = function(event) {
+    if (event.lengthComputable) {
+      var percent = Math.round((event.loaded / event.total) * 100);
+      fill.style.width = percent + "%";
+      statusText.textContent = percent + "% (" + (event.loaded / 1048576).toFixed(1) + " / " + (event.total / 1048576).toFixed(1) + " MB)";
+    } else {
+      statusText.textContent = (event.loaded / 1048576).toFixed(1) + " MB скачано...";
     }
+  };
 
-    statusText.textContent = "Загрузка завершена! Открытие...";
-    localStorage.setItem('installed_native_version', pendingUpdateData.nativeVersion);
-
-    var blob = new Blob(chunks, { type: 'application/vnd.android.package-archive' });
-    var blobUrl = URL.createObjectURL(blob);
-
-    var a = document.createElement('a');
-    a.href = blobUrl;
-    a.download = 'ReversQuiz_v' + pendingUpdateData.nativeVersion + '.apk';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-
-    setTimeout(function() {
-      closeUpdateModal();
+  xhr.onload = function() {
+    if (xhr.status === 200 || xhr.status === 206) {
+      statusText.textContent = "Загружено! Открытие установщика...";
+      
+      var blob = xhr.response;
+      var blobUrl = window.URL.createObjectURL(blob);
+      
+      var tempLink = document.createElement("a");
+      tempLink.style.display = "none";
+      tempLink.href = blobUrl;
+      tempLink.setAttribute("download", "ReversQuiz.apk");
+      document.body.appendChild(tempLink);
+      tempLink.click();
+      
+      setTimeout(function() {
+        document.body.removeChild(tempLink);
+        window.URL.revokeObjectURL(blobUrl);
+        closeUpdateModal();
+      }, 3000);
+    } else {
+      statusText.textContent = "Ошибка сервера: " + xhr.status;
       btn.style.display = "block";
       cancelBtn.style.display = "block";
-      barWrap.style.display = "none";
-      fill.style.width = "0%";
-      statusText.style.display = "none";
-    }, 2500);
+    }
+  };
 
-  } catch (err) {
-    console.warn("Потоковое скачивание завершилось ошибкой, переключение на прямую загрузку:", err);
-    statusText.textContent = "Передача в системный загрузчик...";
-    
-    var downloadLink = document.createElement("a");
-    downloadLink.href = pendingUpdateData.apkUrl;
-    downloadLink.setAttribute("download", "ReversQuiz.apk");
-    document.body.appendChild(downloadLink);
-    downloadLink.click();
-    document.body.removeChild(downloadLink);
+  xhr.onerror = function() {
+    statusText.textContent = "Сбой соединения при загрузке.";
+    btn.style.display = "block";
+    cancelBtn.style.display = "block";
+  };
 
-    localStorage.setItem('installed_native_version', pendingUpdateData.nativeVersion);
-
-    setTimeout(function() {
-      closeUpdateModal();
-      btn.style.display = "block";
-      cancelBtn.style.display = "block";
-      barWrap.style.display = "none";
-      statusText.style.display = "none";
-    }, 2000);
-  }
+  xhr.send();
 }
 
 function formatScore(val) {
