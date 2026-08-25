@@ -38,7 +38,8 @@ jobs:
           cp -r index.html manifest.json sw.js version.json *.png www/ 2>/dev/null || cp -r * www/ 2>/dev/null || true
 
       - name: Install Dependencies
-        run: npm install
+        run: |
+          npm install @capacitor/core @capacitor/cli @capacitor/android
 
       - name: Initialize Android Project
         run: |
@@ -50,13 +51,13 @@ jobs:
           fi
           npx cap sync android
 
-      - name: Build Unsigned APK
+      - name: Configure Android Permissions and FileProvider
         run: |
-          cd android
-          chmod +x gradlew
-          ./gradlew assembleDebug
+          MANIFEST="android/app/src/main/AndroidManifest.xml"
+          # Добавляем разрешение на установку APK
+          sed -i '/<application/i \    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />\n    <uses-permission android:name="android.permission.INTERNET" />\n    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28" />' $MANIFEST
 
-      - name: Sign APK with Permanent Keystore
+      - name: Setup Constant Keystore & Sign APK
         run: |
           mkdir -p ~/.android
           keytool -genkeypair -alias reversquiz -keyalg RSA -keysize 2048 -validity 10000 \
@@ -64,15 +65,15 @@ jobs:
             -storepass "reversquizpass" -keypass "reversquizpass" \
             -dname "CN=ReversQuiz, O=App, C=RU" -noprompt
 
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
           BUILD_TOOLS_DIR=$(ls -d $ANDROID_HOME/build-tools/* | tail -n 1)
-          APK_PATH="android/app/build/outputs/apk/debug/app-debug.apk"
+          APK_PATH="app/build/outputs/apk/debug/app-debug.apk"
           
           $BUILD_TOOLS_DIR/zipalign -v -p 4 $APK_PATH /tmp/aligned.apk || cp $APK_PATH /tmp/aligned.apk
           $BUILD_TOOLS_DIR/apksigner sign --ks ~/.android/permanent.keystore --ks-pass pass:reversquizpass --ks-key-alias reversquiz --key-pass pass:reversquizpass --out $APK_PATH /tmp/aligned.apk
-
-      - name: Copy Signed APK to Web Root
-        run: |
-          cp android/app/build/outputs/apk/debug/app-debug.apk ./app-latest.apk
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
@@ -80,7 +81,7 @@ jobs:
           name: Revers-Quiz-APK
           path: android/app/build/outputs/apk/debug/app-debug.apk
 
-      - name: Release APK to GitHub Releases
+      - name: Release APK
         uses: softprops/action-gh-release@v2
         with:
           tag_name: latest
