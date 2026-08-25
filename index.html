@@ -7,7 +7,6 @@
 <meta name="referrer" content="no-referrer" />
 <title>🎧 Revers Викторина: Neon Stage</title>
 
-<!-- PWA Manifest и Service Worker -->
 <link rel="manifest" href="manifest.json">
 <script>
   if ('serviceWorker' in navigator) {
@@ -893,6 +892,8 @@ var shouldAutoSwitch = true;
 var lastPlayedTrack = null;
 var trackOrder = {};
 
+var CURRENT_APK_VERSION = 1;
+
 var soundUrls = {
   winner: null,
   lost: null,
@@ -900,6 +901,22 @@ var soundUrls = {
   start: null,
   final: null
 };
+
+async function checkNativeUpdate() {
+  try {
+    var res = await fetch("https://alex46region.github.io/revers-quiz/version.json?t=" + Date.now());
+    if (!res.ok) return;
+    var data = await res.json();
+    if (data && data.nativeVersion > CURRENT_APK_VERSION) {
+      var msg = data.message || "Доступна новая версия приложения!";
+      if (confirm(msg + "\n\nСкачать и установить обновление?")) {
+        window.open(data.apkUrl, "_system");
+      }
+    }
+  } catch (e) {
+    console.log("Проверка системных обновлений пропущена:", e);
+  }
+}
 
 function formatScore(val) {
   var num = parseFloat(val) || 0;
@@ -921,6 +938,7 @@ document.addEventListener('touchstart', unlockMobileAudio, { once: true });
 
 window.addEventListener('load', function() {
   restoreSession();
+  checkNativeUpdate();
 });
 
 function restoreSession() {
