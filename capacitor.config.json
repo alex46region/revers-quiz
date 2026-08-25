@@ -6,6 +6,11 @@
   "server": {
     "url": "https://alex46region.github.io/revers-quiz/",
     "cleartext": true,
-    "androidScheme": "https"
+    "androidScheme": "https",
+    "allowNavigation": [
+      "alex46region.github.io",
+      "github.com",
+      "objects.githubusercontent.com"
+    ]
   }
 }
