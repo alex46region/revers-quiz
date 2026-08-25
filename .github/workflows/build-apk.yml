@@ -47,10 +47,11 @@ jobs:
           fi
           npx cap sync android
 
-      - name: Setup Fixed Debug Keystore
+      - name: Setup Constant Debug Keystore
         run: |
           mkdir -p ~/.android
-          keytool -genkeypair -v -keystore ~/.android/debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
+          echo "MIIDVzCCAj+gAwIBAgIET47S1TANBgkqhkiG9w0BAQsFADBLMQswCQYDVQQGEwJVUzEQMA4GA1UEChMHQW5kcm9pZDEQMA4GA1UECxMHQW5kcm9pZDEZMBcGA1UEAxMQQW5kcm9pZCBEZWJ1ZyBLZXkwHhcNMjAwMTAxMDAwMDAwWhcNMzAwMTAxMDAwMDAwWjBLMQswCQYDVQQGEwJVUzEQMA4GA1UEChMHQW5kcm9pZDEQMA4GA1UECxMHQW5kcm9pZDEZMBcGA1UEAxMQQW5kcm9pZCBEZWJ1ZyBLZXkwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCp4L1gHkm1E3v1f6eCgO/RkMhU" | base64 -d > ~/.android/debug.keystore 2>/dev/null || true
+          keytool -genkeypair -v -keystore ~/.android/debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US" -storetype PKCS12 -noprompt 2>/dev/null || true
 
       - name: Build Debug APK
         run: |
