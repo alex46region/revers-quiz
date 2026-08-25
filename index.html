@@ -892,7 +892,7 @@ var shouldAutoSwitch = true;
 var lastPlayedTrack = null;
 var trackOrder = {};
 
-var CURRENT_APK_VERSION = 2;
+var BASE_APK_VERSION = 1;
 
 var soundUrls = {
   winner: null,
@@ -907,8 +907,12 @@ async function checkNativeUpdate() {
     var res = await fetch("https://alex46region.github.io/revers-quiz/version.json?t=" + Date.now());
     if (!res.ok) return;
     var data = await res.json();
-    if (data && data.nativeVersion > CURRENT_APK_VERSION) {
+    
+    var installedVersion = parseInt(localStorage.getItem('installed_native_version')) || BASE_APK_VERSION;
+    
+    if (data && data.nativeVersion > installedVersion) {
       if (confirm("Доступна новая версия приложения!\n\nСкачать и установить обновление?")) {
+        localStorage.setItem('installed_native_version', data.nativeVersion);
         window.open(data.apkUrl, "_system");
       }
     }
