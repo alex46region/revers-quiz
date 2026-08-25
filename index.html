@@ -694,9 +694,28 @@ button:active {
   color: #fff;
 }
 
+/* Стили неонового прогресс-бара обновления */
+.update-progress-container {
+  width: 100%;
+  height: 12px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  overflow: hidden;
+  margin: 16px 0 8px;
+  border: 1px solid var(--border-subtle);
+}
+
+.update-progress-fill {
+  width: 0%;
+  height: 100%;
+  background: linear-gradient(90deg, var(--neon-cyan), var(--neon-lime));
+  box-shadow: 0 0 12px var(--neon-cyan);
+  transition: width 0.15s ease;
+}
+
 .update-status-text {
   font-family: 'Ubuntu Mono', monospace;
-  font-size: 0.9em;
+  font-size: 0.85em;
   color: var(--neon-yellow);
   text-align: center;
 }
@@ -880,17 +899,21 @@ button:active {
   </div>
 </div>
 
-<!-- Модальное окно обновления приложения -->
+<!-- Модальное окно внутриигрового обновления с прогресс-баром -->
 <div id="update-modal">
   <div class="modal-content">
     <h3><i class="fas fa-cloud-download-alt" style="color:var(--neon-cyan)"></i> Обновление</h3>
-    <p id="update-desc" style="font-size:0.95em; color:var(--text-dim); margin-top: 10px; line-height: 1.4;">
+    <p id="update-desc" style="font-size:0.95em; color:var(--text-dim); margin-top: 8px; line-height: 1.4;">
       Доступна новая версия приложения.
     </p>
-    <div id="update-status-text" class="update-status-text" style="margin-top: 14px; display: none;"></div>
     
-    <button id="start-update-btn" onclick="startInAppDownload()">Скачать и установить</button>
-    <button id="cancel-update-btn" style="background:transparent; border:1px solid var(--border-subtle); color:var(--text-dim); margin-top:8px;" onclick="closeUpdateModal()">Напомнить позже</button>
+    <div class="update-progress-container" id="update-bar-wrap" style="display:none;">
+      <div class="update-progress-fill" id="update-progress-fill"></div>
+    </div>
+    <div class="update-status-text" id="update-status-text" style="display:none;"></div>
+    
+    <button id="start-update-btn" onclick="startInAppDownload()">Загрузить обновление</button>
+    <button id="cancel-update-btn" style="background:transparent; border:1px solid var(--border-subtle); color:var(--text-dim); margin-top:8px;" onclick="closeUpdateModal()">Позже</button>
   </div>
 </div>
 
@@ -939,7 +962,7 @@ async function checkNativeUpdate() {
       pendingUpdateData = data;
       var modal = document.getElementById("update-modal");
       if (modal) {
-        document.getElementById("update-desc").innerHTML = "Доступна версия <strong>v" + data.nativeVersion + "</strong>.<br>Скачать обновление сейчас?";
+        document.getElementById("update-desc").innerHTML = "Доступна версия <strong>v" + data.nativeVersion + "</strong>.<br>Загрузить обновление сейчас?";
         modal.classList.add("active");
       }
     }
@@ -953,27 +976,89 @@ function closeUpdateModal() {
   if (modal) modal.classList.remove("active");
 }
 
-function startInAppDownload() {
+async function startInAppDownload() {
   if (!pendingUpdateData || !pendingUpdateData.apkUrl) return;
 
+  var btn = document.getElementById("start-update-btn");
+  var cancelBtn = document.getElementById("cancel-update-btn");
+  var barWrap = document.getElementById("update-bar-wrap");
+  var fill = document.getElementById("update-progress-fill");
   var statusText = document.getElementById("update-status-text");
-  var startBtn = document.getElementById("start-update-btn");
-  
+
+  btn.style.display = "none";
+  cancelBtn.style.display = "none";
+  barWrap.style.display = "block";
   statusText.style.display = "block";
-  statusText.textContent = "Запуск загрузки в панели уведомлений...";
-  startBtn.disabled = true;
+  statusText.textContent = "Подключение к серверу...";
 
-  // Открываем нативную загрузку файла через системный сервис Android
-  window.open(pendingUpdateData.apkUrl, "_system");
+  try {
+    var response = await fetch(pendingUpdateData.apkUrl);
+    if (!response.ok) throw new Error("HTTP error " + response.status);
 
-  // Фиксируем версию в памяти устройства
-  localStorage.setItem('installed_native_version', pendingUpdateData.nativeVersion);
+    var contentLength = response.headers.get('content-length');
+    var total = contentLength ? parseInt(contentLength, 10) : 0;
+    var loaded = 0;
 
-  setTimeout(function() {
-    closeUpdateModal();
-    startBtn.disabled = false;
-    statusText.style.display = "none";
-  }, 2500);
+    var reader = response.body.getReader();
+    var chunks = [];
+
+    while (true) {
+      var result = await reader.read();
+      if (result.done) break;
+      chunks.push(result.value);
+      loaded += result.value.length;
+      if (total > 0) {
+        var percent = Math.round((loaded / total) * 100);
+        fill.style.width = percent + "%";
+        statusText.textContent = percent + "% (" + (loaded / 1048576).toFixed(1) + " / " + (total / 1048576).toFixed(1) + " MB)";
+      } else {
+        statusText.textContent = (loaded / 1048576).toFixed(1) + " MB скачано";
+      }
+    }
+
+    statusText.textContent = "Загрузка завершена! Открытие...";
+    localStorage.setItem('installed_native_version', pendingUpdateData.nativeVersion);
+
+    var blob = new Blob(chunks, { type: 'application/vnd.android.package-archive' });
+    var blobUrl = URL.createObjectURL(blob);
+
+    var a = document.createElement('a');
+    a.href = blobUrl;
+    a.download = 'ReversQuiz_v' + pendingUpdateData.nativeVersion + '.apk';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+
+    setTimeout(function() {
+      closeUpdateModal();
+      btn.style.display = "block";
+      cancelBtn.style.display = "block";
+      barWrap.style.display = "none";
+      fill.style.width = "0%";
+      statusText.style.display = "none";
+    }, 2500);
+
+  } catch (err) {
+    console.warn("Потоковое скачивание завершилось ошибкой, переключение на прямую загрузку:", err);
+    statusText.textContent = "Передача в системный загрузчик...";
+    
+    var downloadLink = document.createElement("a");
+    downloadLink.href = pendingUpdateData.apkUrl;
+    downloadLink.setAttribute("download", "ReversQuiz.apk");
+    document.body.appendChild(downloadLink);
+    downloadLink.click();
+    document.body.removeChild(downloadLink);
+
+    localStorage.setItem('installed_native_version', pendingUpdateData.nativeVersion);
+
+    setTimeout(function() {
+      closeUpdateModal();
+      btn.style.display = "block";
+      cancelBtn.style.display = "block";
+      barWrap.style.display = "none";
+      statusText.style.display = "none";
+    }, 2000);
+  }
 }
 
 function formatScore(val) {
@@ -1099,7 +1184,7 @@ function playSound(type) {
   var audio = document.getElementById(type === 'winner' ? 'audio-winner' : 'audio-lost');
   if (url && audio) {
     audio.src = url;
-    audio.play().catch(function(e) { console.warn(e); });
+    audio.play().catch(function() {});
   } else {
     showActionNotification(type === 'winner' ? '🎉 Правильно!' : '😢 Мимо!');
   }
