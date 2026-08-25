@@ -35,7 +35,7 @@ jobs:
       - name: Prepare Web Directory
         run: |
           mkdir -p www
-          cp -r index.html manifest.json sw.js *.png www/ 2>/dev/null || cp -r * www/ 2>/dev/null || true
+          cp -r index.html manifest.json sw.js version.json *.png www/ 2>/dev/null || cp -r * www/ 2>/dev/null || true
 
       - name: Install Dependencies
         run: npm install
@@ -58,30 +58,6 @@ jobs:
 
       - name: Sign APK with Permanent Keystore
         run: |
-          # Создаем постоянный ключ с жестко заданным детерминированным seed через фиксированный PKCS12
-          cat << 'EOF' > /tmp/gen_fixed_key.py
-          import base64, os
-          # Фиксированный валидный JKS keystore (пароль: reversquizpass, alias: reversquiz)
-          jks_b64 = (
-            "/u3+7QAAAAIAAAABAAAAAQAKcmV2ZXJzcXVpegAAAZU1/2wzAAAFATCCBP0wDgYKKwYBBAGCNwICHgC"
-            "CA+AwggPcMIIB66ADAgECAgRFNT9sMA0GCSqGSIb3DQEBCwUAMEMxCzAJBgNVBAYTAlJVMREwDwYDV"
-            "QQHEwhQb3N0b3lhbjEPMA0GA1UEChMGUmV2ZXJzMRMwEQYDVQQDEwpSZXZlcnNRdWl6MCAXDTI2MDE"
-            "wMTAwMDAwMFoYDzIxMjYwMTAxMDAwMDAwWjBDMQswCQYDVQQGEwJSVTERMA8GA1UEBxMIUG9zdG95Y"
-            "W4xDzANBgNVBAoTBlJldmVyczETMBEGA1UEAxMKUmV2ZXJzUXVpejCCASIwDQYJKoZIhvcNAQEBBQA"
-            "DggEPADCCAQoCggEBAJ5zY4y1+Xj14yN2rP24XJ53d9eJ9e2aG8+3d/3G8z9mK9t9p2x4n6q4w2p9"
-            "s8x2n9w8e2r9q4m5+3j2k4l5/2w4v9r6m5+4e2r9q4l5/3j2k4l5/2w4v9r6m5+4e2r9q4l5/3j2k"
-            "4l5/2w4v9r6m5+4e2r9q4l5/3j2k4l5/2w4v9r6m5+4e2r9q4l5/3j2k4l5/2w4v9r6m5+4e2r9q4"
-            "l5/3j2k4l5/2w4v9r6m5+4e2r9q4l5/3j2k4l5/2w4v9r6m5+4e2r9q4l5/3j2k4l5/2w4v9r6m5+"
-            "4e2r9q4l5/3j2k4l5/2w4v9r6m5+4e2r9q4l5/3j2k4l5/2w4v9r6m5+4e2r9q4l5/3j2k4l5/2w4"
-            "v9r6m5+4AgMBAAGjITAfMB0GA1UdDgQWBBQ1+J9w8e2r9q4l5/3j2k4l5/2w4zANBgkqhkiG9w0BA"
-            "QsFAAOCAQEAOJ9w8e2r9q4l5/3j2k4l5/2w4v9r6m5+4e2r9q4l5/3j2k4l5/2w4v9r6m5+4e2r9q"
-            "4l5/3j2k4l5/2w4v9r6m5+4e2r9q4l5/3j2k4l5/2w4v9r6m5+4e2r9q4l5/3j2k4l5/2w4v9r6m5"
-            "+4e2r9q4l5/3j2k4l5/2w4v9r6m5+4e2r9q4l5/3j2k4l5/2w4v9r6m5+4e2r9q4l5/3j2k4l5/2w"
-            "4v9r6m5+4e2r9q4l5/3j2k4l5/2w4v9r6m5+4e2r9q4l5/3j2k4l5/2w4v9r6m5+4"
-          )
-          EOF
-          
-          # Генерируем ключ один раз на основе статического сертификата
           mkdir -p ~/.android
           keytool -genkeypair -alias reversquiz -keyalg RSA -keysize 2048 -validity 10000 \
             -keystore ~/.android/permanent.keystore \
@@ -94,13 +70,17 @@ jobs:
           $BUILD_TOOLS_DIR/zipalign -v -p 4 $APK_PATH /tmp/aligned.apk || cp $APK_PATH /tmp/aligned.apk
           $BUILD_TOOLS_DIR/apksigner sign --ks ~/.android/permanent.keystore --ks-pass pass:reversquizpass --ks-key-alias reversquiz --key-pass pass:reversquizpass --out $APK_PATH /tmp/aligned.apk
 
+      - name: Copy Signed APK to Web Root
+        run: |
+          cp android/app/build/outputs/apk/debug/app-debug.apk ./app-latest.apk
+
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: Revers-Quiz-APK
           path: android/app/build/outputs/apk/debug/app-debug.apk
 
-      - name: Release APK
+      - name: Release APK to GitHub Releases
         uses: softprops/action-gh-release@v2
         with:
           tag_name: latest
