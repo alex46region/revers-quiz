@@ -604,7 +604,7 @@ button:active {
   opacity: 1;
 }
 
-#settings-modal {
+#settings-modal, #update-modal {
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.85);
@@ -619,7 +619,7 @@ button:active {
   transition: opacity 0.2s;
 }
 
-#settings-modal.active {
+#settings-modal.active, #update-modal.active {
   opacity: 1;
   pointer-events: auto;
 }
@@ -692,6 +692,31 @@ button:active {
 .final-scores strong {
   font-family: 'Ubuntu Mono', monospace;
   color: #fff;
+}
+
+/* Стили окна загрузчика обновлений */
+.update-progress-container {
+  width: 100%;
+  height: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  overflow: hidden;
+  margin: 18px 0 8px;
+}
+
+.update-progress-fill {
+  width: 0%;
+  height: 100%;
+  background: linear-gradient(90deg, var(--neon-cyan), var(--neon-lime));
+  box-shadow: 0 0 10px var(--neon-cyan);
+  transition: width 0.1s ease;
+}
+
+.update-status-text {
+  font-family: 'Ubuntu Mono', monospace;
+  font-size: 0.9em;
+  color: var(--neon-yellow);
+  text-align: center;
 }
 </style>
 </head>
@@ -873,6 +898,20 @@ button:active {
   </div>
 </div>
 
+<!-- Модальное окно встроенного обновления с прогрессом -->
+<div id="update-modal">
+  <div class="modal-content">
+    <h3><i class="fas fa-cloud-download-alt" style="color:var(--neon-cyan)"></i> Обновление</h3>
+    <p id="update-desc" style="font-size:0.9em; color:var(--text-dim);">Доступна новая версия приложения.</p>
+    <div class="update-progress-container" id="update-bar-wrap" style="display:none;">
+      <div class="update-progress-fill" id="update-progress-fill"></div>
+    </div>
+    <div class="update-status-text" id="update-status-text"></div>
+    <button id="start-update-btn" onclick="startInAppDownload()">Загрузить и установить</button>
+    <button id="cancel-update-btn" style="background:transparent; border:1px solid var(--border-subtle); color:var(--text-dim); margin-top:8px;" onclick="closeUpdateModal()">Позже</button>
+  </div>
+</div>
+
 <script>
 var PUBLIC_KEY = "https://yadi.sk/d/WuP3cXvzcoZxVg";
 var team1Name = "Команда А";
@@ -893,6 +932,8 @@ var lastPlayedTrack = null;
 var trackOrder = {};
 
 var BASE_APK_VERSION = 1;
+var pendingUpdateData = null;
+var isUpdateChecking = false;
 
 var soundUrls = {
   winner: null,
@@ -903,6 +944,8 @@ var soundUrls = {
 };
 
 async function checkNativeUpdate() {
+  if (isUpdateChecking) return;
+  isUpdateChecking = true;
   try {
     var res = await fetch("https://alex46region.github.io/revers-quiz/version.json?t=" + Date.now());
     if (!res.ok) return;
@@ -911,13 +954,90 @@ async function checkNativeUpdate() {
     var installedVersion = parseInt(localStorage.getItem('installed_native_version')) || BASE_APK_VERSION;
     
     if (data && data.nativeVersion > installedVersion) {
-      if (confirm("Доступна новая версия приложения!\n\nСкачать и установить обновление?")) {
-        localStorage.setItem('installed_native_version', data.nativeVersion);
-        window.open(data.apkUrl, "_system");
+      pendingUpdateData = data;
+      var modal = document.getElementById("update-modal");
+      if (modal) {
+        modal.classList.add("active");
+        document.getElementById("update-desc").textContent = "Обнаружена версия " + data.nativeVersion + ". Загрузить обновление прямо сейчас?";
       }
     }
   } catch (e) {
     console.log("Проверка обновлений пропущена:", e);
+  }
+}
+
+function closeUpdateModal() {
+  var modal = document.getElementById("update-modal");
+  if (modal) modal.classList.remove("active");
+}
+
+async function startInAppDownload() {
+  if (!pendingUpdateData || !pendingUpdateData.apkUrl) return;
+  
+  var btn = document.getElementById("start-update-btn");
+  var cancelBtn = document.getElementById("cancel-update-btn");
+  var barWrap = document.getElementById("update-bar-wrap");
+  var fill = document.getElementById("update-progress-fill");
+  var statusText = document.getElementById("update-status-text");
+
+  btn.style.display = "none";
+  cancelBtn.style.display = "none";
+  barWrap.style.display = "block";
+  statusText.textContent = "Подключение...";
+
+  try {
+    var response = await fetch(pendingUpdateData.apkUrl);
+    if (!response.ok) throw new Error("Сетевая ошибка: " + response.status);
+
+    var contentLength = response.headers.get('content-length');
+    var total = parseInt(contentLength, 10);
+    var loaded = 0;
+
+    var reader = response.body.getReader();
+    var chunks = [];
+
+    while (true) {
+      var result = await reader.read();
+      if (result.done) break;
+      chunks.push(result.value);
+      loaded += result.value.length;
+      if (total) {
+        var percent = Math.round((loaded / total) * 100);
+        fill.style.width = percent + "%";
+        statusText.textContent = percent + "% (" + (loaded / 1048576).toFixed(1) + " / " + (total / 1048576).toFixed(1) + " MB)";
+      } else {
+        statusText.textContent = (loaded / 1048576).toFixed(1) + " MB";
+      }
+    }
+
+    statusText.textContent = "Запуск установки...";
+    localStorage.setItem('installed_native_version', pendingUpdateData.nativeVersion);
+
+    var blob = new Blob(chunks, { type: 'application/vnd.android.package-archive' });
+    var blobUrl = URL.createObjectURL(blob);
+
+    var a = document.createElement('a');
+    a.href = blobUrl;
+    a.download = 'revers-quiz-update.apk';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+
+    setTimeout(function() {
+      closeUpdateModal();
+      btn.style.display = "block";
+      cancelBtn.style.display = "block";
+      barWrap.style.display = "none";
+      fill.style.width = "0%";
+      statusText.textContent = "";
+    }, 2000);
+
+  } catch (err) {
+    statusText.textContent = "Ошибка загрузки: переход по ссылке...";
+    setTimeout(function() {
+      localStorage.setItem('installed_native_version', pendingUpdateData.nativeVersion);
+      window.location.href = pendingUpdateData.apkUrl;
+    }, 1000);
   }
 }
 
@@ -1044,7 +1164,7 @@ function playSound(type) {
   var audio = document.getElementById(type === 'winner' ? 'audio-winner' : 'audio-lost');
   if (url && audio) {
     audio.src = url;
-    audio.play().catch(function(e) { console.warn(e); });
+    audio.play().catch(function() {});
   } else {
     showActionNotification(type === 'winner' ? '🎉 Правильно!' : '😢 Мимо!');
   }
