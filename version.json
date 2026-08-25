@@ -1,5 +1,5 @@
 {
-  "nativeVersion": 9,
+  "nativeVersion": 10,
   "apkUrl": "https://github.com/alex46region/revers-quiz/releases/latest/download/app-debug.apk",
-  "message": "Обнаружена новая версия приложения!"
+  "message": "Доступно обновление игры!"
 }
