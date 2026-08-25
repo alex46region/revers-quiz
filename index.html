@@ -908,13 +908,12 @@ async function checkNativeUpdate() {
     if (!res.ok) return;
     var data = await res.json();
     if (data && data.nativeVersion > CURRENT_APK_VERSION) {
-      var msg = data.message || "Доступна новая версия приложения!";
-      if (confirm(msg + "\n\nСкачать и установить обновление?")) {
+      if (confirm("Доступна новая версия приложения!\n\nСкачать и установить обновление?")) {
         window.open(data.apkUrl, "_system");
       }
     }
   } catch (e) {
-    console.log("Проверка системных обновлений пропущена:", e);
+    console.log("Проверка обновлений пропущена:", e);
   }
 }
 
