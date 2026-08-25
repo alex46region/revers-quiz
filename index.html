@@ -604,7 +604,7 @@ button:active {
   opacity: 1;
 }
 
-#settings-modal, #update-modal {
+#settings-modal {
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.85);
@@ -619,7 +619,7 @@ button:active {
   transition: opacity 0.2s;
 }
 
-#settings-modal.active, #update-modal.active {
+#settings-modal.active {
   opacity: 1;
   pointer-events: auto;
 }
@@ -692,13 +692,6 @@ button:active {
 .final-scores strong {
   font-family: 'Ubuntu Mono', monospace;
   color: #fff;
-}
-
-.update-status-text {
-  font-family: 'Ubuntu Mono', monospace;
-  font-size: 0.9em;
-  color: var(--neon-yellow);
-  text-align: center;
 }
 </style>
 </head>
@@ -880,21 +873,6 @@ button:active {
   </div>
 </div>
 
-<!-- Модальное окно обновления приложения -->
-<div id="update-modal">
-  <div class="modal-content">
-    <h3><i class="fas fa-cloud-download-alt" style="color:var(--neon-cyan)"></i> Обновление</h3>
-    <p id="update-desc" style="font-size:0.95em; color:var(--text-dim); margin-top: 8px; line-height: 1.4;">
-      Доступна новая версия приложения.
-    </p>
-    
-    <div id="update-status-text" class="update-status-text" style="display:none; margin-top: 14px;"></div>
-    
-    <button id="start-update-btn" onclick="startInAppDownload()">Загрузить обновление</button>
-    <button id="cancel-update-btn" style="background:transparent; border:1px solid var(--border-subtle); color:var(--text-dim); margin-top:8px;" onclick="closeUpdateModal()">Позже</button>
-  </div>
-</div>
-
 <script>
 var PUBLIC_KEY = "https://yadi.sk/d/WuP3cXvzcoZxVg";
 var team1Name = "Команда А";
@@ -914,10 +892,6 @@ var shouldAutoSwitch = true;
 var lastPlayedTrack = null;
 var trackOrder = {};
 
-var BASE_APK_VERSION = 1;
-var pendingUpdateData = null;
-var isUpdateChecking = false;
-
 var soundUrls = {
   winner: null,
   lost: null,
@@ -925,59 +899,6 @@ var soundUrls = {
   start: null,
   final: null
 };
-
-async function checkNativeUpdate() {
-  if (isUpdateChecking) return;
-  isUpdateChecking = true;
-  try {
-    var res = await fetch("https://alex46region.github.io/revers-quiz/version.json?t=" + Date.now());
-    if (!res.ok) return;
-    var data = await res.json();
-    
-    var installedVersion = parseInt(localStorage.getItem('installed_native_version')) || BASE_APK_VERSION;
-    
-    if (data && data.nativeVersion > installedVersion) {
-      pendingUpdateData = data;
-      var modal = document.getElementById("update-modal");
-      if (modal) {
-        document.getElementById("update-desc").innerHTML = "Доступна версия <strong>v" + data.nativeVersion + "</strong>.<br>Загрузить обновление сейчас?";
-        modal.classList.add("active");
-      }
-    }
-  } catch (e) {
-    console.log("Проверка обновлений пропущена:", e);
-  }
-}
-
-function closeUpdateModal() {
-  var modal = document.getElementById("update-modal");
-  if (modal) modal.classList.remove("active");
-}
-
-function startInAppDownload() {
-  if (!pendingUpdateData || !pendingUpdateData.apkUrl) return;
-
-  var statusText = document.getElementById("update-status-text");
-  var startBtn = document.getElementById("start-update-btn");
-
-  startBtn.disabled = true;
-  startBtn.style.opacity = "0.5";
-  statusText.style.display = "block";
-  statusText.textContent = "Файл загружается в шторку Android...";
-
-  // Фиксируем версию, чтобы не вызывать повторных окон
-  localStorage.setItem('installed_native_version', pendingUpdateData.nativeVersion);
-
-  // Прямой вызов системного загрузчика Android без CORS-ограничений JS
-  window.location.assign(pendingUpdateData.apkUrl);
-
-  setTimeout(function() {
-    closeUpdateModal();
-    startBtn.disabled = false;
-    startBtn.style.opacity = "1";
-    statusText.style.display = "none";
-  }, 3000);
-}
 
 function formatScore(val) {
   var num = parseFloat(val) || 0;
@@ -999,7 +920,6 @@ document.addEventListener('touchstart', unlockMobileAudio, { once: true });
 
 window.addEventListener('load', function() {
   restoreSession();
-  checkNativeUpdate();
 });
 
 function restoreSession() {
