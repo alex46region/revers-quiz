@@ -1,5 +1,5 @@
 {
-  "nativeVersion": 6,
-  "apkUrl": "https://github.com/alex46region/revers-quiz/releases/latest/download/app-debug.apk",
-  "message": "Вышло обновление приложения с новой иконкой!"
+  "nativeVersion": 7,
+  "apkUrl": "https://alex46region.github.io/revers-quiz/app-latest.apk",
+  "message": "Обнаружена новая версия приложения!"
 }
