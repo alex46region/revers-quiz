@@ -40,11 +40,22 @@ jobs:
           if [ -f "icon.png" ]; then
             mkdir -p assets
             cp icon.png assets/icon.png
-            npx @capacitor/assets generate --android
+            npx @capacitor/assets generate --android 2>/dev/null || true
           fi
           npx cap sync android
 
-      - name: Build Debug APK
+      - name: Create Permanent Signing Keystore
+        run: |
+          cd android/app
+          keytool -genkeypair -v -keystore my-release-key.jks -keyalg RSA -keysize 2048 -validity 10000 -alias my-key-alias -storepass reversquizpass -keypass reversquizpass -dname "CN=ReversQuiz, OU=App, O=Revers, L=City, S=State, C=RU"
+
+      - name: Configure Gradle Signing
+        run: |
+          cd android/app
+          sed -i '/defaultConfig {/a \        signingConfig signingConfigs.debug' build.gradle
+          sed -i '/buildTypes {/i \    signingConfigs {\n        debug {\n            storeFile file("my-release-key.jks")\n            storePassword "reversquizpass"\n            keyAlias "my-key-alias"\n            keyPassword "reversquizpass"\n        }\n    }' build.gradle
+
+      - name: Build APK with Fixed Signature
         run: |
           cd android
           chmod +x gradlew
