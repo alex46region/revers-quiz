@@ -694,28 +694,9 @@ button:active {
   color: #fff;
 }
 
-/* Прогресс-бар загрузчика */
-.update-progress-container {
-  width: 100%;
-  height: 12px;
-  background: rgba(255, 255, 255, 0.08);
-  border-radius: 6px;
-  overflow: hidden;
-  margin: 16px 0 8px;
-  border: 1px solid var(--border-subtle);
-}
-
-.update-progress-fill {
-  width: 0%;
-  height: 100%;
-  background: linear-gradient(90deg, var(--neon-cyan), var(--neon-lime));
-  box-shadow: 0 0 12px var(--neon-cyan);
-  transition: width 0.15s ease;
-}
-
 .update-status-text {
   font-family: 'Ubuntu Mono', monospace;
-  font-size: 0.85em;
+  font-size: 0.9em;
   color: var(--neon-yellow);
   text-align: center;
 }
@@ -899,7 +880,7 @@ button:active {
   </div>
 </div>
 
-<!-- Модальное окно внутриигрового обновления с прогресс-баром -->
+<!-- Модальное окно обновления приложения -->
 <div id="update-modal">
   <div class="modal-content">
     <h3><i class="fas fa-cloud-download-alt" style="color:var(--neon-cyan)"></i> Обновление</h3>
@@ -907,10 +888,7 @@ button:active {
       Доступна новая версия приложения.
     </p>
     
-    <div class="update-progress-container" id="update-bar-wrap" style="display:none;">
-      <div class="update-progress-fill" id="update-progress-fill"></div>
-    </div>
-    <div class="update-status-text" id="update-status-text" style="display:none;"></div>
+    <div id="update-status-text" class="update-status-text" style="display:none; margin-top: 14px;"></div>
     
     <button id="start-update-btn" onclick="startInAppDownload()">Загрузить обновление</button>
     <button id="cancel-update-btn" style="background:transparent; border:1px solid var(--border-subtle); color:var(--text-dim); margin-top:8px;" onclick="closeUpdateModal()">Позже</button>
@@ -979,67 +957,26 @@ function closeUpdateModal() {
 function startInAppDownload() {
   if (!pendingUpdateData || !pendingUpdateData.apkUrl) return;
 
-  var btn = document.getElementById("start-update-btn");
-  var cancelBtn = document.getElementById("cancel-update-btn");
-  var barWrap = document.getElementById("update-bar-wrap");
-  var fill = document.getElementById("update-progress-fill");
   var statusText = document.getElementById("update-status-text");
+  var startBtn = document.getElementById("start-update-btn");
 
-  btn.style.display = "none";
-  cancelBtn.style.display = "none";
-  barWrap.style.display = "block";
+  startBtn.disabled = true;
+  startBtn.style.opacity = "0.5";
   statusText.style.display = "block";
-  statusText.textContent = "Подключение...";
+  statusText.textContent = "Файл загружается в шторку Android...";
 
+  // Фиксируем версию, чтобы не вызывать повторных окон
   localStorage.setItem('installed_native_version', pendingUpdateData.nativeVersion);
 
-  var xhr = new XMLHttpRequest();
-  xhr.open("GET", pendingUpdateData.apkUrl, true);
-  xhr.responseType = "blob";
+  // Прямой вызов системного загрузчика Android без CORS-ограничений JS
+  window.location.assign(pendingUpdateData.apkUrl);
 
-  xhr.onprogress = function(event) {
-    if (event.lengthComputable) {
-      var percent = Math.round((event.loaded / event.total) * 100);
-      fill.style.width = percent + "%";
-      statusText.textContent = percent + "% (" + (event.loaded / 1048576).toFixed(1) + " / " + (event.total / 1048576).toFixed(1) + " MB)";
-    } else {
-      statusText.textContent = (event.loaded / 1048576).toFixed(1) + " MB скачано...";
-    }
-  };
-
-  xhr.onload = function() {
-    if (xhr.status === 200 || xhr.status === 206) {
-      statusText.textContent = "Загружено! Открытие установщика...";
-      
-      var blob = xhr.response;
-      var blobUrl = window.URL.createObjectURL(blob);
-      
-      var tempLink = document.createElement("a");
-      tempLink.style.display = "none";
-      tempLink.href = blobUrl;
-      tempLink.setAttribute("download", "ReversQuiz.apk");
-      document.body.appendChild(tempLink);
-      tempLink.click();
-      
-      setTimeout(function() {
-        document.body.removeChild(tempLink);
-        window.URL.revokeObjectURL(blobUrl);
-        closeUpdateModal();
-      }, 3000);
-    } else {
-      statusText.textContent = "Ошибка сервера: " + xhr.status;
-      btn.style.display = "block";
-      cancelBtn.style.display = "block";
-    }
-  };
-
-  xhr.onerror = function() {
-    statusText.textContent = "Сбой соединения при загрузке.";
-    btn.style.display = "block";
-    cancelBtn.style.display = "block";
-  };
-
-  xhr.send();
+  setTimeout(function() {
+    closeUpdateModal();
+    startBtn.disabled = false;
+    startBtn.style.opacity = "1";
+    statusText.style.display = "none";
+  }, 3000);
 }
 
 function formatScore(val) {
