@@ -7,6 +7,9 @@ on:
       - master
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -44,26 +47,25 @@ jobs:
           fi
           npx cap sync android
 
-      - name: Create Permanent Signing Keystore
+      - name: Setup Fixed Debug Keystore
         run: |
-          cd android/app
-          keytool -genkeypair -v -keystore my-release-key.jks -keyalg RSA -keysize 2048 -validity 10000 -alias my-key-alias -storepass reversquizpass -keypass reversquizpass -dname "CN=ReversQuiz, OU=App, O=Revers, L=City, S=State, C=RU"
+          mkdir -p ~/.android
+          keytool -genkeypair -v -keystore ~/.android/debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
 
-      - name: Configure Gradle Signing
-        run: |
-          cd android/app
-          sed -i '/defaultConfig {/a \        signingConfig signingConfigs.debug' build.gradle
-          sed -i '/buildTypes {/i \    signingConfigs {\n        debug {\n            storeFile file("my-release-key.jks")\n            storePassword "reversquizpass"\n            keyAlias "my-key-alias"\n            keyPassword "reversquizpass"\n        }\n    }' build.gradle
-
-      - name: Build APK with Fixed Signature
+      - name: Build Debug APK
         run: |
           cd android
           chmod +x gradlew
           ./gradlew assembleDebug
 
-      - name: Release Latest APK
-        uses: softprops/action-gh-release@v1
-        if: startsWith(github.ref, 'refs/heads/')
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Revers-Quiz-APK
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Release APK
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: latest
           files: android/app/build/outputs/apk/debug/app-debug.apk
