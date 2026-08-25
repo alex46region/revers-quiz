@@ -29,14 +29,19 @@ jobs:
       - name: Prepare Web Directory
         run: |
           mkdir -p www
-          cp -r index.html manifest.json sw.js www/ 2>/dev/null || cp -r * www/ 2>/dev/null || true
+          cp -r index.html manifest.json sw.js *.png www/ 2>/dev/null || cp -r * www/ 2>/dev/null || true
 
-      - name: Install Capacitor Dependencies
+      - name: Install Dependencies
         run: npm install
 
       - name: Initialize Android Project
         run: |
           npx cap add android
+          if [ -f "icon.png" ]; then
+            mkdir -p assets
+            cp icon.png assets/icon.png
+            npx @capacitor/assets generate --android
+          fi
           npx cap sync android
 
       - name: Build Debug APK
