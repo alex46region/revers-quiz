@@ -694,7 +694,6 @@ button:active {
   color: #fff;
 }
 
-/* Стили окна загрузчика обновлений */
 .update-progress-container {
   width: 100%;
   height: 12px;
@@ -898,11 +897,11 @@ button:active {
   </div>
 </div>
 
-<!-- Модальное окно встроенного обновления с прогрессом -->
+<!-- Внутриигровое окно обновления с прогресс-баром -->
 <div id="update-modal">
   <div class="modal-content">
     <h3><i class="fas fa-cloud-download-alt" style="color:var(--neon-cyan)"></i> Обновление</h3>
-    <p id="update-desc" style="font-size:0.9em; color:var(--text-dim);">Доступна новая версия приложения.</p>
+    <p id="update-desc" style="font-size:0.9em; color:var(--text-dim); margin-top: 6px;">Доступна новая версия приложения.</p>
     <div class="update-progress-container" id="update-bar-wrap" style="display:none;">
       <div class="update-progress-fill" id="update-progress-fill"></div>
     </div>
@@ -985,12 +984,14 @@ async function startInAppDownload() {
   barWrap.style.display = "block";
   statusText.textContent = "Подключение...";
 
+  localStorage.setItem('installed_native_version', pendingUpdateData.nativeVersion);
+
   try {
-    var response = await fetch(pendingUpdateData.apkUrl);
-    if (!response.ok) throw new Error("Сетевая ошибка: " + response.status);
+    var response = await fetch(pendingUpdateData.apkUrl + "?t=" + Date.now());
+    if (!response.ok) throw new Error("Status " + response.status);
 
     var contentLength = response.headers.get('content-length');
-    var total = parseInt(contentLength, 10);
+    var total = contentLength ? parseInt(contentLength, 10) : 0;
     var loaded = 0;
 
     var reader = response.body.getReader();
@@ -1001,43 +1002,44 @@ async function startInAppDownload() {
       if (result.done) break;
       chunks.push(result.value);
       loaded += result.value.length;
-      if (total) {
+      if (total > 0) {
         var percent = Math.round((loaded / total) * 100);
         fill.style.width = percent + "%";
         statusText.textContent = percent + "% (" + (loaded / 1048576).toFixed(1) + " / " + (total / 1048576).toFixed(1) + " MB)";
       } else {
-        statusText.textContent = (loaded / 1048576).toFixed(1) + " MB";
+        statusText.textContent = (loaded / 1048576).toFixed(1) + " MB загружено";
       }
     }
 
-    statusText.textContent = "Запуск установки...";
-    localStorage.setItem('installed_native_version', pendingUpdateData.nativeVersion);
-
+    statusText.textContent = "Готово! Запуск установщика...";
     var blob = new Blob(chunks, { type: 'application/vnd.android.package-archive' });
     var blobUrl = URL.createObjectURL(blob);
 
     var a = document.createElement('a');
     a.href = blobUrl;
-    a.download = 'revers-quiz-update.apk';
+    a.download = 'ReversQuiz_v' + pendingUpdateData.nativeVersion + '.apk';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
 
     setTimeout(function() {
       closeUpdateModal();
-      btn.style.display = "block";
-      cancelBtn.style.display = "block";
-      barWrap.style.display = "none";
-      fill.style.width = "0%";
-      statusText.textContent = "";
-    }, 2000);
+    }, 2500);
 
   } catch (err) {
-    statusText.textContent = "Ошибка загрузки: переход по ссылке...";
+    console.warn("Прямой стрим заблокирован, запуск одиночной загрузки:", err);
+    statusText.textContent = "Скачивание файла...";
+    
+    var a = document.createElement('a');
+    a.href = pendingUpdateData.apkUrl;
+    a.download = 'ReversQuiz_v' + pendingUpdateData.nativeVersion + '.apk';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+
     setTimeout(function() {
-      localStorage.setItem('installed_native_version', pendingUpdateData.nativeVersion);
-      window.location.href = pendingUpdateData.apkUrl;
-    }, 1000);
+      closeUpdateModal();
+    }, 2000);
   }
 }
 
@@ -1164,7 +1166,7 @@ function playSound(type) {
   var audio = document.getElementById(type === 'winner' ? 'audio-winner' : 'audio-lost');
   if (url && audio) {
     audio.src = url;
-    audio.play().catch(function() {});
+    audio.play().catch(function(e) { console.warn(e); });
   } else {
     showActionNotification(type === 'winner' ? '🎉 Правильно!' : '😢 Мимо!');
   }
