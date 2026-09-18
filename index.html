@@ -650,7 +650,7 @@ button:active {
 .modal-content button:not(.close-modal) {
   width: 100%;
   padding: 14px;
-  margin-top: 20px;
+  margin-top: 14px;
   background: var(--neon-cyan);
   color: #000;
 }
@@ -692,6 +692,36 @@ button:active {
 .final-scores strong {
   font-family: 'Ubuntu Mono', monospace;
   color: #fff;
+}
+
+/* Стили блока обновления в настройках */
+.settings-update-box {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border-subtle);
+  text-align: center;
+}
+
+.settings-update-box button {
+  background: transparent !important;
+  border: 1px solid var(--neon-cyan) !important;
+  color: var(--neon-cyan) !important;
+  padding: 10px 14px !important;
+  font-size: 0.85em !important;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.settings-update-box button:active {
+  background: rgba(0, 229, 255, 0.1) !important;
+}
+
+.update-status-msg {
+  font-family: 'Ubuntu Mono', monospace;
+  font-size: 0.8em;
+  color: var(--neon-yellow);
+  margin-top: 8px;
+  min-height: 1.2em;
 }
 </style>
 </head>
@@ -876,6 +906,14 @@ button:active {
     </select>
     
     <button onclick="setSettings()">Применить</button>
+
+    <!-- Блок ручной проверки обновлений -->
+    <div class="settings-update-box">
+      <button id="manual-check-update-btn" onclick="manualCheckAppUpdate()">
+        <i class="fas fa-sync-alt"></i> Проверить обновление
+      </button>
+      <div id="manual-update-status" class="update-status-msg"></div>
+    </div>
   </div>
 </div>
 
@@ -889,8 +927,8 @@ var playedTracks = new Set();
 var currentTrackName = null;
 var selectedFolder = "";
 var timerDuration = 10;
-var originalDelay = 2; // Задержка перед воспроизведением оригинала (в секундах)
-var originalTimeout = null; // Таймер отложенного воспроизведения оригинала
+var originalDelay = 2;
+var originalTimeout = null;
 var mixMode = false;
 var timerValue = 0;
 var timerInterval = null;
@@ -907,6 +945,54 @@ var soundUrls = {
   start: null,
   final: null
 };
+
+// Функция принудительной проверки version.json
+async function manualCheckAppUpdate() {
+  var statusEl = document.getElementById("manual-update-status");
+  var btn = document.getElementById("manual-check-update-btn");
+  if (!statusEl) return;
+
+  statusEl.textContent = "Проверка...";
+  btn.disabled = true;
+
+  try {
+    var res = await fetch("version.json?t=" + Date.now());
+    if (!res.ok) throw new Error("Файл не найден");
+    var data = await res.json();
+    
+    var localVer = parseInt(localStorage.getItem('app_version')) || 0;
+    var remoteVer = parseInt(data.nativeVersion) || 0;
+
+    if (remoteVer > localVer) {
+      statusEl.textContent = "Обновление до v" + remoteVer + "...";
+      localStorage.setItem('app_version', remoteVer);
+
+      // Очищаем кэш Service Worker
+      if ('caches' in window) {
+        var keys = await caches.keys();
+        await Promise.all(keys.map(function(k) { return caches.delete(k); }));
+      }
+
+      // Обновляем Service Worker
+      if ('serviceWorker' in navigator) {
+        var registrations = await navigator.serviceWorker.getRegistrations();
+        for (var reg of registrations) {
+          await reg.update();
+        }
+      }
+
+      setTimeout(function() {
+        window.location.reload(true);
+      }, 800);
+    } else {
+      statusEl.textContent = "Актуальная версия (v" + (localVer || remoteVer) + ")";
+      btn.disabled = false;
+    }
+  } catch(e) {
+    statusEl.textContent = "Ошибка проверки сети";
+    btn.disabled = false;
+  }
+}
 
 function formatScore(val) {
   var num = parseFloat(val) || 0;
@@ -1026,12 +1112,10 @@ async function preloadAllSounds() {
   }
 }
 
-// Запуск звукового эффекта с отложенным воспроизведением оригинала
 function playSound(type) {
   var url = type === 'winner' ? soundUrls.winner : soundUrls.lost;
   var audio = document.getElementById(type === 'winner' ? 'audio-winner' : 'audio-lost');
 
-  // Останавливаем реверс и таймер
   var r = document.getElementById("audio-revers");
   if (r) {
     r.pause();
@@ -1041,7 +1125,6 @@ function playSound(type) {
   stopTimer();
   hideTrackPopup();
 
-  // Воспроизводим звук победы/проигрыша
   if (url && audio) {
     audio.src = url;
     audio.currentTime = 0;
@@ -1050,13 +1133,11 @@ function playSound(type) {
     showActionNotification(type === 'winner' ? '🎉 Правильно!' : '😢 Мимо!');
   }
 
-  // Сбрасываем предыдущий запланированный запуск оригинала
   if (originalTimeout) {
     clearTimeout(originalTimeout);
     originalTimeout = null;
   }
 
-  // Запуск оригинала через указанное количество секунд
   var delayMs = Math.max(0, originalDelay * 1000);
   originalTimeout = setTimeout(function() {
     startOriginalPlayback();
@@ -1064,7 +1145,6 @@ function playSound(type) {
   }, delayMs);
 }
 
-// Функция запуска оригинального трека с раскрытием блока плеера
 function startOriginalPlayback() {
   var p = document.getElementById("original-player");
   var b = document.getElementById("normal-toggle");
@@ -1073,7 +1153,6 @@ function startOriginalPlayback() {
 
   if (!currentTrackName || !files[currentTrackName] || !files[currentTrackName].normal) return;
 
-  // Раскрываем блок оригинала, если он был скрыт
   if (p) p.style.display = "block";
   if (b) b.textContent = "Скрыть оригинал";
 
@@ -1299,7 +1378,6 @@ function generateSongButtons() {
   updateNextTrackButton();
 }
 
-// Очистка предыдущего аудио из памяти
 function purgeAudioBuffer(audioEl) {
   if (audioEl) {
     audioEl.pause();
@@ -1336,7 +1414,6 @@ function playTrack(name) {
       document.getElementById("revers-duration").textContent = formatTime(audioRevers.duration);
     };
 
-    // ФОНОВАЯ ПРЕДЗАГРУЗКА ОРИГИНАЛА В БУФЕР
     if (track.normal) {
       audioNormal.src = track.normal;
       audioNormal.preload = "auto";
@@ -1477,7 +1554,7 @@ function toggleNormal() {
     });
   } else {
     a.pause();
-    i.classList.replace("fa-play", "fa-pause");
+    i.classList.replace("fa-pause", "fa-play");
   }
 }
 
@@ -1617,10 +1694,15 @@ function openSettings() {
   var dIn = document.getElementById("original-delay-input");
   var mIn = document.getElementById("mix-mode");
   var sMod = document.getElementById("settings-modal");
+  var statusEl = document.getElementById("manual-update-status");
   
   if (tIn) tIn.value = timerDuration;
   if (dIn) dIn.value = originalDelay;
   if (mIn) mIn.value = mixMode ? "mixed" : "normal";
+  if (statusEl) {
+    var currentVer = localStorage.getItem('app_version') || '11';
+    statusEl.textContent = "Текущая версия: v" + currentVer;
+  }
   if (sMod) sMod.classList.add("active");
 }
 
