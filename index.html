@@ -862,13 +862,19 @@ button:active {
   <div class="modal-content">
     <button class="close-modal" onclick="closeSettings()">&times;</button>
     <h3>Параметры</h3>
+    
     <label for="timer-input">Таймер ответа (сек)</label>
     <input type="number" id="timer-input" min="1" max="300" value="10">
+    
+    <label for="original-delay-input">Задержка оригинала (сек)</label>
+    <input type="number" id="original-delay-input" min="0" max="30" value="2">
+
     <label for="mix-mode">Режим треков</label>
     <select id="mix-mode">
       <option value="normal">Обычный (по категории)</option>
       <option value="mixed">Mix Mode (микс всех папок)</option>
     </select>
+    
     <button onclick="setSettings()">Применить</button>
   </div>
 </div>
@@ -883,6 +889,8 @@ var playedTracks = new Set();
 var currentTrackName = null;
 var selectedFolder = "";
 var timerDuration = 10;
+var originalDelay = 2; // Задержка перед воспроизведением оригинала (в секундах)
+var originalTimeout = null; // Таймер отложенного воспроизведения оригинала
 var mixMode = false;
 var timerValue = 0;
 var timerInterval = null;
@@ -933,7 +941,8 @@ function restoreSession() {
       score2 = parseFloat(data.score2) || 0;
       playedTracks = new Set(data.playedTracks || []);
       selectedFolder = data.selectedFolder || "";
-      timerDuration = data.timerDuration || 10;
+      timerDuration = typeof data.timerDuration !== 'undefined' ? data.timerDuration : 10;
+      originalDelay = typeof data.originalDelay !== 'undefined' ? data.originalDelay : 2;
       mixMode = data.mixMode || false;
       activeTeam = data.activeTeam || null;
       shouldAutoSwitch = data.shouldAutoSwitch !== false;
@@ -984,6 +993,7 @@ function saveState() {
       playedTracks: Array.from(playedTracks),
       selectedFolder: selectedFolder,
       timerDuration: timerDuration,
+      originalDelay: originalDelay,
       mixMode: mixMode,
       activeTeam: activeTeam,
       shouldAutoSwitch: shouldAutoSwitch,
@@ -1016,16 +1026,69 @@ async function preloadAllSounds() {
   }
 }
 
+// Запуск звукового эффекта с отложенным воспроизведением оригинала
 function playSound(type) {
-  stopAllSounds();
   var url = type === 'winner' ? soundUrls.winner : soundUrls.lost;
   var audio = document.getElementById(type === 'winner' ? 'audio-winner' : 'audio-lost');
+
+  // Останавливаем реверс и таймер
+  var r = document.getElementById("audio-revers");
+  if (r) {
+    r.pause();
+    var rIcon = document.getElementById("revers-play-icon");
+    if (rIcon) rIcon.classList.replace("fa-pause", "fa-play");
+  }
+  stopTimer();
+  hideTrackPopup();
+
+  // Воспроизводим звук победы/проигрыша
   if (url && audio) {
     audio.src = url;
-    audio.play().catch(function() {});
+    audio.currentTime = 0;
+    audio.play().catch(function(e) { console.warn(e); });
   } else {
     showActionNotification(type === 'winner' ? '🎉 Правильно!' : '😢 Мимо!');
   }
+
+  // Сбрасываем предыдущий запланированный запуск оригинала
+  if (originalTimeout) {
+    clearTimeout(originalTimeout);
+    originalTimeout = null;
+  }
+
+  // Запуск оригинала через указанное количество секунд
+  var delayMs = Math.max(0, originalDelay * 1000);
+  originalTimeout = setTimeout(function() {
+    startOriginalPlayback();
+    originalTimeout = null;
+  }, delayMs);
+}
+
+// Функция запуска оригинального трека с раскрытием блока плеера
+function startOriginalPlayback() {
+  var p = document.getElementById("original-player");
+  var b = document.getElementById("normal-toggle");
+  var a = document.getElementById("audio-normal");
+  var i = document.getElementById("normal-play-icon");
+
+  if (!currentTrackName || !files[currentTrackName] || !files[currentTrackName].normal) return;
+
+  // Раскрываем блок оригинала, если он был скрыт
+  if (p) p.style.display = "block";
+  if (b) b.textContent = "Скрыть оригинал";
+
+  if (!a.src || a.src === "" || a.src === window.location.href) {
+    a.src = files[currentTrackName].normal;
+    a.load();
+  }
+
+  a.currentTime = 0;
+  a.play().then(function() {
+    if (i) i.classList.replace("fa-play", "fa-pause");
+    updateNormalProgress();
+  }).catch(function(err) {
+    console.warn("Автовоспроизведение оригинала ожидает действия:", err);
+  });
 }
 
 function formatTime(seconds) {
@@ -1236,23 +1299,53 @@ function generateSongButtons() {
   updateNextTrackButton();
 }
 
+// Очистка предыдущего аудио из памяти
+function purgeAudioBuffer(audioEl) {
+  if (audioEl) {
+    audioEl.pause();
+    audioEl.removeAttribute("src");
+    audioEl.load();
+  }
+}
+
 function playTrack(name) {
+  if (originalTimeout) {
+    clearTimeout(originalTimeout);
+    originalTimeout = null;
+  }
   hideOriginal();
   stopAllSounds();
   hideTrackPopup();
+
+  var audioRevers = document.getElementById("audio-revers");
+  var audioNormal = document.getElementById("audio-normal");
+  purgeAudioBuffer(audioRevers);
+  purgeAudioBuffer(audioNormal);
+
   currentTrackName = name;
   var track = files[name];
+
   if (track && track.revers) {
-    var audio = document.getElementById("audio-revers");
-    audio.src = track.revers;
-    audio.load();
-    audio.onended = function() {
+    audioRevers.src = track.revers;
+    audioRevers.load();
+    audioRevers.onended = function() {
       if (timerDuration > 0) startTimer();
       hideTrackPopup();
     };
-    audio.onloadedmetadata = function() {
-      document.getElementById("revers-duration").textContent = formatTime(audio.duration);
+    audioRevers.onloadedmetadata = function() {
+      document.getElementById("revers-duration").textContent = formatTime(audioRevers.duration);
     };
+
+    // ФОНОВАЯ ПРЕДЗАГРУЗКА ОРИГИНАЛА В БУФЕР
+    if (track.normal) {
+      audioNormal.src = track.normal;
+      audioNormal.preload = "auto";
+      audioNormal.load();
+      audioNormal.onloadedmetadata = function() {
+        document.getElementById("normal-duration").textContent = formatTime(audioNormal.duration);
+      };
+    }
+
     toggleRevers();
   }
   updateShuffleButtonState();
@@ -1370,17 +1463,18 @@ function toggleNormal() {
     stopTimer();
     r.pause();
     document.getElementById("revers-play-icon").classList.replace("fa-pause", "fa-play");
-    a.src = (files[currentTrackName] && files[currentTrackName].normal) ? files[currentTrackName].normal : "";
-    a.load();
+    
+    if (!a.src && files[currentTrackName] && files[currentTrackName].normal) {
+      a.src = files[currentTrackName].normal;
+      a.load();
+    }
+    
     a.play().then(function() {
       i.classList.replace("fa-play", "fa-pause");
       updateNormalProgress();
     }).catch(function(err) {
       console.warn("Воспроизведение оригинала заблокировано:", err);
     });
-    a.onloadedmetadata = function() {
-      document.getElementById("normal-duration").textContent = formatTime(a.duration);
-    };
   } else {
     a.pause();
     i.classList.replace("fa-play", "fa-pause");
@@ -1476,6 +1570,10 @@ function removeScore(team, points) {
 }
 
 function stopAllSounds() {
+  if (originalTimeout) {
+    clearTimeout(originalTimeout);
+    originalTimeout = null;
+  }
   ["audio-revers", "audio-normal", "audio-winner", "audio-lost", "audio-ring", "audio-start", "audio-final"].forEach(function(id) {
     var el = document.getElementById(id);
     if (el) {
@@ -1497,6 +1595,10 @@ function updateTrackCounter() {
 function endQuiz() {
   localStorage.removeItem('reversQuiz');
   stopAllSounds();
+
+  purgeAudioBuffer(document.getElementById("audio-revers"));
+  purgeAudioBuffer(document.getElementById("audio-normal"));
+
   var quizArea = document.getElementById("quiz-area");
   quizArea.innerHTML = '';
   var resultDiv = document.createElement('div');
@@ -1512,9 +1614,12 @@ function endQuiz() {
 
 function openSettings() {
   var tIn = document.getElementById("timer-input");
+  var dIn = document.getElementById("original-delay-input");
   var mIn = document.getElementById("mix-mode");
   var sMod = document.getElementById("settings-modal");
+  
   if (tIn) tIn.value = timerDuration;
+  if (dIn) dIn.value = originalDelay;
   if (mIn) mIn.value = mixMode ? "mixed" : "normal";
   if (sMod) sMod.classList.add("active");
 }
@@ -1525,12 +1630,20 @@ function closeSettings() {
 }
 
 function setSettings() {
-  var input = document.getElementById("timer-input");
+  var inputTimer = document.getElementById("timer-input");
+  var inputDelay = document.getElementById("original-delay-input");
   var mode = document.getElementById("mix-mode").value;
-  var value = parseInt(input.value);
-  if (isNaN(value) || value < 1 || value > 300) return alert("Таймер: от 1 до 300 сек.");
-  timerDuration = value;
+  
+  var valTimer = parseInt(inputTimer.value);
+  var valDelay = parseFloat(inputDelay.value);
+
+  if (isNaN(valTimer) || valTimer < 1 || valTimer > 300) return alert("Таймер: от 1 до 300 сек.");
+  if (isNaN(valDelay) || valDelay < 0 || valDelay > 30) return alert("Задержка оригинала: от 0 до 30 сек.");
+
+  timerDuration = valTimer;
+  originalDelay = valDelay;
   mixMode = mode === "mixed";
+
   closeSettings();
   updateFolderSection();
   saveState();
