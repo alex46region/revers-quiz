@@ -881,6 +881,7 @@ button:active {
 <audio id="audio-ring" preload="auto" playsinline style="display:none;"></audio>
 <audio id="audio-start" preload="auto" playsinline style="display:none;"></audio>
 <audio id="audio-final" preload="auto" playsinline style="display:none;"></audio>
+<audio id="audio-game-over" preload="auto" playsinline style="display:none;"></audio>
 
 <div id="settings-btn" onclick="openSettings()">
   <i class="fas fa-sliders-h"></i>
@@ -943,7 +944,8 @@ var soundUrls = {
   lost: null,
   ring: null,
   start: null,
-  final: null
+  final: null,
+  gameOver: null
 };
 
 // Функция принудительной проверки version.json
@@ -1000,7 +1002,7 @@ function formatScore(val) {
 }
 
 function unlockMobileAudio() {
-  var audios = ['audio-revers', 'audio-normal', 'audio-winner', 'audio-lost', 'audio-ring', 'audio-start', 'audio-final'];
+  var audios = ['audio-revers', 'audio-normal', 'audio-winner', 'audio-lost', 'audio-ring', 'audio-start', 'audio-final', 'audio-game-over'];
   audios.forEach(function(id) {
     var a = document.getElementById(id);
     if (a) {
@@ -1106,6 +1108,14 @@ async function preloadAllSounds() {
       if (n.indexOf("winner") !== -1 && n.endsWith(".mp3")) soundUrls.winner = f.file;
       if (n.indexOf("lost") !== -1 && n.endsWith(".mp3")) soundUrls.lost = f.file;
       if (n.indexOf("ring_score") !== -1 && n.endsWith(".mp3")) soundUrls.ring = f.file;
+      if (n.indexOf("game_over") !== -1 && n.endsWith(".mp3")) {
+        soundUrls.gameOver = f.file;
+        var aGameOver = document.getElementById("audio-game-over");
+        if (aGameOver) {
+          aGameOver.src = f.file;
+          aGameOver.load();
+        }
+      }
     });
   } catch (e) {
     console.error("Ошибка загрузки системных звуков:", e);
@@ -1554,7 +1564,7 @@ function toggleNormal() {
     });
   } else {
     a.pause();
-    i.classList.replace("fa-pause", "fa-play");
+    i.classList.replace("fa-play", "fa-pause");
   }
 }
 
@@ -1651,7 +1661,7 @@ function stopAllSounds() {
     clearTimeout(originalTimeout);
     originalTimeout = null;
   }
-  ["audio-revers", "audio-normal", "audio-winner", "audio-lost", "audio-ring", "audio-start", "audio-final"].forEach(function(id) {
+  ["audio-revers", "audio-normal", "audio-winner", "audio-lost", "audio-ring", "audio-start", "audio-final", "audio-game-over"].forEach(function(id) {
     var el = document.getElementById(id);
     if (el) {
       el.pause();
@@ -1672,6 +1682,13 @@ function updateTrackCounter() {
 function endQuiz() {
   localStorage.removeItem('reversQuiz');
   stopAllSounds();
+
+  // Проигрывание заранее предзагруженного звука GAME_OVER
+  var aGameOver = document.getElementById("audio-game-over");
+  if (aGameOver && soundUrls.gameOver) {
+    aGameOver.currentTime = 0;
+    aGameOver.play().catch(function(e) { console.warn(e); });
+  }
 
   purgeAudioBuffer(document.getElementById("audio-revers"));
   purgeAudioBuffer(document.getElementById("audio-normal"));
