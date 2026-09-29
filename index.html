@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
 <meta name="theme-color" content="#05060a" />
 <meta name="referrer" content="no-referrer" />
-<title>🎧 Revers Викторина: Neon Stage (Ведущий)</title>
+<title>🎧 Revers Викторина: Neon Stage</title>
 
 <link rel="manifest" href="manifest.json">
 <script>
@@ -139,7 +139,6 @@ h1 i {
   color: var(--neon-cyan);
 }
 
-/* Блок онлайн-комнаты */
 .online-box {
   background: rgba(0, 229, 255, 0.05);
   border: 1px solid var(--neon-cyan);
@@ -231,6 +230,12 @@ select {
   background-size: 14px;
 }
 
+.team-input {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
 button {
   font-family: 'Space Grotesk', sans-serif;
   font-weight: 700;
@@ -248,12 +253,21 @@ button:active {
   transform: scale(0.98);
 }
 
-#load-songs-btn {
+.team-input button, #load-songs-btn {
   width: 100%;
   padding: 15px;
   font-size: 15px;
   text-transform: uppercase;
   letter-spacing: 1px;
+}
+
+.team-input button {
+  background: var(--neon-cyan);
+  color: #000;
+  box-shadow: 0 4px 20px rgba(0, 229, 255, 0.35);
+}
+
+#load-songs-btn {
   background: linear-gradient(135deg, var(--neon-purple), var(--neon-pink));
   color: #fff;
   box-shadow: 0 4px 20px rgba(255, 0, 85, 0.35);
@@ -636,17 +650,19 @@ button:active {
 
 .modal-content {
   background: var(--bg-surface);
-  padding: 28px;
+  padding: 24px;
   border-radius: 20px;
-  width: 90%;
-  max-width: 380px;
+  width: 92%;
+  max-width: 400px;
+  max-height: 90vh;
+  overflow-y: auto;
   border: 1px solid var(--border-subtle);
   position: relative;
 }
 
 .modal-content h3 {
   font-family: 'Syne', sans-serif;
-  margin-bottom: 16px;
+  margin-bottom: 14px;
 }
 
 .modal-content label {
@@ -654,7 +670,7 @@ button:active {
   font-size: 0.8em;
   text-transform: uppercase;
   color: var(--text-dim);
-  margin: 12px 0 4px;
+  margin: 10px 0 4px;
 }
 
 .modal-content button:not(.close-modal) {
@@ -700,8 +716,8 @@ button:active {
 }
 
 .settings-update-box {
-  margin-top: 18px;
-  padding-top: 14px;
+  margin-top: 16px;
+  padding-top: 12px;
   border-top: 1px solid var(--border-subtle);
   text-align: center;
 }
@@ -720,7 +736,7 @@ button:active {
   font-family: 'Ubuntu Mono', monospace;
   font-size: 0.8em;
   color: var(--neon-yellow);
-  margin-top: 8px;
+  margin-top: 6px;
   min-height: 1.2em;
 }
 </style>
@@ -734,11 +750,11 @@ button:active {
 <div class="container">
   <div class="header">
     <h1><i class="fas fa-bolt"></i> Revers Quiz</h1>
-    <div class="subtitle">Интерактивный режим ведущего</div>
+    <div class="subtitle" id="game-subtitle">Угадай трек наоборот</div>
   </div>
 
-  <!-- Блок онлайн-комнаты -->
-  <div class="section">
+  <!-- Блок интерактивной комнаты (виден только в онлайн режиме) -->
+  <div class="section" id="host-online-section" style="display:none;">
     <div class="online-box">
       <div>
         <span style="font-size:0.85em; color:var(--text-dim); text-transform:uppercase;">PIN Комнаты:</span>
@@ -755,6 +771,16 @@ button:active {
     </div>
     <div class="connected-teams-list" id="host-teams-container">
       <div style="color:var(--text-dim); font-size:0.9em;">Ожидание подключения участников...</div>
+    </div>
+  </div>
+
+  <!-- Блок команд в обычном режиме -->
+  <div class="section" id="local-teams-section">
+    <h2 class="section-title"><i class="fas fa-users"></i> Команды</h2>
+    <div class="team-input">
+      <input type="text" id="team1" placeholder="Команда 1" value="Команда А" />
+      <input type="text" id="team2" placeholder="Команда 2" value="Команда Б" />
+      <button onclick="setTeams()">Сохранить команды</button>
     </div>
   </div>
 
@@ -911,6 +937,22 @@ button:active {
     <button class="close-modal" onclick="closeSettings()">&times;</button>
     <h3>Параметры</h3>
     
+    <!-- Переключатель интерактивного режима -->
+    <label for="interactive-mode-toggle">Режим игры</label>
+    <select id="interactive-mode-toggle">
+      <option value="false">Обычный режим (оффлайн)</option>
+      <option value="true">Интерактивный (онлайн для участников)</option>
+    </select>
+
+    <!-- Переключатель видимости счёта для игроков -->
+    <div id="show-score-wrap">
+      <label for="show-score-toggle">Показывать счёт участникам</label>
+      <select id="show-score-toggle">
+        <option value="true">Да, показывать</option>
+        <option value="false">Нет, скрывать</option>
+      </select>
+    </div>
+
     <label for="timer-input">Таймер ответа (сек)</label>
     <input type="number" id="timer-input" min="1" max="300" value="10">
     
@@ -946,15 +988,16 @@ var firebaseConfig = {
   measurementId: "G-93CJT9ZT4G"
 };
 
-firebase.initializeApp(firebaseConfig);
-var db = firebase.database();
+var db = null;
 var currentRoomPin = null;
 var roomRef = null;
 var connectedTeamsMap = {};
+var isInteractiveMode = false;
+var showScoreToPlayers = true;
 
 var PUBLIC_KEY = "https://yadi.sk/d/WuP3cXvzcoZxVg";
-var team1Name = "Команда 1";
-var team2Name = "Команда 2";
+var team1Name = "Команда А";
+var team2Name = "Команда Б";
 var score1 = 0, score2 = 0;
 var files = {};
 var playedTracks = new Set();
@@ -981,8 +1024,14 @@ var soundUrls = {
   gameOver: null
 };
 
-// Инициализация Realtime Room
 function initHostRoom() {
+  if (!isInteractiveMode) return;
+  
+  if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+  }
+  db = firebase.database();
+
   currentRoomPin = localStorage.getItem("host_room_pin");
   if (!currentRoomPin) {
     currentRoomPin = Math.floor(1000 + Math.random() * 9000).toString();
@@ -992,25 +1041,23 @@ function initHostRoom() {
 
   roomRef = db.ref("rooms/" + currentRoomPin);
   
-  // Создаем/обновляем статус комнаты
   roomRef.update({
     status: "idle",
-    buzzer: { locked: true, pressedBy: null },
+    showScore: showScoreToPlayers,
+    buzzer: { locked: true, pressedBy: null, passedBy: [] },
     revealedTrack: ""
   });
 
-  // Отслеживаем подключенные команды
   roomRef.child("teams").on("value", function(snapshot) {
     var teams = snapshot.val() || {};
     connectedTeamsMap = teams;
     renderConnectedTeams(teams);
   });
 
-  // Отслеживаем нажатия на баззер капитанами
   roomRef.child("buzzer").on("value", function(snapshot) {
     var buzzer = snapshot.val();
     if (buzzer && buzzer.locked && buzzer.pressedByName) {
-      handleBuzzerTriggered(buzzer.pressedByName);
+      handleBuzzerTriggered(buzzer.pressedBy, buzzer.pressedByName);
     }
   });
 }
@@ -1032,7 +1079,6 @@ function renderConnectedTeams(teams) {
     pill.innerHTML = '<i class="fas fa-check-circle"></i> ' + t.name + ' (' + (t.score || 0) + ')';
     container.appendChild(pill);
 
-    // Автоматически назначаем имена первым двум командам для табло
     if (idx === 0) {
       team1Name = t.name;
       document.getElementById("team1-label").textContent = t.name;
@@ -1043,8 +1089,8 @@ function renderConnectedTeams(teams) {
   });
 }
 
-// Когда кто-то нажал кнопку
-function handleBuzzerTriggered(teamName) {
+// При нажатии кнопки участником: останавливаем трек и подсвечиваем блок команды
+function handleBuzzerTriggered(teamId, teamName) {
   var r = document.getElementById("audio-revers");
   if (r && !r.paused) {
     r.pause();
@@ -1052,7 +1098,14 @@ function handleBuzzerTriggered(teamName) {
   }
   stopTimer();
 
-  // Звук звонка
+  // Определяем, какая это команда (1 или 2), и подсвечиваем блок
+  var teamKeys = Object.keys(connectedTeamsMap);
+  if (teamKeys[0] === teamId) {
+    activateTeam(1);
+  } else if (teamKeys[1] === teamId) {
+    activateTeam(2);
+  }
+
   if (soundUrls.ring) {
     var a = document.getElementById("audio-ring");
     a.src = soundUrls.ring;
@@ -1136,14 +1189,35 @@ document.addEventListener('touchstart', unlockMobileAudio, { once: true });
 
 window.addEventListener('load', function() {
   restoreSession();
+  applyGameModeUI();
   initHostRoom();
 });
+
+function applyGameModeUI() {
+  var onlineSec = document.getElementById("host-online-section");
+  var localSec = document.getElementById("local-teams-section");
+  var sub = document.getElementById("game-subtitle");
+  
+  if (isInteractiveMode) {
+    onlineSec.style.display = "block";
+    localSec.style.display = "none";
+    sub.textContent = "Интерактивный режим ведущего";
+  } else {
+    onlineSec.style.display = "none";
+    localSec.style.display = "block";
+    sub.textContent = "Угадай трек наоборот";
+  }
+}
 
 function restoreSession() {
   var saved = localStorage.getItem('reversQuiz');
   if (saved) {
     try {
       var data = JSON.parse(saved);
+      isInteractiveMode = data.isInteractiveMode === true;
+      showScoreToPlayers = data.showScoreToPlayers !== false;
+      team1Name = data.team1 || "Команда А";
+      team2Name = data.team2 || "Команда Б";
       score1 = parseFloat(data.score1) || 0;
       score2 = parseFloat(data.score2) || 0;
       playedTracks = new Set(data.playedTracks || []);
@@ -1157,10 +1231,18 @@ function restoreSession() {
       trackOrder = data.trackOrder || {};
       files = data.files || {};
 
+      var t1 = document.getElementById("team1");
+      var t2 = document.getElementById("team2");
+      var t1L = document.getElementById("team1-label");
+      var t2L = document.getElementById("team2-label");
       var s1 = document.getElementById("score1");
       var s2 = document.getElementById("score2");
       var fSel = document.getElementById("folder-select");
 
+      if (t1) t1.value = team1Name;
+      if (t2) t2.value = team2Name;
+      if (t1L) t1L.textContent = team1Name;
+      if (t2L) t2L.textContent = team2Name;
       if (s1) s1.textContent = formatScore(score1);
       if (s2) s2.textContent = formatScore(score2);
       if (fSel) fSel.value = selectedFolder;
@@ -1185,6 +1267,10 @@ function restoreSession() {
 function saveState() {
   try {
     var state = {
+      isInteractiveMode: isInteractiveMode,
+      showScoreToPlayers: showScoreToPlayers,
+      team1: team1Name,
+      team2: team2Name,
       score1: score1,
       score2: score2,
       playedTracks: Array.from(playedTracks),
@@ -1254,12 +1340,11 @@ function playSound(type) {
     showActionNotification(type === 'winner' ? '🎉 Правильно!' : '😢 Мимо!');
   }
 
-  // Транслируем всем командам ответ в комнату
-  if (roomRef) {
+  if (isInteractiveMode && roomRef) {
     roomRef.update({
       status: "reveal",
       revealedTrack: currentTrackName || "",
-      buzzer: { locked: true, pressedBy: null }
+      buzzer: { locked: true, pressedBy: null, passedBy: [] }
     });
   }
 
@@ -1305,6 +1390,21 @@ function formatTime(seconds) {
   var mins = Math.floor(seconds / 60);
   var secs = seconds % 60;
   return String(mins).padStart(2, '0') + ":" + String(secs).padStart(2, '0');
+}
+
+function setTeams() {
+  var t1 = document.getElementById("team1").value.trim();
+  var t2 = document.getElementById("team2").value.trim();
+  if (!t1 || !t2) {
+    alert("Введите оба названия команд!");
+    return;
+  }
+  team1Name = t1;
+  team2Name = t2;
+  document.getElementById("team1-label").textContent = t1;
+  document.getElementById("team2-label").textContent = t2;
+  saveState();
+  showActionNotification('✅ Составы обновлены!');
 }
 
 function updateFolderSection() {
@@ -1590,12 +1690,11 @@ function toggleRevers() {
     stopTimer();
     hideBuzzerAlert();
 
-    // Разблокируем баззеры командам в комнате
-    if (roomRef) {
+    if (isInteractiveMode && roomRef) {
       roomRef.update({
         status: "playing",
         revealedTrack: "",
-        buzzer: { locked: false, pressedBy: null, pressedByName: null }
+        buzzer: { locked: false, pressedBy: null, pressedByName: null, passedBy: [] }
       });
     }
 
@@ -1619,7 +1718,7 @@ function toggleRevers() {
     audio.pause();
     icon.classList.replace("fa-pause", "fa-play");
     hideTrackPopup();
-    if (roomRef) {
+    if (isInteractiveMode && roomRef) {
       roomRef.update({ status: "idle" });
     }
   }
@@ -1777,7 +1876,7 @@ function removeScore(team, points) {
 }
 
 function syncTeamScoresToCloud() {
-  if (!roomRef) return;
+  if (!isInteractiveMode || !roomRef) return;
   var teamKeys = Object.keys(connectedTeamsMap);
   if (teamKeys[0]) roomRef.child("teams/" + teamKeys[0] + "/score").set(score1);
   if (teamKeys[1]) roomRef.child("teams/" + teamKeys[1] + "/score").set(score2);
@@ -1836,12 +1935,17 @@ function openSettings() {
   var tIn = document.getElementById("timer-input");
   var dIn = document.getElementById("original-delay-input");
   var mIn = document.getElementById("mix-mode");
+  var modeSel = document.getElementById("interactive-mode-toggle");
+  var scoreSel = document.getElementById("show-score-toggle");
   var sMod = document.getElementById("settings-modal");
   var statusEl = document.getElementById("manual-update-status");
   
   if (tIn) tIn.value = timerDuration;
   if (dIn) dIn.value = originalDelay;
   if (mIn) mIn.value = mixMode ? "mixed" : "normal";
+  if (modeSel) modeSel.value = isInteractiveMode ? "true" : "false";
+  if (scoreSel) scoreSel.value = showScoreToPlayers ? "true" : "false";
+  
   if (statusEl) {
     var currentVer = localStorage.getItem('app_version') || '11';
     statusEl.textContent = "Текущая версия: v" + currentVer;
@@ -1858,6 +1962,8 @@ function setSettings() {
   var inputTimer = document.getElementById("timer-input");
   var inputDelay = document.getElementById("original-delay-input");
   var mode = document.getElementById("mix-mode").value;
+  var newInteractive = document.getElementById("interactive-mode-toggle").value === "true";
+  var newShowScore = document.getElementById("show-score-toggle").value === "true";
   
   var valTimer = parseInt(inputTimer.value);
   var valDelay = parseFloat(inputDelay.value);
@@ -1865,14 +1971,27 @@ function setSettings() {
   if (isNaN(valTimer) || valTimer < 1 || valTimer > 300) return alert("Таймер: от 1 до 300 сек.");
   if (isNaN(valDelay) || valDelay < 0 || valDelay > 30) return alert("Задержка оригинала: от 0 до 30 сек.");
 
+  var needReload = (newInteractive !== isInteractiveMode);
+
   timerDuration = valTimer;
   originalDelay = valDelay;
   mixMode = mode === "mixed";
+  isInteractiveMode = newInteractive;
+  showScoreToPlayers = newShowScore;
 
-  closeSettings();
-  updateFolderSection();
+  if (isInteractiveMode && roomRef) {
+    roomRef.update({ showScore: showScoreToPlayers });
+  }
+
   saveState();
-  showActionNotification('⚙️ Настройки применены');
+  closeSettings();
+
+  if (needReload) {
+    location.reload();
+  } else {
+    updateFolderSection();
+    showActionNotification('⚙️ Настройки применены');
+  }
 }
 
 function startTimer() {
