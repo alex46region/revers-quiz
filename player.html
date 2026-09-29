@@ -169,7 +169,6 @@ body {
   justify-content: space-between;
 }
 
-/* Адаптивное табло участников БЕЗ скролла */
 .scoreboard-arena {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(75px, 1fr));
@@ -232,7 +231,6 @@ body {
   color: var(--neon-pink);
 }
 
-/* Статус-панель раунда */
 .status-pill {
   background: var(--bg-card);
   border: 1px solid var(--border-subtle);
@@ -269,7 +267,6 @@ body {
   display: none;
 }
 
-/* 3D Баззер */
 .buzzer-stage {
   flex: 1;
   display: flex;
@@ -375,7 +372,7 @@ body {
   color: #fff;
 }
 
-/* Экран завершения игры */
+/* Экран окончания игры */
 #game-over-view {
   display: none;
   flex-direction: column;
@@ -459,6 +456,10 @@ body {
 </head>
 <body>
 
+<!-- Аудио-плееры для синхронной трансляции -->
+<audio id="player-audio-revers" preload="auto" playsinline style="display:none;"></audio>
+<audio id="player-audio-normal" preload="auto" playsinline style="display:none;"></audio>
+
 <!-- 1. Экран логина команды -->
 <div class="login-wrap" id="login-view">
   <div class="brand-icon"><i class="fas fa-bolt"></i></div>
@@ -536,6 +537,20 @@ var currentRoom = null;
 var myTeamId = null;
 var myTeamName = "";
 var gameOverTimer = null;
+var currentLoadedReversUrl = "";
+
+// Разблокировка мобильного аудио по первому тапу
+function unlockMobileAudio() {
+  ['player-audio-revers', 'player-audio-normal'].forEach(function(id) {
+    var a = document.getElementById(id);
+    if (a) {
+      a.play().catch(function() {});
+      a.pause();
+    }
+  });
+}
+document.addEventListener('click', unlockMobileAudio, { once: true });
+document.addEventListener('touchstart', unlockMobileAudio, { once: true });
 
 function showError(msg) {
   var err = document.getElementById("login-error");
@@ -572,6 +587,7 @@ function joinGame() {
     roomRef.child("teams/" + myTeamId).set({
       name: myTeamName,
       ready: true,
+      readyToPlay: false,
       score: 0
     });
 
@@ -581,8 +597,63 @@ function joinGame() {
     document.getElementById("game-view").style.display = "flex";
 
     listenToGameState();
+    listenToAudioStream();
   }).catch(function(e) {
     showError("Ошибка подключения: " + e.message);
+  });
+}
+
+// Слушатель фоновой трансляции и синхронизации аудио
+function listenToAudioStream() {
+  var audioSyncRef = db.ref("rooms/" + currentRoom + "/audioSync");
+  var aRevers = document.getElementById("player-audio-revers");
+  var aNormal = document.getElementById("player-audio-normal");
+
+  audioSyncRef.on("value", function(snapshot) {
+    var sync = snapshot.val();
+    if (!sync) return;
+
+    // Фоновая загрузка в буфер без показа названия
+    if (sync.reversUrl && sync.reversUrl !== currentLoadedReversUrl) {
+      currentLoadedReversUrl = sync.reversUrl;
+
+      aRevers.src = sync.reversUrl;
+      aRevers.preload = "auto";
+      aRevers.load();
+
+      if (sync.normalUrl) {
+        aNormal.src = sync.normalUrl;
+        aNormal.preload = "auto";
+        aNormal.load();
+      }
+
+      // Как только трек готов играть без запинок, рапортуем ведущему
+      aRevers.oncanplaythrough = function() {
+        if (currentRoom && myTeamId) {
+          db.ref("rooms/" + currentRoom + "/teams/" + myTeamId + "/readyToPlay").set(true);
+        }
+        aRevers.oncanplaythrough = null;
+      };
+    }
+
+    // Управление синхронным воспроизведением
+    if (sync.playAction === "play_revers") {
+      aNormal.pause();
+      aRevers.currentTime = sync.targetTime || 0;
+      aRevers.play().catch(function(e) { console.warn(e); });
+    } else if (sync.playAction === "play_normal") {
+      aRevers.pause();
+      aNormal.currentTime = sync.targetTime || 0;
+      aNormal.play().catch(function(e) { console.warn(e); });
+    } else if (sync.playAction === "pause") {
+      aRevers.pause();
+      aNormal.pause();
+    } else if (sync.playAction === "stop") {
+      aRevers.pause();
+      aNormal.pause();
+      aRevers.currentTime = 0;
+      aNormal.currentTime = 0;
+    }
   });
 }
 
@@ -593,7 +664,6 @@ function listenToGameState() {
     var data = snapshot.val();
     if (!data) return;
 
-    // ОБРАБОТКА ФИНАЛА ИГРЫ
     if (data.status === "game_over") {
       showGameOverScreen(data.leaderboard || []);
       return;
@@ -612,14 +682,12 @@ function listenToGameState() {
     var teams = data.teams || {};
     var teamKeys = Object.keys(teams);
 
-    // Отрисовка компактного табло без горизонтального скролла
     if (!showMyScore && !showOppScore) {
       scoreboardWrap.style.display = "none";
     } else {
       scoreboardWrap.style.display = "grid";
       scoreboardWrap.innerHTML = "";
 
-      // Своя команда первой
       if (showMyScore && teams[myTeamId]) {
         var myCard = document.createElement("div");
         myCard.className = "score-card my-card";
@@ -629,7 +697,6 @@ function listenToGameState() {
         scoreboardWrap.appendChild(myCard);
       }
 
-      // Карточки соперников компактно в сетку
       if (showOppScore) {
         teamKeys.filter(function(k) { return k !== myTeamId; }).forEach(function(k) {
           var oppCard = document.createElement("div");
@@ -710,6 +777,11 @@ function listenToGameState() {
 function showGameOverScreen(leaderboard) {
   if (gameOverTimer) return;
 
+  var aRevers = document.getElementById("player-audio-revers");
+  var aNormal = document.getElementById("player-audio-normal");
+  if (aRevers) aRevers.pause();
+  if (aNormal) aNormal.pause();
+
   document.getElementById("game-view").style.display = "none";
   var overView = document.getElementById("game-over-view");
   overView.style.display = "flex";
@@ -738,7 +810,6 @@ function showGameOverScreen(leaderboard) {
     });
   }
 
-  // Обратный отсчет 10 секунд до сброса
   var timeLeft = 10;
   var secSpan = document.getElementById("reset-seconds");
   secSpan.textContent = timeLeft;
@@ -750,7 +821,6 @@ function showGameOverScreen(leaderboard) {
     if (timeLeft <= 0) {
       clearInterval(gameOverTimer);
       gameOverTimer = null;
-      // Полный возврат к стартовому окну ввода PIN
       window.location.reload();
     }
   }, 1000);
