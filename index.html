@@ -139,7 +139,6 @@ h1 i {
   color: var(--neon-cyan);
 }
 
-/* Адаптивный блок интерактивной комнаты */
 .online-box {
   background: rgba(0, 229, 255, 0.05);
   border: 1px solid var(--neon-cyan);
@@ -1077,6 +1076,15 @@ button:active {
       <option value="true">Интерактивный (онлайн для участников)</option>
     </select>
 
+    <!-- Переключатель аудиотрансляции на устройства участников -->
+    <div id="stream-audio-wrap">
+      <label for="stream-audio-toggle">Трансляция аудио участникам</label>
+      <select id="stream-audio-toggle">
+        <option value="false">Выключена (звук только у ведущего)</option>
+        <option value="true">Включена (синхронно на всех телефонах)</option>
+      </select>
+    </div>
+
     <div id="show-score-wrap">
       <label for="show-score-toggle">Показывать свой счёт участникам</label>
       <select id="show-score-toggle">
@@ -1155,8 +1163,8 @@ var roomRef = null;
 var isInteractiveMode = false;
 var showScoreToPlayers = true;
 var showOpponentScore = true;
+var streamAudioToPlayers = false;
 
-// Динамический массив команд
 var teamsData = [
   { id: 'team_1', name: 'Команда 1', score: 0 },
   { id: 'team_2', name: 'Команда 2', score: 0 }
@@ -1192,7 +1200,7 @@ function copyPlayerLink() {
   var link = "https://clck.ru/3WBWUq";
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(link).then(function() {
-      showActionNotification("📋 Ссылка скопирована в буфер!");
+      showActionNotification("📋 Ссылка скопирована!");
     }).catch(function() {
       fallbackCopyText(link);
     });
@@ -1210,7 +1218,7 @@ function fallbackCopyText(text) {
   textArea.select();
   try {
     document.execCommand('copy');
-    showActionNotification("📋 Ссылка скопирована в буфер!");
+    showActionNotification("📋 Ссылка скопирована!");
   } catch (err) {
     alert("Ссылка: " + text);
   }
@@ -1253,16 +1261,21 @@ function initHostRoom() {
     status: "idle",
     showScore: showScoreToPlayers,
     showOpponentScore: showOpponentScore,
+    streamAudio: streamAudioToPlayers,
     buzzer: { locked: true, pressedBy: null, passedBy: [] },
-    revealedTrack: ""
+    revealedTrack: "",
+    audioSync: {
+      reversUrl: "",
+      normalUrl: "",
+      playAction: "stop",
+      targetTime: 0
+    }
   });
 
-  // В интерактиве изначально список команд пуст, пока кто-то не подключится
   teamsData = [];
   renderHostTeamsList();
   renderScoreboardGrid();
 
-  // Отслеживаем только реальные подключения команд из Firebase
   roomRef.child("teams").on("value", function(snapshot) {
     var rawTeams = snapshot.val() || {};
     var cloudKeys = Object.keys(rawTeams);
@@ -1272,7 +1285,8 @@ function initHostRoom() {
         return {
           id: key,
           name: rawTeams[key].name || "Команда",
-          score: rawTeams[key].score || 0
+          score: rawTeams[key].score || 0,
+          readyToPlay: rawTeams[key].readyToPlay || false
         };
       });
     } else {
@@ -1413,6 +1427,11 @@ function handleBuzzerTriggered(teamId, teamName) {
   }
   stopTimer();
 
+  // При баззере глушим аудио у всех участников
+  if (isInteractiveMode && roomRef && streamAudioToPlayers) {
+    roomRef.child("audioSync").update({ playAction: "pause" });
+  }
+
   activateTeam(teamId);
 
   if (soundUrls.ring) {
@@ -1530,6 +1549,7 @@ function restoreSession() {
       isInteractiveMode = data.isInteractiveMode === true;
       showScoreToPlayers = data.showScoreToPlayers !== false;
       showOpponentScore = data.showOpponentScore !== false;
+      streamAudioToPlayers = data.streamAudioToPlayers === true;
       
       if (Array.isArray(data.teamsData) && data.teamsData.length >= 2) {
         teamsData = data.teamsData;
@@ -1570,6 +1590,7 @@ function saveState() {
       isInteractiveMode: isInteractiveMode,
       showScoreToPlayers: showScoreToPlayers,
       showOpponentScore: showOpponentScore,
+      streamAudioToPlayers: streamAudioToPlayers,
       teamsData: teamsData,
       playedTracks: Array.from(playedTracks),
       selectedFolder: selectedFolder,
@@ -1677,6 +1698,14 @@ function startOriginalPlayback() {
   a.play().then(function() {
     if (i) i.classList.replace("fa-play", "fa-pause");
     updateNormalProgress();
+
+    // Синхронный запуск оригинала на телефонах игроков
+    if (isInteractiveMode && roomRef && streamAudioToPlayers) {
+      roomRef.child("audioSync").update({
+        playAction: "play_normal",
+        targetTime: 0
+      });
+    }
   }).catch(function(err) {
     console.warn("Автовоспроизведение оригинала:", err);
   });
@@ -1891,7 +1920,6 @@ function playTrack(name) {
   stopAllSounds();
   hideTrackPopup();
 
-  // В интерактиве сбрасываем подсветку команд до физического нажатия
   if (isInteractiveMode) {
     clearTeamHighlight();
   }
@@ -1922,6 +1950,21 @@ function playTrack(name) {
       audioNormal.onloadedmetadata = function() {
         document.getElementById("normal-duration").textContent = formatTime(audioNormal.duration);
       };
+    }
+
+    // Фоновая трансляция аудио в базу для предзагрузки на телефоны участников
+    if (isInteractiveMode && roomRef) {
+      // Сбрасываем готовность всех команд
+      teamsData.forEach(function(t) {
+        roomRef.child("teams/" + t.id + "/readyToPlay").set(false);
+      });
+
+      roomRef.child("audioSync").set({
+        reversUrl: track.revers || "",
+        normalUrl: track.normal || "",
+        playAction: "prepare",
+        targetTime: 0
+      });
     }
 
     toggleRevers();
@@ -1965,51 +2008,108 @@ function hideTrackPopup() {
   if (popup) popup.style.opacity = 0;
 }
 
+// Запуск реверса с синхронизацией аудиопотока
 function toggleRevers() {
   var audio = document.getElementById("audio-revers");
   var normal = document.getElementById("audio-normal");
   var icon = document.getElementById("revers-play-icon");
+
   if (!normal.paused) {
     normal.pause();
     document.getElementById("normal-play-icon").classList.replace("fa-pause", "fa-play");
   }
+
   if (audio.paused) {
     stopTimer();
     hideBuzzerAlert();
 
-    if (isInteractiveMode && roomRef) {
-      clearTeamHighlight();
-      roomRef.update({
-        status: "playing",
-        revealedTrack: "",
-        buzzer: { locked: false, pressedBy: null, pressedByName: null, passedBy: [] }
+    // Если включена трансляция аудио участникам, проверяем буферизацию
+    if (isInteractiveMode && streamAudioToPlayers && teamsData.length > 0) {
+      waitForPlayersAudioReady(function() {
+        startReversPlaybackLocallyAndRemotely();
       });
+    } else {
+      startReversPlaybackLocallyAndRemotely();
     }
-
-    audio.play().then(function() {
-      icon.classList.replace("fa-play", "fa-pause");
-      showTrackPopup(currentTrackName);
-      updateReversProgress();
-
-      // В оффлайн режиме — циклическое переключение хода
-      if (!isInteractiveMode && currentTrackName !== lastPlayedTrack) {
-        cycleNextOfflineTeam();
-        lastPlayedTrack = currentTrackName;
-        saveState();
-      }
-    }).catch(function(err) {
-      console.warn("Воспроизведение заблокировано:", err);
-    });
   } else {
     audio.pause();
     icon.classList.replace("fa-pause", "fa-play");
     hideTrackPopup();
+
     if (isInteractiveMode && roomRef) {
       roomRef.update({ status: "idle" });
+      if (streamAudioToPlayers) {
+        roomRef.child("audioSync").update({ playAction: "pause" });
+      }
     }
   }
   updateShuffleButtonState();
   updateNextTrackButton();
+}
+
+// Ожидание подтверждения загрузки трека в буфер от всех смартфонов
+function waitForPlayersAudioReady(callback) {
+  var timeoutTriggered = false;
+  var timer = setTimeout(function() {
+    timeoutTriggered = true;
+    callback();
+  }, 2500); // Страховочный тайм-аут на случай медленного интернета
+
+  var listener = roomRef.child("teams").on("value", function(snapshot) {
+    if (timeoutTriggered) {
+      roomRef.child("teams").off("value", listener);
+      return;
+    }
+    var raw = snapshot.val() || {};
+    var allReady = true;
+    var count = 0;
+
+    Object.keys(raw).forEach(function(k) {
+      count++;
+      if (!raw[k].readyToPlay) allReady = false;
+    });
+
+    if (count > 0 && allReady) {
+      clearTimeout(timer);
+      roomRef.child("teams").off("value", listener);
+      callback();
+    }
+  });
+}
+
+function startReversPlaybackLocallyAndRemotely() {
+  var audio = document.getElementById("audio-revers");
+  var icon = document.getElementById("revers-play-icon");
+
+  if (isInteractiveMode && roomRef) {
+    clearTeamHighlight();
+    roomRef.update({
+      status: "playing",
+      revealedTrack: "",
+      buzzer: { locked: false, pressedBy: null, pressedByName: null, passedBy: [] }
+    });
+
+    if (streamAudioToPlayers) {
+      roomRef.child("audioSync").update({
+        playAction: "play_revers",
+        targetTime: 0
+      });
+    }
+  }
+
+  audio.play().then(function() {
+    icon.classList.replace("fa-play", "fa-pause");
+    showTrackPopup(currentTrackName);
+    updateReversProgress();
+
+    if (!isInteractiveMode && currentTrackName !== lastPlayedTrack) {
+      cycleNextOfflineTeam();
+      lastPlayedTrack = currentTrackName;
+      saveState();
+    }
+  }).catch(function(err) {
+    console.warn("Воспроизведение заблокировано:", err);
+  });
 }
 
 function cycleNextOfflineTeam() {
@@ -2062,7 +2162,6 @@ function changeScore(teamId, delta) {
     showNotification(delta + ' (' + team.name + ')', false);
   }
 
-  // Синхронизация с облаком в интерактиве
   if (isInteractiveMode && roomRef) {
     roomRef.child("teams/" + teamId + "/score").set(team.score);
   }
@@ -2101,12 +2200,23 @@ function toggleNormal() {
     a.play().then(function() {
       i.classList.replace("fa-play", "fa-pause");
       updateNormalProgress();
+
+      if (isInteractiveMode && roomRef && streamAudioToPlayers) {
+        roomRef.child("audioSync").update({
+          playAction: "play_normal",
+          targetTime: 0
+        });
+      }
     }).catch(function(err) {
       console.warn("Воспроизведение оригинала заблокировано:", err);
     });
   } else {
     a.pause();
     i.classList.replace("fa-play", "fa-pause");
+
+    if (isInteractiveMode && roomRef && streamAudioToPlayers) {
+      roomRef.child("audioSync").update({ playAction: "pause" });
+    }
   }
 }
 
@@ -2210,13 +2320,11 @@ function endQuiz() {
   purgeAudioBuffer(document.getElementById("audio-revers"));
   purgeAudioBuffer(document.getElementById("audio-normal"));
 
-  // Сортируем команды по убыванию очков
   var sortedTeams = teamsData.slice().sort(function(a, b) { return b.score - a.score; });
   var winnerText = (sortedTeams[0] && sortedTeams[1] && sortedTeams[0].score === sortedTeams[1].score) 
     ? "Боевая ничья!" 
     : (sortedTeams[0] ? sortedTeams[0].name + " побеждает!" : "Игра завершена");
 
-  // Транслируем финал и пьедестал участникам в комнату
   if (isInteractiveMode && roomRef) {
     roomRef.update({
       status: "game_over",
@@ -2224,7 +2332,6 @@ function endQuiz() {
     });
   }
 
-  // Удаляем старый PIN, чтобы для следующей игры сгенерировался новый
   localStorage.removeItem("host_room_pin");
 
   var quizArea = document.getElementById("quiz-area");
@@ -2255,6 +2362,7 @@ function openSettings() {
   var dIn = document.getElementById("original-delay-input");
   var mIn = document.getElementById("mix-mode");
   var modeSel = document.getElementById("interactive-mode-toggle");
+  var streamSel = document.getElementById("stream-audio-toggle");
   var scoreSel = document.getElementById("show-score-toggle");
   var opponentScoreSel = document.getElementById("show-opponent-score-toggle");
   var sMod = document.getElementById("settings-modal");
@@ -2264,6 +2372,7 @@ function openSettings() {
   if (dIn) dIn.value = originalDelay;
   if (mIn) mIn.value = mixMode ? "mixed" : "normal";
   if (modeSel) modeSel.value = isInteractiveMode ? "true" : "false";
+  if (streamSel) streamSel.value = streamAudioToPlayers ? "true" : "false";
   if (scoreSel) scoreSel.value = showScoreToPlayers ? "true" : "false";
   if (opponentScoreSel) opponentScoreSel.value = showOpponentScore ? "true" : "false";
   
@@ -2284,6 +2393,7 @@ function setSettings() {
   var inputDelay = document.getElementById("original-delay-input");
   var mode = document.getElementById("mix-mode").value;
   var newInteractive = document.getElementById("interactive-mode-toggle").value === "true";
+  var newStreamAudio = document.getElementById("stream-audio-toggle").value === "true";
   var newShowScore = document.getElementById("show-score-toggle").value === "true";
   var newShowOpponent = document.getElementById("show-opponent-score-toggle").value === "true";
   
@@ -2299,13 +2409,15 @@ function setSettings() {
   originalDelay = valDelay;
   mixMode = mode === "mixed";
   isInteractiveMode = newInteractive;
+  streamAudioToPlayers = newStreamAudio;
   showScoreToPlayers = newShowScore;
   showOpponentScore = newShowOpponent;
 
   if (isInteractiveMode && roomRef) {
     roomRef.update({ 
       showScore: showScoreToPlayers,
-      showOpponentScore: showOpponentScore
+      showOpponentScore: showOpponentScore,
+      streamAudio: streamAudioToPlayers
     });
   }
 
