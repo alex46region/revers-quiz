@@ -139,17 +139,24 @@ h1 i {
   color: var(--neon-cyan);
 }
 
+/* Адаптивный блок интерактивной комнаты */
 .online-box {
   background: rgba(0, 229, 255, 0.05);
   border: 1px solid var(--neon-cyan);
   border-radius: 14px;
-  padding: 14px 18px;
+  padding: 16px;
   margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.online-row-top {
   display: flex;
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
-  gap: 14px;
+  gap: 10px;
 }
 
 .pin-display {
@@ -160,27 +167,43 @@ h1 i {
   letter-spacing: 3px;
 }
 
+.online-link-area {
+  background: rgba(5, 6, 10, 0.6);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
 .link-actions {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-top: 4px;
+  width: 100%;
 }
 
 .copy-link-btn {
+  flex: 1;
+  min-width: 0;
   font-family: 'Ubuntu Mono', monospace;
-  font-size: 0.95em;
+  font-size: 0.9em;
   font-weight: 700;
   color: var(--neon-cyan);
   background: rgba(0, 229, 255, 0.08);
   border: 1px dashed var(--neon-cyan);
-  padding: 6px 12px;
+  padding: 10px 12px;
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .copy-link-btn:active {
@@ -192,14 +215,15 @@ h1 i {
   background: rgba(255, 234, 0, 0.1);
   border: 1px solid var(--neon-yellow);
   color: var(--neon-yellow);
-  padding: 6px 12px;
+  padding: 10px 16px;
   border-radius: 8px;
-  font-size: 0.85em;
+  font-size: 0.9em;
   font-weight: 700;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  flex-shrink: 0;
 }
 
 .qr-trigger-btn:active {
@@ -791,7 +815,7 @@ button:active {
   cursor: pointer;
 }
 
-/* Стили QR-окна */
+/* Окно QR-кода */
 .qr-modal-content {
   background: var(--bg-surface);
   border: 1px solid var(--neon-cyan);
@@ -883,12 +907,19 @@ button:active {
   <!-- Блок интерактивной комнаты (онлайн) -->
   <div class="section" id="host-online-section" style="display:none;">
     <div class="online-box">
-      <div>
-        <span style="font-size:0.85em; color:var(--text-dim); text-transform:uppercase;">PIN Комнаты:</span>
-        <div class="pin-display" id="host-pin">----</div>
+      <div class="online-row-top">
+        <div>
+          <span style="font-size:0.8em; color:var(--text-dim); text-transform:uppercase;">PIN Комнаты:</span>
+          <div class="pin-display" id="host-pin">----</div>
+        </div>
+        <div>
+          <span style="font-size:0.8em; color:var(--text-dim); text-transform:uppercase;">Для участников:</span>
+          <div style="font-size:0.85em; color:var(--neon-cyan); font-weight:700;">/player.html</div>
+        </div>
       </div>
-      <div>
-        <span style="font-size:0.85em; color:var(--text-dim);">Ссылка для команд:</span>
+
+      <div class="online-link-area">
+        <span style="font-size:0.8em; color:var(--text-dim);">Быстрая ссылка:</span>
         <div class="link-actions">
           <div class="copy-link-btn" onclick="copyPlayerLink()" title="Нажмите, чтобы скопировать">
             <i class="fas fa-copy"></i> https://clck.ru/3WBWUq
