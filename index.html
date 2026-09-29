@@ -149,7 +149,7 @@ h1 i {
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 14px;
 }
 
 .pin-display {
@@ -158,6 +158,53 @@ h1 i {
   font-weight: 700;
   color: var(--neon-yellow);
   letter-spacing: 3px;
+}
+
+.link-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.copy-link-btn {
+  font-family: 'Ubuntu Mono', monospace;
+  font-size: 0.95em;
+  font-weight: 700;
+  color: var(--neon-cyan);
+  background: rgba(0, 229, 255, 0.08);
+  border: 1px dashed var(--neon-cyan);
+  padding: 6px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.copy-link-btn:active {
+  background: var(--neon-cyan);
+  color: #000;
+}
+
+.qr-trigger-btn {
+  background: rgba(255, 234, 0, 0.1);
+  border: 1px solid var(--neon-yellow);
+  color: var(--neon-yellow);
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 0.85em;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.qr-trigger-btn:active {
+  background: var(--neon-yellow);
+  color: #000;
 }
 
 .connected-teams-list {
@@ -681,7 +728,7 @@ button:active {
   opacity: 1;
 }
 
-#settings-modal {
+#settings-modal, #qr-modal {
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.85);
@@ -695,7 +742,7 @@ button:active {
   transition: opacity 0.2s;
 }
 
-#settings-modal.active {
+#settings-modal.active, #qr-modal.active {
   opacity: 1;
   pointer-events: auto;
 }
@@ -742,6 +789,34 @@ button:active {
   color: var(--text-dim);
   font-size: 1.3em;
   cursor: pointer;
+}
+
+/* Стили QR-окна */
+.qr-modal-content {
+  background: var(--bg-surface);
+  border: 1px solid var(--neon-cyan);
+  border-radius: 24px;
+  padding: 28px 24px;
+  width: 90%;
+  max-width: 340px;
+  text-align: center;
+  position: relative;
+  box-shadow: 0 0 50px rgba(0, 229, 255, 0.25);
+}
+
+.qr-box-img {
+  background: #fff;
+  border-radius: 16px;
+  padding: 14px;
+  margin: 16px auto;
+  display: inline-block;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+}
+
+.qr-box-img img {
+  width: 190px;
+  height: 190px;
+  display: block;
 }
 
 .winner-screen {
@@ -814,7 +889,14 @@ button:active {
       </div>
       <div>
         <span style="font-size:0.85em; color:var(--text-dim);">Ссылка для команд:</span>
-        <div style="font-size:0.9em; color:var(--neon-cyan); font-weight:700;">/player.html</div>
+        <div class="link-actions">
+          <div class="copy-link-btn" onclick="copyPlayerLink()" title="Нажмите, чтобы скопировать">
+            <i class="fas fa-copy"></i> https://clck.ru/3WBWUq
+          </div>
+          <button class="qr-trigger-btn" onclick="openQrModal()">
+            <i class="fas fa-qrcode"></i> QR
+          </button>
+        </div>
       </div>
     </div>
 
@@ -952,6 +1034,7 @@ button:active {
 
 <div id="timer-circle">0</div>
 
+<!-- Модальное окно настроек -->
 <div id="settings-modal">
   <div class="modal-content">
     <button class="close-modal" onclick="closeSettings()">&times;</button>
@@ -1002,6 +1085,27 @@ button:active {
   </div>
 </div>
 
+<!-- Модальное окно с QR-кодом -->
+<div id="qr-modal">
+  <div class="qr-modal-content">
+    <button class="close-modal" onclick="closeQrModal()">&times;</button>
+    <h3 style="font-family:'Syne',sans-serif; color:var(--neon-cyan); margin-bottom:4px;">
+      <i class="fas fa-qrcode"></i> Вход для команд
+    </h3>
+    <p style="font-size:0.85em; color:var(--text-dim);">
+      Отсканируйте камерой телефона для перехода
+    </p>
+
+    <div class="qr-box-img">
+      <img src="https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=https%3A%2F%2Fclck.ru%2F3WBWUq" alt="QR Code" />
+    </div>
+
+    <div style="font-family:'Ubuntu Mono',monospace; font-size:1.1em; color:var(--neon-yellow); font-weight:700;">
+      https://clck.ru/3WBWUq
+    </div>
+  </div>
+</div>
+
 <script>
 var firebaseConfig = {
   apiKey: "AIzaSyC9sh7uazv-WbudsO7TYap4-wENjkLD3K4",
@@ -1021,7 +1125,7 @@ var isInteractiveMode = false;
 var showScoreToPlayers = true;
 var showOpponentScore = true;
 
-// Динамический массив команд: [{ id: 'team_1', name: 'Команда 1', score: 0 }]
+// Динамический массив команд
 var teamsData = [
   { id: 'team_1', name: 'Команда 1', score: 0 },
   { id: 'team_2', name: 'Команда 2', score: 0 }
@@ -1053,6 +1157,45 @@ var soundUrls = {
   gameOver: null
 };
 
+function copyPlayerLink() {
+  var link = "https://clck.ru/3WBWUq";
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(link).then(function() {
+      showActionNotification("📋 Ссылка скопирована в буфер!");
+    }).catch(function() {
+      fallbackCopyText(link);
+    });
+  } else {
+    fallbackCopyText(link);
+  }
+}
+
+function fallbackCopyText(text) {
+  var textArea = document.createElement("textarea");
+  textArea.value = text;
+  textArea.style.position = "fixed";
+  document.body.appendChild(textArea);
+  textArea.focus();
+  textArea.select();
+  try {
+    document.execCommand('copy');
+    showActionNotification("📋 Ссылка скопирована в буфер!");
+  } catch (err) {
+    alert("Ссылка: " + text);
+  }
+  document.body.removeChild(textArea);
+}
+
+function openQrModal() {
+  var modal = document.getElementById("qr-modal");
+  if (modal) modal.classList.add("active");
+}
+
+function closeQrModal() {
+  var modal = document.getElementById("qr-modal");
+  if (modal) modal.classList.remove("active");
+}
+
 function generateNewRoomPin() {
   var newPin = Math.floor(1000 + Math.random() * 9000).toString();
   localStorage.setItem("host_room_pin", newPin);
@@ -1083,6 +1226,12 @@ function initHostRoom() {
     revealedTrack: ""
   });
 
+  // В интерактиве изначально список команд пуст, пока кто-то не подключится
+  teamsData = [];
+  renderHostTeamsList();
+  renderScoreboardGrid();
+
+  // Отслеживаем только реальные подключения команд из Firebase
   roomRef.child("teams").on("value", function(snapshot) {
     var rawTeams = snapshot.val() || {};
     var cloudKeys = Object.keys(rawTeams);
@@ -1095,6 +1244,8 @@ function initHostRoom() {
           score: rawTeams[key].score || 0
         };
       });
+    } else {
+      teamsData = [];
     }
     renderHostTeamsList();
     renderScoreboardGrid();
@@ -1113,7 +1264,7 @@ function renderHostTeamsList() {
   if (!container) return;
 
   if (teamsData.length === 0) {
-    container.innerHTML = '<div style="color:var(--text-dim); font-size:0.9em;">Ожидание подключения участников...</div>';
+    container.innerHTML = '<div style="color:var(--text-dim); font-size:0.9em;"><i class="fas fa-spinner fa-spin" style="margin-right:6px;"></i>Ожидание подключения участников...</div>';
     return;
   }
 
@@ -1191,6 +1342,11 @@ function renderScoreboardGrid() {
   var grid = document.getElementById("teams-scoreboard-grid");
   if (!grid) return;
   grid.innerHTML = "";
+
+  if (isInteractiveMode && teamsData.length === 0) {
+    grid.innerHTML = '<div style="color:var(--text-dim); text-align:center; grid-column: 1 / -1; padding:20px;">Участники пока не подключились к комнате</div>';
+    return;
+  }
 
   teamsData.forEach(function(t) {
     var group = document.createElement("div");
@@ -1312,7 +1468,9 @@ document.addEventListener('touchstart', unlockMobileAudio, { once: true });
 window.addEventListener('load', function() {
   restoreSession();
   applyGameModeUI();
-  renderOfflineTeamsInputs();
+  if (!isInteractiveMode) {
+    renderOfflineTeamsInputs();
+  }
   renderScoreboardGrid();
   initHostRoom();
 });
