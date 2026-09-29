@@ -331,7 +331,6 @@ button:active {
   color: var(--neon-yellow);
 }
 
-/* Динамическая сетка счёта команд */
 .score-controls {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
@@ -1084,7 +1083,6 @@ function initHostRoom() {
     revealedTrack: ""
   });
 
-  // Отслеживаем команды в комнате
   roomRef.child("teams").on("value", function(snapshot) {
     var rawTeams = snapshot.val() || {};
     var cloudKeys = Object.keys(rawTeams);
@@ -1128,7 +1126,6 @@ function renderHostTeamsList() {
   });
 }
 
-// Отрисовка полей ввода команд в оффлайн режиме
 function renderOfflineTeamsInputs() {
   var container = document.getElementById("teams-input-container");
   if (!container) return;
@@ -1146,7 +1143,6 @@ function renderOfflineTeamsInputs() {
 
     row.appendChild(input);
 
-    // Удалять можно только если команд больше 2
     if (teamsData.length > 2) {
       var delBtn = document.createElement("button");
       delBtn.className = "btn-del-team";
@@ -1191,7 +1187,6 @@ function saveOfflineTeams() {
   showActionNotification('✅ Составы команд сохранены!');
 }
 
-// Отрисовка неоновых блоков счёта для всех команд
 function renderScoreboardGrid() {
   var grid = document.getElementById("teams-scoreboard-grid");
   if (!grid) return;
@@ -2017,9 +2012,6 @@ function endQuiz() {
   localStorage.removeItem('reversQuiz');
   stopAllSounds();
 
-  // Удаляем старый PIN, чтобы в следующий раз был сгенерирован новый
-  localStorage.removeItem("host_room_pin");
-
   var aGameOver = document.getElementById("audio-game-over");
   if (aGameOver && soundUrls.gameOver) {
     aGameOver.currentTime = 0;
@@ -2031,7 +2023,20 @@ function endQuiz() {
 
   // Сортируем команды по убыванию очков
   var sortedTeams = teamsData.slice().sort(function(a, b) { return b.score - a.score; });
-  var winnerText = sortedTeams[0].score === sortedTeams[1].score ? "Боевая ничья!" : sortedTeams[0].name + " побеждает!";
+  var winnerText = (sortedTeams[0] && sortedTeams[1] && sortedTeams[0].score === sortedTeams[1].score) 
+    ? "Боевая ничья!" 
+    : (sortedTeams[0] ? sortedTeams[0].name + " побеждает!" : "Игра завершена");
+
+  // Транслируем финал и пьедестал участникам в комнату
+  if (isInteractiveMode && roomRef) {
+    roomRef.update({
+      status: "game_over",
+      leaderboard: sortedTeams.map(function(t) { return { name: t.name, score: t.score }; })
+    });
+  }
+
+  // Удаляем старый PIN, чтобы для следующей игры сгенерировался новый
+  localStorage.removeItem("host_room_pin");
 
   var quizArea = document.getElementById("quiz-area");
   quizArea.innerHTML = '';
