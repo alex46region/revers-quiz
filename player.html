@@ -2,13 +2,13 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-<meta name="theme-color" content="#05060a" />
-<title>🎮 Revers Quiz — Экран команды</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<meta name="theme-color" content="#030407" />
+<title>⚡ Revers Quiz — Buzzer Arena</title>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=Syne:wght@800&family=Ubuntu+Mono:wght@700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Syne:wght@800&family=Ubuntu+Mono:wght@700&display=swap" rel="stylesheet">
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
 
 <!-- Firebase App & Database -->
@@ -17,15 +17,16 @@
 
 <style>
 :root {
-  --bg-deep: #05060a;
-  --bg-surface: #0e121a;
-  --bg-elevated: #161c28;
-  --neon-yellow: #ffea00;
-  --neon-lime: #00ff66;
+  --bg-deep: #030407;
+  --bg-card: rgba(14, 18, 26, 0.75);
+  --neon-cyan: #00f0ff;
   --neon-pink: #ff0055;
-  --neon-cyan: #00e5ff;
+  --neon-yellow: #ffe600;
+  --neon-lime: #00ff66;
+  --neon-purple: #7000ff;
   --text-pure: #ffffff;
-  --text-dim: #8b9bb4;
+  --text-dim: #7d8ea6;
+  --border-glow: rgba(0, 240, 255, 0.2);
   --border-subtle: rgba(255, 255, 255, 0.08);
 }
 
@@ -35,259 +36,403 @@
   padding: 0;
   font-family: 'Space Grotesk', sans-serif;
   -webkit-tap-highlight-color: transparent;
+  user-select: none;
 }
 
 body {
   background-color: var(--bg-deep);
   background-image: 
-    radial-gradient(circle at 50% 0%, rgba(0, 229, 255, 0.15) 0%, transparent 50%),
-    radial-gradient(circle at 50% 100%, rgba(255, 0, 85, 0.12) 0%, transparent 60%);
+    radial-gradient(circle at 50% 10%, rgba(0, 240, 255, 0.12) 0%, transparent 50%),
+    radial-gradient(circle at 10% 90%, rgba(112, 0, 255, 0.12) 0%, transparent 50%),
+    radial-gradient(circle at 90% 90%, rgba(255, 0, 85, 0.12) 0%, transparent 50%);
   color: var(--text-pure);
   min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
   padding: 16px;
   overflow: hidden;
 }
 
-.login-card {
-  max-width: 400px;
-  width: 100%;
+/* Экран логина */
+.login-wrap {
   margin: auto;
-  background: var(--bg-surface);
-  border: 1px solid var(--border-subtle);
-  border-radius: 24px;
-  padding: 28px 24px;
+  width: 100%;
+  max-width: 380px;
+  background: var(--bg-card);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--border-glow);
+  border-radius: 28px;
+  padding: 32px 24px;
   text-align: center;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.9), 0 0 30px rgba(0, 240, 255, 0.1);
+  animation: fadeIn 0.4s ease;
 }
 
-.login-card h2 {
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(15px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.brand-icon {
+  width: 60px;
+  height: 60px;
+  background: linear-gradient(135deg, var(--neon-cyan), var(--neon-purple));
+  border-radius: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+  font-size: 1.8em;
+  color: #000;
+  box-shadow: 0 0 25px rgba(0, 240, 255, 0.4);
+}
+
+.login-wrap h2 {
   font-family: 'Syne', sans-serif;
   font-size: 1.8em;
-  color: #fff;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
+  letter-spacing: 0.5px;
 }
 
-.login-card p {
+.login-wrap p {
   color: var(--text-dim);
-  font-size: 0.9em;
-  margin-bottom: 20px;
+  font-size: 0.85em;
+  margin-bottom: 24px;
+  line-height: 1.4;
 }
 
-input {
+.input-box {
+  margin-bottom: 14px;
+  position: relative;
+}
+
+.input-box input {
   width: 100%;
-  padding: 14px 16px;
-  background: var(--bg-deep);
+  padding: 16px 18px;
+  background: rgba(5, 6, 10, 0.8);
   border: 1px solid var(--border-subtle);
-  border-radius: 12px;
+  border-radius: 14px;
   color: #fff;
-  font-size: 16px;
-  margin-bottom: 12px;
-  outline: none;
+  font-size: 17px;
+  font-weight: 700;
   text-align: center;
+  outline: none;
+  transition: all 0.2s;
 }
 
-input:focus {
+.input-box input:focus {
   border-color: var(--neon-cyan);
+  box-shadow: 0 0 20px rgba(0, 240, 255, 0.25);
 }
 
-button.btn-primary {
+.btn-join {
   width: 100%;
   padding: 16px;
-  background: var(--neon-cyan);
+  margin-top: 6px;
+  background: linear-gradient(90deg, var(--neon-cyan), #00aaff);
   color: #000;
   border: none;
-  border-radius: 12px;
+  border-radius: 14px;
   font-size: 16px;
-  font-weight: 700;
-  cursor: pointer;
+  font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 1px;
+  letter-spacing: 1.5px;
+  cursor: pointer;
+  box-shadow: 0 6px 25px rgba(0, 240, 255, 0.35);
 }
 
+.btn-join:active {
+  transform: scale(0.98);
+}
+
+.error-banner {
+  color: var(--neon-pink);
+  background: rgba(255, 0, 85, 0.1);
+  border: 1px solid rgba(255, 0, 85, 0.3);
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-size: 0.85em;
+  font-weight: 700;
+  margin-top: 14px;
+  display: none;
+}
+
+/* Игровой экран */
 #game-view {
   display: none;
   flex-direction: column;
   flex: 1;
-  max-width: 500px;
+  max-width: 440px;
   width: 100%;
   margin: 0 auto;
   justify-content: space-between;
 }
 
-.top-bar {
+/* Верхнее табло очков */
+.scoreboard-arena {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: var(--bg-surface);
-  padding: 12px 18px;
-  border-radius: 16px;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.score-card {
+  flex: 1;
+  background: var(--bg-card);
+  backdrop-filter: blur(12px);
   border: 1px solid var(--border-subtle);
-}
-
-.team-badge {
-  font-weight: 700;
-  color: var(--neon-cyan);
-  font-size: 1.1em;
-}
-
-.score-badge {
-  font-family: 'Ubuntu Mono', monospace;
-  font-size: 1.3em;
-  font-weight: 700;
-  color: var(--neon-yellow);
-}
-
-.round-info {
+  border-radius: 18px;
+  padding: 12px 14px;
   text-align: center;
-  margin: 10px 0;
+  transition: all 0.3s;
 }
 
-.round-title {
-  font-family: 'Syne', sans-serif;
-  font-size: 1.2em;
+.score-card.my-card {
+  border-color: var(--neon-cyan);
+  background: rgba(0, 240, 255, 0.04);
+  box-shadow: 0 0 20px rgba(0, 240, 255, 0.1);
+}
+
+.score-card.opponent-card {
+  border-color: rgba(255, 0, 85, 0.3);
+  background: rgba(255, 0, 85, 0.03);
+}
+
+.score-team-title {
+  font-size: 0.8em;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.score-team-pts {
+  font-family: 'Ubuntu Mono', monospace;
+  font-size: 2.2em;
+  font-weight: 700;
+  line-height: 1;
+  margin-top: 4px;
+}
+
+.my-card .score-team-pts {
+  color: var(--neon-cyan);
+  text-shadow: 0 0 15px rgba(0, 240, 255, 0.4);
+}
+
+.opponent-card .score-team-pts {
+  color: var(--neon-pink);
+  text-shadow: 0 0 15px rgba(255, 0, 85, 0.4);
+}
+
+/* Статус-панель раунда */
+.status-pill {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  padding: 10px 16px;
+  text-align: center;
+  font-size: 0.9em;
+  font-weight: 700;
   color: var(--text-dim);
   text-transform: uppercase;
-  letter-spacing: 1.5px;
+  letter-spacing: 1px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
 
-.track-revealed {
+.status-pill.playing {
+  border-color: var(--neon-yellow);
+  color: var(--neon-yellow);
+  box-shadow: 0 0 15px rgba(255, 230, 0, 0.15);
+}
+
+.revealed-track-box {
   background: rgba(0, 255, 102, 0.1);
   border: 1px solid var(--neon-lime);
   color: var(--neon-lime);
-  padding: 14px;
   border-radius: 14px;
-  margin-top: 14px;
-  font-size: 1.1em;
+  padding: 14px;
+  text-align: center;
+  font-size: 1.05em;
   font-weight: 700;
+  margin-top: 10px;
   display: none;
+  animation: pulse 1s infinite alternate;
 }
 
-.buzzer-wrap {
+/* 3D Неоновый баззер */
+.buzzer-stage {
   flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 16px;
-  padding: 10px 0;
+  position: relative;
+  gap: 20px;
 }
 
-.buzzer-btn {
+.buzzer-halo {
+  position: relative;
+  border-radius: 50%;
+  padding: 14px;
+  background: radial-gradient(circle, rgba(255, 0, 85, 0.15) 0%, transparent 70%);
+}
+
+.buzzer-3d-btn {
   width: 230px;
   height: 230px;
   border-radius: 50%;
-  border: none;
-  background: radial-gradient(circle, #ff0055 0%, #a00037 100%);
+  border: 4px solid rgba(255, 255, 255, 0.15);
+  background: radial-gradient(circle at 35% 35%, #ff2a70, #c40042 60%, #700024 100%);
   color: #fff;
   font-family: 'Syne', sans-serif;
-  font-size: 1.7em;
+  font-size: 1.8em;
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 2px;
   cursor: pointer;
-  box-shadow: 0 0 50px rgba(255, 0, 85, 0.5), inset 0 -6px 12px rgba(0, 0, 0, 0.5);
-  transition: all 0.15s ease;
+  box-shadow: 
+    0 15px 35px rgba(255, 0, 85, 0.4),
+    0 0 60px rgba(255, 0, 85, 0.25),
+    inset 0 4px 8px rgba(255, 255, 255, 0.4),
+    inset 0 -8px 16px rgba(0, 0, 0, 0.6);
+  transition: all 0.12s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  text-align: center;
-  padding: 10px;
+  gap: 6px;
 }
 
-.buzzer-btn:active:not(:disabled) {
-  transform: scale(0.94);
-  box-shadow: 0 0 25px rgba(255, 0, 85, 0.7);
+.buzzer-3d-btn:active:not(:disabled) {
+  transform: scale(0.92) translateY(6px);
+  box-shadow: 
+    0 5px 15px rgba(255, 0, 85, 0.5),
+    inset 0 2px 4px rgba(255, 255, 255, 0.3),
+    inset 0 -4px 10px rgba(0, 0, 0, 0.8);
 }
 
-.buzzer-btn:disabled {
-  background: #2a2f3a;
-  box-shadow: none;
-  color: #667285;
+.buzzer-3d-btn:disabled {
+  background: radial-gradient(circle, #252a36 0%, #151821 100%);
+  box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.05), inset 0 -4px 8px rgba(0,0,0,0.5);
+  border-color: rgba(255, 255, 255, 0.05);
+  color: #4a5468;
   cursor: not-allowed;
+  transform: none !important;
 }
 
-.buzzer-btn.active-turn {
-  background: radial-gradient(circle, var(--neon-lime) 0%, #00a83e 100%);
+.buzzer-3d-btn.winner-turn {
+  background: radial-gradient(circle at 35% 35%, #2eff84, #00bd4c 60%, #006b2b 100%);
+  box-shadow: 0 0 70px rgba(0, 255, 102, 0.7), inset 0 4px 10px rgba(255, 255, 255, 0.6);
   color: #000;
-  box-shadow: 0 0 60px rgba(0, 255, 102, 0.8);
-  animation: pulse-turn 0.8s infinite alternate;
+  animation: pulseTurn 0.8s infinite alternate;
 }
 
-@keyframes pulse-turn {
-  0% { transform: scale(0.98); }
+@keyframes pulseTurn {
+  0% { transform: scale(0.97); }
   100% { transform: scale(1.03); }
 }
 
 .pass-turn-btn {
-  background: transparent;
+  background: rgba(255, 230, 0, 0.08);
   border: 1px solid var(--neon-yellow);
   color: var(--neon-yellow);
-  padding: 10px 20px;
-  border-radius: 12px;
-  font-weight: 700;
+  padding: 12px 24px;
+  border-radius: 14px;
+  font-weight: 800;
   font-size: 0.9em;
   text-transform: uppercase;
   letter-spacing: 1px;
   cursor: pointer;
+  box-shadow: 0 4px 20px rgba(255, 230, 0, 0.2);
   display: none;
+  animation: fadeIn 0.3s;
 }
 
 .pass-turn-btn:active {
-  background: rgba(255, 234, 0, 0.15);
+  background: var(--neon-yellow);
+  color: #000;
 }
 
-.status-footer {
-  text-align: center;
+/* Нижний статус-бар */
+.hud-footer {
+  background: var(--bg-card);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border-subtle);
+  border-radius: 16px;
   padding: 14px;
-  background: var(--bg-surface);
-  border-radius: 14px;
+  text-align: center;
   font-size: 0.95em;
   color: var(--text-dim);
-  border: 1px solid var(--border-subtle);
 }
 
-.status-footer strong {
+.hud-footer strong {
   color: #fff;
 }
 </style>
 </head>
 <body>
 
-<div class="login-card" id="login-view">
-  <h2>Вход в викторину</h2>
-  <p>Введите PIN комнаты ведущего и название вашей команды</p>
+<!-- Экран подключения команды -->
+<div class="login-wrap" id="login-view">
+  <div class="brand-icon"><i class="fas fa-bolt"></i></div>
+  <h2>Вход в Арену</h2>
+  <p>Введите PIN-код с экрана ведущего и назовите команду</p>
   
-  <input type="number" id="room-pin" placeholder="PIN код (4 цифры)" />
-  <input type="text" id="team-name" placeholder="Название команды" />
-  
-  <button class="btn-primary" onclick="joinGame()">Готов к игре</button>
-  <div id="login-error" style="color:var(--neon-pink); margin-top:10px; font-size:0.85em;"></div>
+  <div class="input-box">
+    <input type="number" id="room-pin" placeholder="PIN код" pattern="[0-9]*" />
+  </div>
+  <div class="input-box">
+    <input type="text" id="team-name" placeholder="Название команды" maxlength="20" />
+  </div>
+
+  <button class="btn-join" onclick="joinGame()">Подключиться</button>
+  <div class="error-banner" id="login-error"></div>
 </div>
 
+<!-- Игровой экран участника -->
 <div id="game-view">
-  <div class="top-bar">
-    <div class="team-badge" id="hud-team-name">Команда</div>
-    <div class="score-badge" id="hud-team-score" style="display:none;">Счёт: 0</div>
+  <!-- Табло очков -->
+  <div class="scoreboard-arena" id="scoreboard-wrap">
+    <div class="score-card my-card" id="my-score-card">
+      <div class="score-team-title" id="my-team-title">Моя команда</div>
+      <div class="score-team-pts" id="my-team-pts">0</div>
+    </div>
+    <div class="score-card opponent-card" id="opponent-score-card">
+      <div class="score-team-title" id="opponent-team-title">Соперник</div>
+      <div class="score-team-pts" id="opponent-team-pts">0</div>
+    </div>
   </div>
 
-  <div class="round-info">
-    <div class="round-title" id="hud-round-status">Ожидание раунда</div>
-    <div class="track-revealed" id="revealed-track-box"></div>
+  <!-- Статус раунда -->
+  <div>
+    <div class="status-pill" id="round-status-pill">
+      <i class="fas fa-hourglass-half"></i> <span>Ожидание раунда</span>
+    </div>
+    <div class="revealed-track-box" id="revealed-track-box"></div>
   </div>
 
-  <div class="buzzer-wrap">
-    <button class="buzzer-btn" id="buzzer-btn" disabled onclick="pressBuzzer()">
-      ЖДИ...
-    </button>
+  <!-- Центральная кнопка баззера -->
+  <div class="buzzer-stage">
+    <div class="buzzer-halo">
+      <button class="buzzer-3d-btn" id="buzzer-btn" disabled onclick="pressBuzzer()">
+        <i class="fas fa-hand-paper" style="font-size:1.1em; margin-bottom:2px;"></i>
+        <span>ЖДИ</span>
+      </button>
+    </div>
     <button class="pass-turn-btn" id="pass-btn" onclick="passTurn()">
       <i class="fas fa-forward"></i> Пас / Пропустить ход
     </button>
   </div>
 
-  <div class="status-footer" id="hud-footer">
-    Ожидание команды ведущего...
+  <!-- Информационная строка -->
+  <div class="hud-footer" id="hud-footer">
+    Ожидаем запуск раунда ведущим...
   </div>
 </div>
 
@@ -310,22 +455,32 @@ var currentRoom = null;
 var myTeamId = null;
 var myTeamName = "";
 
+function showError(msg) {
+  var err = document.getElementById("login-error");
+  err.textContent = msg;
+  err.style.display = "block";
+}
+
 function joinGame() {
   var pin = document.getElementById("room-pin").value.trim();
   var name = document.getElementById("team-name").value.trim();
-  var err = document.getElementById("login-error");
 
-  if (!pin || !name) {
-    err.textContent = "Заполните все поля!";
+  if (!pin) {
+    showError("Введите PIN-код комнаты!");
+    return;
+  }
+  if (!name) {
+    showError("Укажите название вашей команды!");
     return;
   }
 
-  err.textContent = "Подключение...";
+  showError("Подключение к комнате...");
   var roomRef = db.ref("rooms/" + pin);
 
+  // Проверка существования комнаты
   roomRef.once("value").then(function(snapshot) {
     if (!snapshot.exists()) {
-      err.textContent = "Комната с таким PIN не найдена!";
+      showError("❌ Комната с PIN " + pin + " не найдена. Проверьте код у ведущего!");
       return;
     }
 
@@ -333,6 +488,7 @@ function joinGame() {
     myTeamName = name;
     myTeamId = "team_" + Math.random().toString(36).substr(2, 6);
 
+    // Регистрируем команду в комнате
     roomRef.child("teams/" + myTeamId).set({
       name: myTeamName,
       ready: true,
@@ -343,11 +499,11 @@ function joinGame() {
 
     document.getElementById("login-view").style.display = "none";
     document.getElementById("game-view").style.display = "flex";
-    document.getElementById("hud-team-name").textContent = myTeamName;
+    document.getElementById("my-team-title").textContent = myTeamName;
 
     listenToGameState();
   }).catch(function(e) {
-    err.textContent = "Ошибка сети: " + e.message;
+    showError("Ошибка подключения к серверу: " + e.message);
   });
 }
 
@@ -361,82 +517,112 @@ function listenToGameState() {
     var buzzerBtn = document.getElementById("buzzer-btn");
     var passBtn = document.getElementById("pass-btn");
     var hudFooter = document.getElementById("hud-footer");
-    var hudStatus = document.getElementById("hud-round-status");
+    var roundStatusPill = document.getElementById("round-status-pill");
     var trackBox = document.getElementById("revealed-track-box");
-    var scoreBadge = document.getElementById("hud-team-score");
 
-    // Видимость счёта
-    if (data.showScore !== false && data.teams && data.teams[myTeamId]) {
-      scoreBadge.style.display = "block";
-      scoreBadge.textContent = "Счёт: " + (data.teams[myTeamId].score || 0);
+    var scoreboardWrap = document.getElementById("scoreboard-wrap");
+    var myScoreCard = document.getElementById("my-score-card");
+    var opponentScoreCard = document.getElementById("opponent-score-card");
+
+    // Управление отображением очков
+    var showMyScore = data.showScore !== false;
+    var showOppScore = data.showOpponentScore !== false;
+
+    if (!showMyScore && !showOppScore) {
+      scoreboardWrap.style.display = "none";
     } else {
-      scoreBadge.style.display = "none";
+      scoreboardWrap.style.display = "flex";
+      myScoreCard.style.display = showMyScore ? "block" : "none";
+      opponentScoreCard.style.display = showOppScore ? "block" : "none";
+    }
+
+    // Заполнение очков своей команды и соперника
+    var teams = data.teams || {};
+    var teamKeys = Object.keys(teams);
+
+    if (teams[myTeamId]) {
+      document.getElementById("my-team-pts").textContent = teams[myTeamId].score || 0;
+    }
+
+    var opponentKey = teamKeys.find(function(k) { return k !== myTeamId; });
+    if (opponentKey && teams[opponentKey]) {
+      document.getElementById("opponent-team-title").textContent = teams[opponentKey].name || "Соперник";
+      document.getElementById("opponent-team-pts").textContent = teams[opponentKey].score || 0;
+    } else {
+      document.getElementById("opponent-team-title").textContent = "Соперник";
+      document.getElementById("opponent-team-pts").textContent = "0";
     }
 
     var buzzer = data.buzzer || {};
     var passedBy = buzzer.passedBy || [];
     var haveIPassed = passedBy.indexOf(myTeamId) !== -1;
 
+    // Состояния раунда
     if (data.status === "playing") {
       trackBox.style.display = "none";
-      hudStatus.textContent = "🎵 Трек играет!";
+      roundStatusPill.className = "status-pill playing";
+      roundStatusPill.innerHTML = '<i class="fas fa-volume-up"></i> <span>Трек играет!</span>';
       
       if (!buzzer.locked) {
         passBtn.style.display = "none";
         
         if (haveIPassed) {
           buzzerBtn.disabled = true;
-          buzzerBtn.className = "buzzer-btn";
-          buzzerBtn.textContent = "ПАС";
-          hudFooter.innerHTML = "Вы спасовали. Ожидаем соперника...";
+          buzzerBtn.className = "buzzer-3d-btn";
+          buzzerBtn.innerHTML = '<i class="fas fa-forward"></i><span>ПАС</span>';
+          hudFooter.innerHTML = "Вы спасовали. Ожидаем ответа соперника...";
         } else {
           buzzerBtn.disabled = false;
-          buzzerBtn.className = "buzzer-btn";
-          buzzerBtn.textContent = "ОТВЕТИТЬ!";
-          hudFooter.innerHTML = "Слушай трек и жми, когда готов!";
+          buzzerBtn.className = "buzzer-3d-btn";
+          buzzerBtn.innerHTML = '<i class="fas fa-bolt"></i><span>ЖМИ!</span>';
+          hudFooter.innerHTML = "Слушай внимательно и нажимай быстрее!";
         }
       } else {
         if (buzzer.pressedBy === myTeamId) {
           buzzerBtn.disabled = true;
-          buzzerBtn.className = "buzzer-btn active-turn";
-          buzzerBtn.textContent = "ВАШ ОТВЕТ!";
+          buzzerBtn.className = "buzzer-3d-btn winner-turn";
+          buzzerBtn.innerHTML = '<i class="fas fa-microphone"></i><span>ОТВЕТ!</span>';
           passBtn.style.display = "inline-flex";
-          hudFooter.innerHTML = "🏆 <strong style='color:var(--neon-lime)'>Вы успели первым! Отвечайте или пасуйте:</strong>";
+          hudFooter.innerHTML = "🏆 <strong style='color:var(--neon-lime)'>Вы успели первым! Называйте трек или пасуйте:</strong>";
         } else {
           passBtn.style.display = "none";
           buzzerBtn.disabled = true;
-          buzzerBtn.className = "buzzer-btn";
-          buzzerBtn.textContent = "БЛОК";
+          buzzerBtn.className = "buzzer-3d-btn";
+          buzzerBtn.innerHTML = '<i class="fas fa-lock"></i><span>БЛОК</span>';
           var fastTeam = buzzer.pressedByName || "Соперник";
-          hudFooter.innerHTML = "⛔ <strong>" + fastTeam + "</strong> отвечает!";
+          hudFooter.innerHTML = "⛔ <strong>" + fastTeam + "</strong> отвечает первым!";
         }
       }
     } else if (data.status === "reveal") {
       passBtn.style.display = "none";
       buzzerBtn.disabled = true;
-      buzzerBtn.className = "buzzer-btn";
-      buzzerBtn.textContent = "ОТВЕТ";
-      hudStatus.textContent = "Оригинальный трек";
-      hudFooter.innerHTML = "Раунд завершен.";
+      buzzerBtn.className = "buzzer-3d-btn";
+      buzzerBtn.innerHTML = '<i class="fas fa-music"></i><span>ОТВЕТ</span>';
+      roundStatusPill.className = "status-pill";
+      roundStatusPill.innerHTML = '<i class="fas fa-check-circle"></i> <span>Раунд завершён</span>';
+      hudFooter.innerHTML = "Звучит оригинальная версия трека.";
       
       if (data.revealedTrack) {
         trackBox.style.display = "block";
-        trackBox.textContent = "🎶 " + data.revealedTrack;
+        trackBox.innerHTML = '<i class="fas fa-play-circle"></i> ' + data.revealedTrack;
       }
     } else {
       passBtn.style.display = "none";
       buzzerBtn.disabled = true;
-      buzzerBtn.className = "buzzer-btn";
-      buzzerBtn.textContent = "ЖДИ...";
-      hudStatus.textContent = "Ожидание следующего трека";
+      buzzerBtn.className = "buzzer-3d-btn";
+      buzzerBtn.innerHTML = '<i class="fas fa-hourglass-start"></i><span>ЖДИ</span>';
+      roundStatusPill.className = "status-pill";
+      roundStatusPill.innerHTML = '<i class="fas fa-hourglass-start"></i> <span>Подготовка</span>';
       trackBox.style.display = "none";
-      hudFooter.innerHTML = "Ведущий выбирает трек...";
+      hudFooter.innerHTML = "Ведущий выбирает следующий трек...";
     }
   });
 }
 
 function pressBuzzer() {
   if (!currentRoom || !myTeamId) return;
+
+  if (navigator.vibrate) navigator.vibrate([40]);
 
   var buzzerRef = db.ref("rooms/" + currentRoom + "/buzzer");
   
@@ -460,6 +646,8 @@ function pressBuzzer() {
 function passTurn() {
   if (!currentRoom || !myTeamId) return;
 
+  if (navigator.vibrate) navigator.vibrate([20, 30, 20]);
+
   var buzzerRef = db.ref("rooms/" + currentRoom + "/buzzer");
   
   buzzerRef.transaction(function(buzzer) {
@@ -470,7 +658,6 @@ function passTurn() {
       passed.push(myTeamId);
     }
 
-    // Снимаем блокировку, разрешая другой команде нажать
     return {
       locked: false,
       pressedBy: null,
