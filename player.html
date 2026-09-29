@@ -11,7 +11,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=Syne:wght@800&family=Ubuntu+Mono:wght@700&display=swap" rel="stylesheet">
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
 
-<!-- Firebase App & Database (CDN) -->
+<!-- Firebase App & Database -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
@@ -106,7 +106,6 @@ button.btn-primary {
   letter-spacing: 1px;
 }
 
-/* Игровой экран */
 #game-view {
   display: none;
   flex-direction: column;
@@ -142,7 +141,7 @@ button.btn-primary {
 
 .round-info {
   text-align: center;
-  margin: 20px 0;
+  margin: 10px 0;
 }
 
 .round-title {
@@ -163,27 +162,27 @@ button.btn-primary {
   font-size: 1.1em;
   font-weight: 700;
   display: none;
-  animation: pulse 1s infinite alternate;
 }
 
-/* Кнопка-баззер */
 .buzzer-wrap {
   flex: 1;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 20px 0;
+  gap: 16px;
+  padding: 10px 0;
 }
 
 .buzzer-btn {
-  width: 240px;
-  height: 240px;
+  width: 230px;
+  height: 230px;
   border-radius: 50%;
   border: none;
   background: radial-gradient(circle, #ff0055 0%, #a00037 100%);
   color: #fff;
   font-family: 'Syne', sans-serif;
-  font-size: 1.8em;
+  font-size: 1.7em;
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 2px;
@@ -221,6 +220,24 @@ button.btn-primary {
   100% { transform: scale(1.03); }
 }
 
+.pass-turn-btn {
+  background: transparent;
+  border: 1px solid var(--neon-yellow);
+  color: var(--neon-yellow);
+  padding: 10px 20px;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 0.9em;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  cursor: pointer;
+  display: none;
+}
+
+.pass-turn-btn:active {
+  background: rgba(255, 234, 0, 0.15);
+}
+
 .status-footer {
   text-align: center;
   padding: 14px;
@@ -238,10 +255,9 @@ button.btn-primary {
 </head>
 <body>
 
-<!-- Экран входа -->
 <div class="login-card" id="login-view">
   <h2>Вход в викторину</h2>
-  <p>Введите PIN комнаты у ведущего и название вашей команды</p>
+  <p>Введите PIN комнаты ведущего и название вашей команды</p>
   
   <input type="number" id="room-pin" placeholder="PIN код (4 цифры)" />
   <input type="text" id="team-name" placeholder="Название команды" />
@@ -250,11 +266,10 @@ button.btn-primary {
   <div id="login-error" style="color:var(--neon-pink); margin-top:10px; font-size:0.85em;"></div>
 </div>
 
-<!-- Игровой экран -->
 <div id="game-view">
   <div class="top-bar">
     <div class="team-badge" id="hud-team-name">Команда</div>
-    <div class="score-badge" id="hud-team-score">Счёт: 0</div>
+    <div class="score-badge" id="hud-team-score" style="display:none;">Счёт: 0</div>
   </div>
 
   <div class="round-info">
@@ -265,6 +280,9 @@ button.btn-primary {
   <div class="buzzer-wrap">
     <button class="buzzer-btn" id="buzzer-btn" disabled onclick="pressBuzzer()">
       ЖДИ...
+    </button>
+    <button class="pass-turn-btn" id="pass-btn" onclick="passTurn()">
+      <i class="fas fa-forward"></i> Пас / Пропустить ход
     </button>
   </div>
 
@@ -315,14 +333,12 @@ function joinGame() {
     myTeamName = name;
     myTeamId = "team_" + Math.random().toString(36).substr(2, 6);
 
-    // Регистрируем команду в комнате
     roomRef.child("teams/" + myTeamId).set({
       name: myTeamName,
       ready: true,
       score: 0
     });
 
-    // Обработка отключения
     roomRef.child("teams/" + myTeamId).onDisconnect().remove();
 
     document.getElementById("login-view").style.display = "none";
@@ -343,39 +359,60 @@ function listenToGameState() {
     if (!data) return;
 
     var buzzerBtn = document.getElementById("buzzer-btn");
+    var passBtn = document.getElementById("pass-btn");
     var hudFooter = document.getElementById("hud-footer");
     var hudStatus = document.getElementById("hud-round-status");
     var trackBox = document.getElementById("revealed-track-box");
+    var scoreBadge = document.getElementById("hud-team-score");
 
-    // Обновляем счет команды
-    if (data.teams && data.teams[myTeamId]) {
-      document.getElementById("hud-team-score").textContent = "Счёт: " + (data.teams[myTeamId].score || 0);
+    // Видимость счёта
+    if (data.showScore !== false && data.teams && data.teams[myTeamId]) {
+      scoreBadge.style.display = "block";
+      scoreBadge.textContent = "Счёт: " + (data.teams[myTeamId].score || 0);
+    } else {
+      scoreBadge.style.display = "none";
     }
 
-    // Состояния игры
+    var buzzer = data.buzzer || {};
+    var passedBy = buzzer.passedBy || [];
+    var haveIPassed = passedBy.indexOf(myTeamId) !== -1;
+
     if (data.status === "playing") {
       trackBox.style.display = "none";
       hudStatus.textContent = "🎵 Трек играет!";
       
-      if (!data.buzzer || !data.buzzer.locked) {
-        buzzerBtn.disabled = false;
-        buzzerBtn.className = "buzzer-btn";
-        buzzerBtn.textContent = "ОТВЕТИТЬ!";
-        hudFooter.innerHTML = "Слушай трек и жми, когда готов!";
+      if (!buzzer.locked) {
+        passBtn.style.display = "none";
+        
+        if (haveIPassed) {
+          buzzerBtn.disabled = true;
+          buzzerBtn.className = "buzzer-btn";
+          buzzerBtn.textContent = "ПАС";
+          hudFooter.innerHTML = "Вы спасовали. Ожидаем соперника...";
+        } else {
+          buzzerBtn.disabled = false;
+          buzzerBtn.className = "buzzer-btn";
+          buzzerBtn.textContent = "ОТВЕТИТЬ!";
+          hudFooter.innerHTML = "Слушай трек и жми, когда готов!";
+        }
       } else {
-        buzzerBtn.disabled = true;
-        if (data.buzzer.pressedBy === myTeamId) {
+        if (buzzer.pressedBy === myTeamId) {
+          buzzerBtn.disabled = true;
           buzzerBtn.className = "buzzer-btn active-turn";
           buzzerBtn.textContent = "ВАШ ОТВЕТ!";
-          hudFooter.innerHTML = "🏆 <strong style='color:var(--neon-lime)'>Вы успели первым! Отвечайте ведущему!</strong>";
+          passBtn.style.display = "inline-flex";
+          hudFooter.innerHTML = "🏆 <strong style='color:var(--neon-lime)'>Вы успели первым! Отвечайте или пасуйте:</strong>";
         } else {
+          passBtn.style.display = "none";
+          buzzerBtn.disabled = true;
           buzzerBtn.className = "buzzer-btn";
           buzzerBtn.textContent = "БЛОК";
-          var fastTeam = data.buzzer.pressedByName || "Соперник";
-          hudFooter.innerHTML = "⛔ <strong>" + fastTeam + "</strong> жмет быстрее!";
+          var fastTeam = buzzer.pressedByName || "Соперник";
+          hudFooter.innerHTML = "⛔ <strong>" + fastTeam + "</strong> отвечает!";
         }
       }
     } else if (data.status === "reveal") {
+      passBtn.style.display = "none";
       buzzerBtn.disabled = true;
       buzzerBtn.className = "buzzer-btn";
       buzzerBtn.textContent = "ОТВЕТ";
@@ -387,6 +424,7 @@ function listenToGameState() {
         trackBox.textContent = "🎶 " + data.revealedTrack;
       }
     } else {
+      passBtn.style.display = "none";
       buzzerBtn.disabled = true;
       buzzerBtn.className = "buzzer-btn";
       buzzerBtn.textContent = "ЖДИ...";
@@ -402,15 +440,42 @@ function pressBuzzer() {
 
   var buzzerRef = db.ref("rooms/" + currentRoom + "/buzzer");
   
-  // Транзакция Firebase гарантирует, что только один игрок может стать первым
   buzzerRef.transaction(function(buzzer) {
-    if (buzzer && buzzer.locked) {
-      return; // Уже кто-то нажал
-    }
+    if (!buzzer) buzzer = {};
+    if (buzzer.locked) return;
+    
+    var passed = buzzer.passedBy || [];
+    if (passed.indexOf(myTeamId) !== -1) return;
+
     return {
       locked: true,
       pressedBy: myTeamId,
       pressedByName: myTeamName,
+      passedBy: passed,
+      time: Date.now()
+    };
+  });
+}
+
+function passTurn() {
+  if (!currentRoom || !myTeamId) return;
+
+  var buzzerRef = db.ref("rooms/" + currentRoom + "/buzzer");
+  
+  buzzerRef.transaction(function(buzzer) {
+    if (!buzzer || buzzer.pressedBy !== myTeamId) return;
+    
+    var passed = buzzer.passedBy || [];
+    if (passed.indexOf(myTeamId) === -1) {
+      passed.push(myTeamId);
+    }
+
+    // Снимаем блокировку, разрешая другой команде нажать
+    return {
+      locked: false,
+      pressedBy: null,
+      pressedByName: null,
+      passedBy: passed,
       time: Date.now()
     };
   });
