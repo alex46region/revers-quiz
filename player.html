@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+<meta name="theme-color" content="#05060a" />
+<title>🎮 Revers Quiz — Экран команды</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=Syne:wght@800&family=Ubuntu+Mono:wght@700&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+
+<!-- Firebase App & Database (CDN) -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+<style>
+:root {
+  --bg-deep: #05060a;
+  --bg-surface: #0e121a;
+  --bg-elevated: #161c28;
+  --neon-yellow: #ffea00;
+  --neon-lime: #00ff66;
+  --neon-pink: #ff0055;
+  --neon-cyan: #00e5ff;
+  --text-pure: #ffffff;
+  --text-dim: #8b9bb4;
+  --border-subtle: rgba(255, 255, 255, 0.08);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: 'Space Grotesk', sans-serif;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  background-color: var(--bg-deep);
+  background-image: 
+    radial-gradient(circle at 50% 0%, rgba(0, 229, 255, 0.15) 0%, transparent 50%),
+    radial-gradient(circle at 50% 100%, rgba(255, 0, 85, 0.12) 0%, transparent 60%);
+  color: var(--text-pure);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  overflow: hidden;
+}
+
+.login-card {
+  max-width: 400px;
+  width: 100%;
+  margin: auto;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 24px;
+  padding: 28px 24px;
+  text-align: center;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
+}
+
+.login-card h2 {
+  font-family: 'Syne', sans-serif;
+  font-size: 1.8em;
+  color: #fff;
+  margin-bottom: 8px;
+}
+
+.login-card p {
+  color: var(--text-dim);
+  font-size: 0.9em;
+  margin-bottom: 20px;
+}
+
+input {
+  width: 100%;
+  padding: 14px 16px;
+  background: var(--bg-deep);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  color: #fff;
+  font-size: 16px;
+  margin-bottom: 12px;
+  outline: none;
+  text-align: center;
+}
+
+input:focus {
+  border-color: var(--neon-cyan);
+}
+
+button.btn-primary {
+  width: 100%;
+  padding: 16px;
+  background: var(--neon-cyan);
+  color: #000;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* Игровой экран */
+#game-view {
+  display: none;
+  flex-direction: column;
+  flex: 1;
+  max-width: 500px;
+  width: 100%;
+  margin: 0 auto;
+  justify-content: space-between;
+}
+
+.top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--bg-surface);
+  padding: 12px 18px;
+  border-radius: 16px;
+  border: 1px solid var(--border-subtle);
+}
+
+.team-badge {
+  font-weight: 700;
+  color: var(--neon-cyan);
+  font-size: 1.1em;
+}
+
+.score-badge {
+  font-family: 'Ubuntu Mono', monospace;
+  font-size: 1.3em;
+  font-weight: 700;
+  color: var(--neon-yellow);
+}
+
+.round-info {
+  text-align: center;
+  margin: 20px 0;
+}
+
+.round-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 1.2em;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+}
+
+.track-revealed {
+  background: rgba(0, 255, 102, 0.1);
+  border: 1px solid var(--neon-lime);
+  color: var(--neon-lime);
+  padding: 14px;
+  border-radius: 14px;
+  margin-top: 14px;
+  font-size: 1.1em;
+  font-weight: 700;
+  display: none;
+  animation: pulse 1s infinite alternate;
+}
+
+/* Кнопка-баззер */
+.buzzer-wrap {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px 0;
+}
+
+.buzzer-btn {
+  width: 240px;
+  height: 240px;
+  border-radius: 50%;
+  border: none;
+  background: radial-gradient(circle, #ff0055 0%, #a00037 100%);
+  color: #fff;
+  font-family: 'Syne', sans-serif;
+  font-size: 1.8em;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  cursor: pointer;
+  box-shadow: 0 0 50px rgba(255, 0, 85, 0.5), inset 0 -6px 12px rgba(0, 0, 0, 0.5);
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 10px;
+}
+
+.buzzer-btn:active:not(:disabled) {
+  transform: scale(0.94);
+  box-shadow: 0 0 25px rgba(255, 0, 85, 0.7);
+}
+
+.buzzer-btn:disabled {
+  background: #2a2f3a;
+  box-shadow: none;
+  color: #667285;
+  cursor: not-allowed;
+}
+
+.buzzer-btn.active-turn {
+  background: radial-gradient(circle, var(--neon-lime) 0%, #00a83e 100%);
+  color: #000;
+  box-shadow: 0 0 60px rgba(0, 255, 102, 0.8);
+  animation: pulse-turn 0.8s infinite alternate;
+}
+
+@keyframes pulse-turn {
+  0% { transform: scale(0.98); }
+  100% { transform: scale(1.03); }
+}
+
+.status-footer {
+  text-align: center;
+  padding: 14px;
+  background: var(--bg-surface);
+  border-radius: 14px;
+  font-size: 0.95em;
+  color: var(--text-dim);
+  border: 1px solid var(--border-subtle);
+}
+
+.status-footer strong {
+  color: #fff;
+}
+</style>
+</head>
+<body>
+
+<!-- Экран входа -->
+<div class="login-card" id="login-view">
+  <h2>Вход в викторину</h2>
+  <p>Введите PIN комнаты у ведущего и название вашей команды</p>
+  
+  <input type="number" id="room-pin" placeholder="PIN код (4 цифры)" />
+  <input type="text" id="team-name" placeholder="Название команды" />
+  
+  <button class="btn-primary" onclick="joinGame()">Готов к игре</button>
+  <div id="login-error" style="color:var(--neon-pink); margin-top:10px; font-size:0.85em;"></div>
+</div>
+
+<!-- Игровой экран -->
+<div id="game-view">
+  <div class="top-bar">
+    <div class="team-badge" id="hud-team-name">Команда</div>
+    <div class="score-badge" id="hud-team-score">Счёт: 0</div>
+  </div>
+
+  <div class="round-info">
+    <div class="round-title" id="hud-round-status">Ожидание раунда</div>
+    <div class="track-revealed" id="revealed-track-box"></div>
+  </div>
+
+  <div class="buzzer-wrap">
+    <button class="buzzer-btn" id="buzzer-btn" disabled onclick="pressBuzzer()">
+      ЖДИ...
+    </button>
+  </div>
+
+  <div class="status-footer" id="hud-footer">
+    Ожидание команды ведущего...
+  </div>
+</div>
+
+<script>
+var firebaseConfig = {
+  apiKey: "AIzaSyC9sh7uazv-WbudsO7TYap4-wENjkLD3K4",
+  authDomain: "revers-quiz.firebaseapp.com",
+  databaseURL: "https://revers-quiz-default-rtdb.firebaseio.com",
+  projectId: "revers-quiz",
+  storageBucket: "revers-quiz.firebasestorage.app",
+  messagingSenderId: "940882425335",
+  appId: "1:940882425335:web:bf3c52135d8a7cd7d9eaf2",
+  measurementId: "G-93CJT9ZT4G"
+};
+
+firebase.initializeApp(firebaseConfig);
+var db = firebase.database();
+
+var currentRoom = null;
+var myTeamId = null;
+var myTeamName = "";
+
+function joinGame() {
+  var pin = document.getElementById("room-pin").value.trim();
+  var name = document.getElementById("team-name").value.trim();
+  var err = document.getElementById("login-error");
+
+  if (!pin || !name) {
+    err.textContent = "Заполните все поля!";
+    return;
+  }
+
+  err.textContent = "Подключение...";
+  var roomRef = db.ref("rooms/" + pin);
+
+  roomRef.once("value").then(function(snapshot) {
+    if (!snapshot.exists()) {
+      err.textContent = "Комната с таким PIN не найдена!";
+      return;
+    }
+
+    currentRoom = pin;
+    myTeamName = name;
+    myTeamId = "team_" + Math.random().toString(36).substr(2, 6);
+
+    // Регистрируем команду в комнате
+    roomRef.child("teams/" + myTeamId).set({
+      name: myTeamName,
+      ready: true,
+      score: 0
+    });
+
+    // Обработка отключения
+    roomRef.child("teams/" + myTeamId).onDisconnect().remove();
+
+    document.getElementById("login-view").style.display = "none";
+    document.getElementById("game-view").style.display = "flex";
+    document.getElementById("hud-team-name").textContent = myTeamName;
+
+    listenToGameState();
+  }).catch(function(e) {
+    err.textContent = "Ошибка сети: " + e.message;
+  });
+}
+
+function listenToGameState() {
+  var roomRef = db.ref("rooms/" + currentRoom);
+
+  roomRef.on("value", function(snapshot) {
+    var data = snapshot.val();
+    if (!data) return;
+
+    var buzzerBtn = document.getElementById("buzzer-btn");
+    var hudFooter = document.getElementById("hud-footer");
+    var hudStatus = document.getElementById("hud-round-status");
+    var trackBox = document.getElementById("revealed-track-box");
+
+    // Обновляем счет команды
+    if (data.teams && data.teams[myTeamId]) {
+      document.getElementById("hud-team-score").textContent = "Счёт: " + (data.teams[myTeamId].score || 0);
+    }
+
+    // Состояния игры
+    if (data.status === "playing") {
+      trackBox.style.display = "none";
+      hudStatus.textContent = "🎵 Трек играет!";
+      
+      if (!data.buzzer || !data.buzzer.locked) {
+        buzzerBtn.disabled = false;
+        buzzerBtn.className = "buzzer-btn";
+        buzzerBtn.textContent = "ОТВЕТИТЬ!";
+        hudFooter.innerHTML = "Слушай трек и жми, когда готов!";
+      } else {
+        buzzerBtn.disabled = true;
+        if (data.buzzer.pressedBy === myTeamId) {
+          buzzerBtn.className = "buzzer-btn active-turn";
+          buzzerBtn.textContent = "ВАШ ОТВЕТ!";
+          hudFooter.innerHTML = "🏆 <strong style='color:var(--neon-lime)'>Вы успели первым! Отвечайте ведущему!</strong>";
+        } else {
+          buzzerBtn.className = "buzzer-btn";
+          buzzerBtn.textContent = "БЛОК";
+          var fastTeam = data.buzzer.pressedByName || "Соперник";
+          hudFooter.innerHTML = "⛔ <strong>" + fastTeam + "</strong> жмет быстрее!";
+        }
+      }
+    } else if (data.status === "reveal") {
+      buzzerBtn.disabled = true;
+      buzzerBtn.className = "buzzer-btn";
+      buzzerBtn.textContent = "ОТВЕТ";
+      hudStatus.textContent = "Оригинальный трек";
+      hudFooter.innerHTML = "Раунд завершен.";
+      
+      if (data.revealedTrack) {
+        trackBox.style.display = "block";
+        trackBox.textContent = "🎶 " + data.revealedTrack;
+      }
+    } else {
+      buzzerBtn.disabled = true;
+      buzzerBtn.className = "buzzer-btn";
+      buzzerBtn.textContent = "ЖДИ...";
+      hudStatus.textContent = "Ожидание следующего трека";
+      trackBox.style.display = "none";
+      hudFooter.innerHTML = "Ведущий выбирает трек...";
+    }
+  });
+}
+
+function pressBuzzer() {
+  if (!currentRoom || !myTeamId) return;
+
+  var buzzerRef = db.ref("rooms/" + currentRoom + "/buzzer");
+  
+  // Транзакция Firebase гарантирует, что только один игрок может стать первым
+  buzzerRef.transaction(function(buzzer) {
+    if (buzzer && buzzer.locked) {
+      return; // Уже кто-то нажал
+    }
+    return {
+      locked: true,
+      pressedBy: myTeamId,
+      pressedByName: myTeamName,
+      time: Date.now()
+    };
+  });
+}
+</script>
+</body>
+</html>
