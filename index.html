@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
 <meta name="theme-color" content="#05060a" />
 <meta name="referrer" content="no-referrer" />
-<title>🎧 Revers Викторина: Neon Stage</title>
+<title>🎧 Revers Викторина: Neon Stage (Ведущий)</title>
 
 <link rel="manifest" href="manifest.json">
 <script>
@@ -18,6 +18,11 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Syne:wght@700;800&family=Ubuntu+Mono:wght@700&display=swap" rel="stylesheet">
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+
+<!-- Firebase App & Database -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
 <style>
 :root {
   --bg-deep: #05060a;
@@ -134,6 +139,72 @@ h1 i {
   color: var(--neon-cyan);
 }
 
+/* Блок онлайн-комнаты */
+.online-box {
+  background: rgba(0, 229, 255, 0.05);
+  border: 1px solid var(--neon-cyan);
+  border-radius: 14px;
+  padding: 14px 18px;
+  margin-bottom: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.pin-display {
+  font-family: 'Ubuntu Mono', monospace;
+  font-size: 1.6em;
+  font-weight: 700;
+  color: var(--neon-yellow);
+  letter-spacing: 2px;
+}
+
+.connected-teams-list {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.team-pill {
+  background: var(--bg-deep);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  padding: 8px 14px;
+  font-size: 0.9em;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.team-pill.ready {
+  border-color: var(--neon-lime);
+  color: var(--neon-lime);
+}
+
+.buzzer-alert-overlay {
+  background: rgba(255, 0, 85, 0.15);
+  border: 2px solid var(--neon-pink);
+  border-radius: 14px;
+  padding: 12px;
+  text-align: center;
+  font-family: 'Syne', sans-serif;
+  font-size: 1.3em;
+  font-weight: 800;
+  color: var(--neon-pink);
+  margin-bottom: 12px;
+  display: none;
+  animation: alertPulse 0.6s infinite alternate;
+}
+
+@keyframes alertPulse {
+  0% { transform: scale(0.99); }
+  100% { transform: scale(1.01); }
+}
+
 input[type="text"], input[type="number"], select {
   width: 100%;
   padding: 14px 16px;
@@ -160,12 +231,6 @@ select {
   background-size: 14px;
 }
 
-.team-input {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
 button {
   font-family: 'Space Grotesk', sans-serif;
   font-weight: 700;
@@ -183,21 +248,12 @@ button:active {
   transform: scale(0.98);
 }
 
-.team-input button, #load-songs-btn {
+#load-songs-btn {
   width: 100%;
   padding: 15px;
   font-size: 15px;
   text-transform: uppercase;
   letter-spacing: 1px;
-}
-
-.team-input button {
-  background: var(--neon-cyan);
-  color: #000;
-  box-shadow: 0 4px 20px rgba(0, 229, 255, 0.35);
-}
-
-#load-songs-btn {
   background: linear-gradient(135deg, var(--neon-purple), var(--neon-pink));
   color: #fff;
   box-shadow: 0 4px 20px rgba(255, 0, 85, 0.35);
@@ -217,7 +273,6 @@ button:active {
 #shuffle-btn:hover:not(:disabled) {
   border-color: var(--neon-yellow);
   color: var(--neon-yellow);
-  box-shadow: 0 0 12px rgba(255, 234, 0, 0.2);
 }
 
 .score-controls {
@@ -295,22 +350,10 @@ button:active {
   border: 1px solid rgba(0, 255, 102, 0.25);
 }
 
-.btn.add:hover {
-  background: var(--neon-lime);
-  color: #000;
-  box-shadow: 0 0 12px rgba(0, 255, 102, 0.4);
-}
-
 .btn.remove {
   background: rgba(255, 0, 85, 0.1);
   color: var(--neon-pink);
   border: 1px solid rgba(255, 0, 85, 0.25);
-}
-
-.btn.remove:hover {
-  background: var(--neon-pink);
-  color: #fff;
-  box-shadow: 0 0 12px rgba(255, 0, 85, 0.4);
 }
 
 .result-sounds {
@@ -412,15 +455,6 @@ button:active {
   font-size: 15px;
   text-transform: uppercase;
   letter-spacing: 1px;
-  box-shadow: 0 4px 20px rgba(255, 234, 0, 0.3);
-}
-
-#next-track-btn:disabled {
-  background: var(--bg-deep);
-  color: #444;
-  border: 1px solid var(--border-subtle);
-  box-shadow: none;
-  cursor: not-allowed;
 }
 
 #normal-toggle {
@@ -448,12 +482,6 @@ button:active {
   justify-content: flex-start;
   text-align: left;
   border-radius: 12px;
-}
-
-.song-list button:hover:not(.played) {
-  border-color: var(--neon-cyan);
-  background: rgba(0, 229, 255, 0.05);
-  box-shadow: 0 0 15px rgba(0, 229, 255, 0.15);
 }
 
 .song-number {
@@ -496,12 +524,6 @@ button:active {
   font-size: 14px;
 }
 
-#end-quiz-btn:hover {
-  background: var(--neon-pink);
-  color: #fff;
-  box-shadow: 0 0 20px rgba(255, 0, 85, 0.4);
-}
-
 #timer-circle {
   font-family: 'Ubuntu Mono', monospace;
   position: fixed;
@@ -512,7 +534,6 @@ button:active {
   border-radius: 16px;
   background: rgba(5, 6, 10, 0.85);
   backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
   border: 2px solid var(--neon-cyan);
   color: var(--neon-cyan);
   display: flex;
@@ -539,7 +560,6 @@ button:active {
   height: 44px;
   background: rgba(5, 6, 10, 0.85);
   backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
   border: 1px solid var(--border-subtle);
   border-radius: 12px;
   color: var(--text-dim);
@@ -548,11 +568,6 @@ button:active {
   justify-content: center;
   cursor: pointer;
   z-index: 1000;
-}
-
-#settings-btn:hover {
-  color: #fff;
-  border-color: var(--neon-cyan);
 }
 
 #track-name-popup {
@@ -570,10 +585,7 @@ button:active {
   z-index: 1000;
   opacity: 0;
   pointer-events: none;
-  box-shadow: 0 0 20px rgba(0, 229, 255, 0.3);
   transition: opacity 0.3s;
-  max-width: 90vw;
-  text-align: center;
 }
 
 .score-notification, .action-notification {
@@ -590,7 +602,6 @@ button:active {
   z-index: 3000;
   opacity: 0;
   pointer-events: none;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
   transition: opacity 0.2s;
 }
 
@@ -609,7 +620,6 @@ button:active {
   inset: 0;
   background: rgba(0, 0, 0, 0.85);
   backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -689,12 +699,6 @@ button:active {
   color: var(--text-dim);
 }
 
-.final-scores strong {
-  font-family: 'Ubuntu Mono', monospace;
-  color: #fff;
-}
-
-/* Стили блока обновления в настройках */
 .settings-update-box {
   margin-top: 18px;
   padding-top: 14px;
@@ -710,10 +714,6 @@ button:active {
   font-size: 0.85em !important;
   text-transform: uppercase;
   letter-spacing: 1px;
-}
-
-.settings-update-box button:active {
-  background: rgba(0, 229, 255, 0.1) !important;
 }
 
 .update-status-msg {
@@ -734,15 +734,27 @@ button:active {
 <div class="container">
   <div class="header">
     <h1><i class="fas fa-bolt"></i> Revers Quiz</h1>
-    <div class="subtitle">Угадай трек наоборот</div>
+    <div class="subtitle">Интерактивный режим ведущего</div>
   </div>
 
+  <!-- Блок онлайн-комнаты -->
   <div class="section">
-    <h2 class="section-title"><i class="fas fa-users"></i> Команды</h2>
-    <div class="team-input">
-      <input type="text" id="team1" placeholder="Команда 1" value="Команда А" />
-      <input type="text" id="team2" placeholder="Команда 2" value="Команда Б" />
-      <button onclick="setTeams()">Сохранить команды</button>
+    <div class="online-box">
+      <div>
+        <span style="font-size:0.85em; color:var(--text-dim); text-transform:uppercase;">PIN Комнаты:</span>
+        <div class="pin-display" id="host-pin">----</div>
+      </div>
+      <div>
+        <span style="font-size:0.85em; color:var(--text-dim);">Ссылка для команд:</span>
+        <div style="font-size:0.9em; color:var(--neon-cyan); font-weight:700;">/player.html</div>
+      </div>
+    </div>
+
+    <div style="font-size:0.9em; color:var(--text-dim); text-transform:uppercase; letter-spacing:1px; margin-bottom:6px;">
+      Подключённые команды:
+    </div>
+    <div class="connected-teams-list" id="host-teams-container">
+      <div style="color:var(--text-dim); font-size:0.9em;">Ожидание подключения участников...</div>
     </div>
   </div>
 
@@ -768,12 +780,17 @@ button:active {
   </div>
 
   <div id="quiz-area" style="display: none;">
+    <!-- Баннер нажатия кнопки командой -->
+    <div class="buzzer-alert-overlay" id="buzzer-alert-box">
+      🔔 <span id="buzzer-alert-team">Команда</span> НАЖАЛА КНОПКУ!
+    </div>
+
     <div class="section">
       <h2 class="section-title"><i class="fas fa-trophy"></i> Счёт игры</h2>
       <div class="score-controls">
         <div class="score-team-group" id="score-group-1" onclick="manualActivateTeam(1)">
           <div class="score-team-header">
-            <div class="score-team-label" id="team1-label">Команда А</div>
+            <div class="score-team-label" id="team1-label">Команда 1</div>
             <div class="score-display" id="score1">0</div>
           </div>
           <div class="score-btn-row remove">
@@ -790,7 +807,7 @@ button:active {
 
         <div class="score-team-group" id="score-group-2" onclick="manualActivateTeam(2)">
           <div class="score-team-header">
-            <div class="score-team-label" id="team2-label">Команда Б</div>
+            <div class="score-team-label" id="team2-label">Команда 2</div>
             <div class="score-display" id="score2">0</div>
           </div>
           <div class="score-btn-row remove">
@@ -908,7 +925,6 @@ button:active {
     
     <button onclick="setSettings()">Применить</button>
 
-    <!-- Блок ручной проверки обновлений -->
     <div class="settings-update-box">
       <button id="manual-check-update-btn" onclick="manualCheckAppUpdate()">
         <i class="fas fa-sync-alt"></i> Проверить обновление
@@ -919,9 +935,26 @@ button:active {
 </div>
 
 <script>
+var firebaseConfig = {
+  apiKey: "AIzaSyC9sh7uazv-WbudsO7TYap4-wENjkLD3K4",
+  authDomain: "revers-quiz.firebaseapp.com",
+  databaseURL: "https://revers-quiz-default-rtdb.firebaseio.com",
+  projectId: "revers-quiz",
+  storageBucket: "revers-quiz.firebasestorage.app",
+  messagingSenderId: "940882425335",
+  appId: "1:940882425335:web:bf3c52135d8a7cd7d9eaf2",
+  measurementId: "G-93CJT9ZT4G"
+};
+
+firebase.initializeApp(firebaseConfig);
+var db = firebase.database();
+var currentRoomPin = null;
+var roomRef = null;
+var connectedTeamsMap = {};
+
 var PUBLIC_KEY = "https://yadi.sk/d/WuP3cXvzcoZxVg";
-var team1Name = "Команда А";
-var team2Name = "Команда Б";
+var team1Name = "Команда 1";
+var team2Name = "Команда 2";
 var score1 = 0, score2 = 0;
 var files = {};
 var playedTracks = new Set();
@@ -948,7 +981,96 @@ var soundUrls = {
   gameOver: null
 };
 
-// Функция принудительной проверки version.json
+// Инициализация Realtime Room
+function initHostRoom() {
+  currentRoomPin = localStorage.getItem("host_room_pin");
+  if (!currentRoomPin) {
+    currentRoomPin = Math.floor(1000 + Math.random() * 9000).toString();
+    localStorage.setItem("host_room_pin", currentRoomPin);
+  }
+  document.getElementById("host-pin").textContent = currentRoomPin;
+
+  roomRef = db.ref("rooms/" + currentRoomPin);
+  
+  // Создаем/обновляем статус комнаты
+  roomRef.update({
+    status: "idle",
+    buzzer: { locked: true, pressedBy: null },
+    revealedTrack: ""
+  });
+
+  // Отслеживаем подключенные команды
+  roomRef.child("teams").on("value", function(snapshot) {
+    var teams = snapshot.val() || {};
+    connectedTeamsMap = teams;
+    renderConnectedTeams(teams);
+  });
+
+  // Отслеживаем нажатия на баззер капитанами
+  roomRef.child("buzzer").on("value", function(snapshot) {
+    var buzzer = snapshot.val();
+    if (buzzer && buzzer.locked && buzzer.pressedByName) {
+      handleBuzzerTriggered(buzzer.pressedByName);
+    }
+  });
+}
+
+function renderConnectedTeams(teams) {
+  var container = document.getElementById("host-teams-container");
+  var teamKeys = Object.keys(teams);
+
+  if (teamKeys.length === 0) {
+    container.innerHTML = '<div style="color:var(--text-dim); font-size:0.9em;">Ожидание подключения участников...</div>';
+    return;
+  }
+
+  container.innerHTML = "";
+  teamKeys.forEach(function(key, idx) {
+    var t = teams[key];
+    var pill = document.createElement("div");
+    pill.className = "team-pill ready";
+    pill.innerHTML = '<i class="fas fa-check-circle"></i> ' + t.name + ' (' + (t.score || 0) + ')';
+    container.appendChild(pill);
+
+    // Автоматически назначаем имена первым двум командам для табло
+    if (idx === 0) {
+      team1Name = t.name;
+      document.getElementById("team1-label").textContent = t.name;
+    } else if (idx === 1) {
+      team2Name = t.name;
+      document.getElementById("team2-label").textContent = t.name;
+    }
+  });
+}
+
+// Когда кто-то нажал кнопку
+function handleBuzzerTriggered(teamName) {
+  var r = document.getElementById("audio-revers");
+  if (r && !r.paused) {
+    r.pause();
+    document.getElementById("revers-play-icon").classList.replace("fa-pause", "fa-play");
+  }
+  stopTimer();
+
+  // Звук звонка
+  if (soundUrls.ring) {
+    var a = document.getElementById("audio-ring");
+    a.src = soundUrls.ring;
+    a.currentTime = 0;
+    a.play().catch(function() {});
+  }
+
+  var alertBox = document.getElementById("buzzer-alert-box");
+  var alertTeam = document.getElementById("buzzer-alert-team");
+  alertTeam.textContent = teamName;
+  alertBox.style.display = "block";
+}
+
+function hideBuzzerAlert() {
+  var alertBox = document.getElementById("buzzer-alert-box");
+  if (alertBox) alertBox.style.display = "none";
+}
+
 async function manualCheckAppUpdate() {
   var statusEl = document.getElementById("manual-update-status");
   var btn = document.getElementById("manual-check-update-btn");
@@ -969,13 +1091,11 @@ async function manualCheckAppUpdate() {
       statusEl.textContent = "Обновление до v" + remoteVer + "...";
       localStorage.setItem('app_version', remoteVer);
 
-      // Очищаем кэш Service Worker
       if ('caches' in window) {
         var keys = await caches.keys();
         await Promise.all(keys.map(function(k) { return caches.delete(k); }));
       }
 
-      // Обновляем Service Worker
       if ('serviceWorker' in navigator) {
         var registrations = await navigator.serviceWorker.getRegistrations();
         for (var reg of registrations) {
@@ -1016,6 +1136,7 @@ document.addEventListener('touchstart', unlockMobileAudio, { once: true });
 
 window.addEventListener('load', function() {
   restoreSession();
+  initHostRoom();
 });
 
 function restoreSession() {
@@ -1023,8 +1144,6 @@ function restoreSession() {
   if (saved) {
     try {
       var data = JSON.parse(saved);
-      team1Name = data.team1 || "Команда А";
-      team2Name = data.team2 || "Команда Б";
       score1 = parseFloat(data.score1) || 0;
       score2 = parseFloat(data.score2) || 0;
       playedTracks = new Set(data.playedTracks || []);
@@ -1038,18 +1157,10 @@ function restoreSession() {
       trackOrder = data.trackOrder || {};
       files = data.files || {};
 
-      var t1 = document.getElementById("team1");
-      var t2 = document.getElementById("team2");
-      var t1L = document.getElementById("team1-label");
-      var t2L = document.getElementById("team2-label");
       var s1 = document.getElementById("score1");
       var s2 = document.getElementById("score2");
       var fSel = document.getElementById("folder-select");
 
-      if (t1) t1.value = team1Name;
-      if (t2) t2.value = team2Name;
-      if (t1L) t1L.textContent = team1Name;
-      if (t2L) t2L.textContent = team2Name;
       if (s1) s1.textContent = formatScore(score1);
       if (s2) s2.textContent = formatScore(score2);
       if (fSel) fSel.value = selectedFolder;
@@ -1074,8 +1185,6 @@ function restoreSession() {
 function saveState() {
   try {
     var state = {
-      team1: team1Name,
-      team2: team2Name,
       score1: score1,
       score2: score2,
       playedTracks: Array.from(playedTracks),
@@ -1126,6 +1235,8 @@ function playSound(type) {
   var url = type === 'winner' ? soundUrls.winner : soundUrls.lost;
   var audio = document.getElementById(type === 'winner' ? 'audio-winner' : 'audio-lost');
 
+  hideBuzzerAlert();
+
   var r = document.getElementById("audio-revers");
   if (r) {
     r.pause();
@@ -1141,6 +1252,15 @@ function playSound(type) {
     audio.play().catch(function(e) { console.warn(e); });
   } else {
     showActionNotification(type === 'winner' ? '🎉 Правильно!' : '😢 Мимо!');
+  }
+
+  // Транслируем всем командам ответ в комнату
+  if (roomRef) {
+    roomRef.update({
+      status: "reveal",
+      revealedTrack: currentTrackName || "",
+      buzzer: { locked: true, pressedBy: null }
+    });
   }
 
   if (originalTimeout) {
@@ -1176,7 +1296,7 @@ function startOriginalPlayback() {
     if (i) i.classList.replace("fa-play", "fa-pause");
     updateNormalProgress();
   }).catch(function(err) {
-    console.warn("Автовоспроизведение оригинала ожидает действия:", err);
+    console.warn("Автовоспроизведение оригинала:", err);
   });
 }
 
@@ -1185,21 +1305,6 @@ function formatTime(seconds) {
   var mins = Math.floor(seconds / 60);
   var secs = seconds % 60;
   return String(mins).padStart(2, '0') + ":" + String(secs).padStart(2, '0');
-}
-
-function setTeams() {
-  var t1 = document.getElementById("team1").value.trim();
-  var t2 = document.getElementById("team2").value.trim();
-  if (!t1 || !t2) {
-    alert("Введите оба названия команд!");
-    return;
-  }
-  team1Name = t1;
-  team2Name = t2;
-  document.getElementById("team1-label").textContent = t1;
-  document.getElementById("team2-label").textContent = t2;
-  saveState();
-  showActionNotification('✅ Составы обновлены!');
 }
 
 function updateFolderSection() {
@@ -1285,7 +1390,6 @@ async function loadFiles() {
       var shuffleBtn = document.getElementById("shuffle-btn");
       shuffleBtn.disabled = true;
       shuffleBtn.textContent = '🔁 Чередование';
-      shuffleBtn.title = "В смешанном режиме порядок определяется автоматически";
     } else {
       var path = document.getElementById("folder-select").value;
       if (!path) {
@@ -1316,7 +1420,7 @@ async function loadFiles() {
     updateNextTrackButton();
   } catch (e) {
     console.error("КРИТИЧЕСКАЯ ОШИБКА ЗАГРУЗКИ:", e);
-    alert("Ошибка загрузки: проверьте интернет или структуру папок.");
+    alert("Ошибка загрузки.");
   }
   loadBtn.innerHTML = '<i class="fas fa-cloud-download-alt"></i> Загрузить треки';
 }
@@ -1328,8 +1432,7 @@ function updateShuffleButtonState() {
     shuffleBtn.disabled = hasStarted;
     shuffleBtn.style.opacity = hasStarted ? 0.4 : 1;
     shuffleBtn.style.cursor = hasStarted ? "not-allowed" : "pointer";
-    shuffleBtn.textContent = hasStarted ? '❌ Игра начата (порядок зафиксирован)' : '🔄 Перемешать треки';
-    shuffleBtn.title = hasStarted ? "Нельзя перемешивать после начала игры" : "Перемешать треки в случайном порядке";
+    shuffleBtn.textContent = hasStarted ? '❌ Игра начата' : '🔄 Перемешать треки';
   }
 }
 
@@ -1397,6 +1500,7 @@ function purgeAudioBuffer(audioEl) {
 }
 
 function playTrack(name) {
+  hideBuzzerAlert();
   if (originalTimeout) {
     clearTimeout(originalTimeout);
     originalTimeout = null;
@@ -1484,6 +1588,17 @@ function toggleRevers() {
   }
   if (audio.paused) {
     stopTimer();
+    hideBuzzerAlert();
+
+    // Разблокируем баззеры командам в комнате
+    if (roomRef) {
+      roomRef.update({
+        status: "playing",
+        revealedTrack: "",
+        buzzer: { locked: false, pressedBy: null, pressedByName: null }
+      });
+    }
+
     audio.play().then(function() {
       icon.classList.replace("fa-play", "fa-pause");
       showTrackPopup(currentTrackName);
@@ -1498,12 +1613,15 @@ function toggleRevers() {
         saveState();
       }
     }).catch(function(err) {
-      console.warn("Воспроизведение заблокировано браузером:", err);
+      console.warn("Воспроизведение заблокировано:", err);
     });
   } else {
     audio.pause();
     icon.classList.replace("fa-pause", "fa-play");
     hideTrackPopup();
+    if (roomRef) {
+      roomRef.update({ status: "idle" });
+    }
   }
   updateShuffleButtonState();
   updateNextTrackButton();
@@ -1638,6 +1756,7 @@ function addScore(team, points) {
   document.getElementById("score1").textContent = formatScore(score1);
   document.getElementById("score2").textContent = formatScore(score2);
   saveState();
+  syncTeamScoresToCloud();
   if (soundUrls.ring) {
     var a = document.getElementById("audio-ring");
     a.src = soundUrls.ring;
@@ -1653,7 +1772,15 @@ function removeScore(team, points) {
   document.getElementById("score1").textContent = formatScore(score1);
   document.getElementById("score2").textContent = formatScore(score2);
   saveState();
+  syncTeamScoresToCloud();
   showNotification('-' + points + ' (' + (team === 1 ? team1Name : team2Name) + ')', false);
+}
+
+function syncTeamScoresToCloud() {
+  if (!roomRef) return;
+  var teamKeys = Object.keys(connectedTeamsMap);
+  if (teamKeys[0]) roomRef.child("teams/" + teamKeys[0] + "/score").set(score1);
+  if (teamKeys[1]) roomRef.child("teams/" + teamKeys[1] + "/score").set(score2);
 }
 
 function stopAllSounds() {
@@ -1683,7 +1810,6 @@ function endQuiz() {
   localStorage.removeItem('reversQuiz');
   stopAllSounds();
 
-  // Проигрывание заранее предзагруженного звука GAME_OVER
   var aGameOver = document.getElementById("audio-game-over");
   if (aGameOver && soundUrls.gameOver) {
     aGameOver.currentTime = 0;
