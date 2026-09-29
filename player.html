@@ -167,7 +167,7 @@ body {
   justify-content: space-between;
 }
 
-/* Адаптивное табло */
+/* Компактное табло очков */
 .scoreboard-arena {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(75px, 1fr));
@@ -230,7 +230,6 @@ body {
   color: var(--neon-pink);
 }
 
-/* Статус-панель и плеер раунда у участника */
 .player-status-wrapper {
   display: flex;
   flex-direction: column;
@@ -260,7 +259,7 @@ body {
   box-shadow: 0 0 15px rgba(255, 230, 0, 0.15);
 }
 
-/* Блок таймера трека */
+/* Блок таймера трека (всегда виден во время раунда) */
 .track-timer-bar {
   background: var(--bg-card);
   border: 1px solid var(--border-subtle);
@@ -309,7 +308,6 @@ body {
   display: none;
 }
 
-/* 3D Баззер */
 .buzzer-stage {
   flex: 1;
   display: flex;
@@ -498,11 +496,10 @@ body {
 </head>
 <body>
 
-<!-- Аудио-плееры для синхронной трансляции -->
 <audio id="player-audio-revers" preload="auto" playsinline crossorigin="anonymous" style="display:none;"></audio>
 <audio id="player-audio-normal" preload="auto" playsinline crossorigin="anonymous" style="display:none;"></audio>
 
-<!-- 1. Экран логина команды -->
+<!-- 1. Экран логина -->
 <div class="login-wrap" id="login-view">
   <div class="brand-icon"><i class="fas fa-bolt"></i></div>
   <h2>Вход в игру</h2>
@@ -528,7 +525,7 @@ body {
       <i class="fas fa-hourglass-half"></i> <span>Ожидание раунда</span>
     </div>
 
-    <!-- Таймер и прогресс-бар длительности реверса -->
+    <!-- Таймер и шкала прогресса -->
     <div class="track-timer-bar" id="player-timer-bar">
       <i class="fas fa-music" style="color:var(--neon-cyan); font-size:0.9em;"></i>
       <div class="progress-track">
@@ -557,7 +554,7 @@ body {
   </div>
 </div>
 
-<!-- 3. Экран завершения игры (10 сек) -->
+<!-- 3. Экран завершения игры -->
 <div id="game-over-view">
   <div class="trophy-icon"><i class="fas fa-trophy"></i></div>
   <div class="game-over-title">Итоги игры</div>
@@ -592,6 +589,10 @@ var gameOverTimer = null;
 var currentLoadedReversUrl = "";
 var currentTrackDuration = 0;
 var progressAnimFrame = null;
+
+// Защита от автозапуска старого трека при позднем подключении
+var joinedTrackSessionId = null;
+var hasWaitedForNewTrack = false;
 
 function formatTime(seconds) {
   seconds = Math.floor(seconds || 0);
@@ -644,6 +645,15 @@ function joinGame() {
       return;
     }
 
+    var currentData = snapshot.val();
+    // Фиксируем ID трека, который УЖЕ играет или играл в комнате при нашем входе
+    if (currentData && currentData.audioSync && currentData.audioSync.trackSessionId) {
+      joinedTrackSessionId = currentData.audioSync.trackSessionId;
+      hasWaitedForNewTrack = false; // Ждем следующий трек
+    } else {
+      hasWaitedForNewTrack = true;
+    }
+
     currentRoom = pin;
     myTeamName = name;
     myTeamId = "team_" + Math.random().toString(36).substr(2, 6);
@@ -667,21 +677,29 @@ function joinGame() {
   });
 }
 
-function updatePlayerProgress() {
-  var a = document.getElementById("player-audio-revers");
+function updateProgressDisplay(currentTime, totalDuration) {
   var fill = document.getElementById("player-progress-fill");
   var timeDisplay = document.getElementById("player-time-display");
 
-  var dur = currentTrackDuration || a.duration || 0;
-  var cur = a.currentTime || 0;
+  var dur = totalDuration || currentTrackDuration || 0;
+  var cur = currentTime || 0;
 
   var pct = dur > 0 ? (cur / dur) * 100 : 0;
   fill.style.width = Math.min(100, Math.max(0, pct)) + "%";
   timeDisplay.textContent = formatTime(cur) + " / " + formatTime(dur);
+}
 
-  if (!a.paused) {
-    progressAnimFrame = requestAnimationFrame(updatePlayerProgress);
+function runSyntheticTimer(startAt, duration) {
+  if (progressAnimFrame) cancelAnimationFrame(progressAnimFrame);
+
+  function tick() {
+    var elapsed = Math.max(0, (Date.now() - startAt) / 1000);
+    updateProgressDisplay(elapsed, duration);
+    if (elapsed < duration) {
+      progressAnimFrame = requestAnimationFrame(tick);
+    }
   }
+  tick();
 }
 
 function listenToAudioStream() {
@@ -693,12 +711,21 @@ function listenToAudioStream() {
     var sync = snapshot.val();
     if (!sync) return;
 
-    if (sync.duration) {
-      currentTrackDuration = sync.duration;
-      document.getElementById("player-time-display").textContent = "00:00 / " + formatTime(currentTrackDuration);
+    // Проверяем: если этот трек уже играл до нашего подключения, игнорируем его
+    if (!hasWaitedForNewTrack) {
+      if (sync.trackSessionId === joinedTrackSessionId) {
+        return; // Пропускаем старый трек
+      } else {
+        hasWaitedForNewTrack = true; // Начался новый трек, теперь мы в игре!
+      }
     }
 
-    // Фоновая предзагрузка аудиофайлов
+    if (sync.duration) {
+      currentTrackDuration = sync.duration;
+      updateProgressDisplay(0, currentTrackDuration);
+    }
+
+    // Фоновая предзагрузка нового трека
     if (sync.reversUrl && sync.reversUrl !== currentLoadedReversUrl) {
       currentLoadedReversUrl = sync.reversUrl;
 
@@ -723,20 +750,24 @@ function listenToAudioStream() {
       aNormal.pause();
       
       var targetDelay = Math.max(0, (sync.startAt || Date.now()) - Date.now());
+      var duration = sync.duration || currentTrackDuration || 0;
+
       setTimeout(function() {
         aRevers.currentTime = 0;
         var p = aRevers.play();
         if (p !== undefined) {
-          p.then(function() {
-            updatePlayerProgress();
-          }).catch(function(e) {
-            console.warn("Автовоспроизведение заблокировано браузером:", e);
+          p.catch(function(e) {
+            console.warn("Аудио заблокировано браузером (работает визуальный таймер):", e);
           });
         }
+        // Запускаем таймер времени и прогресс-бар в любом режиме
+        runSyntheticTimer(Date.now(), duration);
       }, targetDelay);
 
     } else if (sync.playAction === "play_normal") {
       aRevers.pause();
+      if (progressAnimFrame) cancelAnimationFrame(progressAnimFrame);
+
       var normDelay = Math.max(0, (sync.startAt || Date.now()) - Date.now());
       setTimeout(function() {
         aNormal.currentTime = 0;
@@ -753,8 +784,7 @@ function listenToAudioStream() {
       aRevers.currentTime = 0;
       aNormal.currentTime = 0;
       if (progressAnimFrame) cancelAnimationFrame(progressAnimFrame);
-      document.getElementById("player-progress-fill").style.width = "0%";
-      document.getElementById("player-time-display").textContent = "00:00 / " + formatTime(currentTrackDuration);
+      updateProgressDisplay(0, currentTrackDuration);
     }
   });
 }
@@ -809,6 +839,18 @@ function listenToGameState() {
           scoreboardWrap.appendChild(oppCard);
         });
       }
+    }
+
+    // Если команда подключилась посреди раунда — ждём следующий
+    if (!hasWaitedForNewTrack) {
+      buzzerBtn.disabled = true;
+      buzzerBtn.className = "buzzer-3d-btn";
+      buzzerBtn.innerHTML = '<i class="fas fa-hourglass-start"></i><span>ЖДИ</span>';
+      roundStatusPill.className = "status-pill";
+      roundStatusPill.innerHTML = '<i class="fas fa-hourglass-start"></i> <span>Ожидание раунда</span>';
+      trackBox.style.display = "none";
+      hudFooter.innerHTML = "Вы подключились посреди игры. Вход со следующего трека...";
+      return;
     }
 
     var buzzer = data.buzzer || {};
