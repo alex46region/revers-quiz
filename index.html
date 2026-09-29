@@ -154,10 +154,10 @@ h1 i {
 
 .pin-display {
   font-family: 'Ubuntu Mono', monospace;
-  font-size: 1.6em;
+  font-size: 1.8em;
   font-weight: 700;
   color: var(--neon-yellow);
-  letter-spacing: 2px;
+  letter-spacing: 3px;
 }
 
 .connected-teams-list {
@@ -753,7 +753,7 @@ button:active {
     <div class="subtitle" id="game-subtitle">Угадай трек наоборот</div>
   </div>
 
-  <!-- Блок интерактивной комнаты (виден только в онлайн режиме) -->
+  <!-- Блок интерактивной комнаты (только онлайн) -->
   <div class="section" id="host-online-section" style="display:none;">
     <div class="online-box">
       <div>
@@ -774,7 +774,7 @@ button:active {
     </div>
   </div>
 
-  <!-- Блок команд в обычном режиме -->
+  <!-- Блок локальных команд (только оффлайн) -->
   <div class="section" id="local-teams-section">
     <h2 class="section-title"><i class="fas fa-users"></i> Команды</h2>
     <div class="team-input">
@@ -937,17 +937,23 @@ button:active {
     <button class="close-modal" onclick="closeSettings()">&times;</button>
     <h3>Параметры</h3>
     
-    <!-- Переключатель интерактивного режима -->
     <label for="interactive-mode-toggle">Режим игры</label>
     <select id="interactive-mode-toggle">
       <option value="false">Обычный режим (оффлайн)</option>
       <option value="true">Интерактивный (онлайн для участников)</option>
     </select>
 
-    <!-- Переключатель видимости счёта для игроков -->
     <div id="show-score-wrap">
-      <label for="show-score-toggle">Показывать счёт участникам</label>
+      <label for="show-score-toggle">Показывать свой счёт участникам</label>
       <select id="show-score-toggle">
+        <option value="true">Да, показывать</option>
+        <option value="false">Нет, скрывать</option>
+      </select>
+    </div>
+
+    <div id="show-opponent-score-wrap">
+      <label for="show-opponent-score-toggle">Показывать счёт соперника участникам</label>
+      <select id="show-opponent-score-toggle">
         <option value="true">Да, показывать</option>
         <option value="false">Нет, скрывать</option>
       </select>
@@ -994,6 +1000,7 @@ var roomRef = null;
 var connectedTeamsMap = {};
 var isInteractiveMode = false;
 var showScoreToPlayers = true;
+var showOpponentScore = true;
 
 var PUBLIC_KEY = "https://yadi.sk/d/WuP3cXvzcoZxVg";
 var team1Name = "Команда А";
@@ -1024,6 +1031,13 @@ var soundUrls = {
   gameOver: null
 };
 
+// Генерация абсолютно нового PIN-кода для каждой игры
+function generateNewRoomPin() {
+  var newPin = Math.floor(1000 + Math.random() * 9000).toString();
+  localStorage.setItem("host_room_pin", newPin);
+  return newPin;
+}
+
 function initHostRoom() {
   if (!isInteractiveMode) return;
   
@@ -1034,8 +1048,7 @@ function initHostRoom() {
 
   currentRoomPin = localStorage.getItem("host_room_pin");
   if (!currentRoomPin) {
-    currentRoomPin = Math.floor(1000 + Math.random() * 9000).toString();
-    localStorage.setItem("host_room_pin", currentRoomPin);
+    currentRoomPin = generateNewRoomPin();
   }
   document.getElementById("host-pin").textContent = currentRoomPin;
 
@@ -1044,6 +1057,7 @@ function initHostRoom() {
   roomRef.update({
     status: "idle",
     showScore: showScoreToPlayers,
+    showOpponentScore: showOpponentScore,
     buzzer: { locked: true, pressedBy: null, passedBy: [] },
     revealedTrack: ""
   });
@@ -1098,7 +1112,6 @@ function handleBuzzerTriggered(teamId, teamName) {
   }
   stopTimer();
 
-  // Определяем, какая это команда (1 или 2), и подсвечиваем блок
   var teamKeys = Object.keys(connectedTeamsMap);
   if (teamKeys[0] === teamId) {
     activateTeam(1);
@@ -1216,6 +1229,7 @@ function restoreSession() {
       var data = JSON.parse(saved);
       isInteractiveMode = data.isInteractiveMode === true;
       showScoreToPlayers = data.showScoreToPlayers !== false;
+      showOpponentScore = data.showOpponentScore !== false;
       team1Name = data.team1 || "Команда А";
       team2Name = data.team2 || "Команда Б";
       score1 = parseFloat(data.score1) || 0;
@@ -1269,6 +1283,7 @@ function saveState() {
     var state = {
       isInteractiveMode: isInteractiveMode,
       showScoreToPlayers: showScoreToPlayers,
+      showOpponentScore: showOpponentScore,
       team1: team1Name,
       team2: team2Name,
       score1: score1,
@@ -1609,6 +1624,11 @@ function playTrack(name) {
   stopAllSounds();
   hideTrackPopup();
 
+  // В интерактиве сбрасываем подсветку команд до нажатия кнопки
+  if (isInteractiveMode) {
+    clearTeamHighlight();
+  }
+
   var audioRevers = document.getElementById("audio-revers");
   var audioNormal = document.getElementById("audio-normal");
   purgeAudioBuffer(audioRevers);
@@ -1691,6 +1711,7 @@ function toggleRevers() {
     hideBuzzerAlert();
 
     if (isInteractiveMode && roomRef) {
+      clearTeamHighlight();
       roomRef.update({
         status: "playing",
         revealedTrack: "",
@@ -1702,7 +1723,7 @@ function toggleRevers() {
       icon.classList.replace("fa-play", "fa-pause");
       showTrackPopup(currentTrackName);
       updateReversProgress();
-      if (currentTrackName !== lastPlayedTrack) {
+      if (!isInteractiveMode && currentTrackName !== lastPlayedTrack) {
         if (shouldAutoSwitch && activeTeam !== null) {
           var next = activeTeam === 1 ? 2 : 1;
           activateTeam(next);
@@ -1741,6 +1762,14 @@ function activateTeam(team) {
   if (team === 2 && g2) g2.classList.add("active");
   activeTeam = team;
   saveState();
+}
+
+function clearTeamHighlight() {
+  var g1 = document.getElementById("score-group-1");
+  var g2 = document.getElementById("score-group-2");
+  if (g1) g1.classList.remove("active");
+  if (g2) g2.classList.remove("active");
+  activeTeam = null;
 }
 
 function showOriginal() {
@@ -1909,6 +1938,9 @@ function endQuiz() {
   localStorage.removeItem('reversQuiz');
   stopAllSounds();
 
+  // Удаляем старый PIN, чтобы при следующей игре был сгенерирован новый
+  localStorage.removeItem("host_room_pin");
+
   var aGameOver = document.getElementById("audio-game-over");
   if (aGameOver && soundUrls.gameOver) {
     aGameOver.currentTime = 0;
@@ -1937,6 +1969,7 @@ function openSettings() {
   var mIn = document.getElementById("mix-mode");
   var modeSel = document.getElementById("interactive-mode-toggle");
   var scoreSel = document.getElementById("show-score-toggle");
+  var opponentScoreSel = document.getElementById("show-opponent-score-toggle");
   var sMod = document.getElementById("settings-modal");
   var statusEl = document.getElementById("manual-update-status");
   
@@ -1945,6 +1978,7 @@ function openSettings() {
   if (mIn) mIn.value = mixMode ? "mixed" : "normal";
   if (modeSel) modeSel.value = isInteractiveMode ? "true" : "false";
   if (scoreSel) scoreSel.value = showScoreToPlayers ? "true" : "false";
+  if (opponentScoreSel) opponentScoreSel.value = showOpponentScore ? "true" : "false";
   
   if (statusEl) {
     var currentVer = localStorage.getItem('app_version') || '11';
@@ -1964,6 +1998,7 @@ function setSettings() {
   var mode = document.getElementById("mix-mode").value;
   var newInteractive = document.getElementById("interactive-mode-toggle").value === "true";
   var newShowScore = document.getElementById("show-score-toggle").value === "true";
+  var newShowOpponent = document.getElementById("show-opponent-score-toggle").value === "true";
   
   var valTimer = parseInt(inputTimer.value);
   var valDelay = parseFloat(inputDelay.value);
@@ -1978,9 +2013,13 @@ function setSettings() {
   mixMode = mode === "mixed";
   isInteractiveMode = newInteractive;
   showScoreToPlayers = newShowScore;
+  showOpponentScore = newShowOpponent;
 
   if (isInteractiveMode && roomRef) {
-    roomRef.update({ showScore: showScoreToPlayers });
+    roomRef.update({ 
+      showScore: showScoreToPlayers,
+      showOpponentScore: showOpponentScore
+    });
   }
 
   saveState();
