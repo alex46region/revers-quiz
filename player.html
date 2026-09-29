@@ -61,7 +61,6 @@ body {
   max-width: 380px;
   background: var(--bg-card);
   backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
   border: 1px solid var(--border-glow);
   border-radius: 28px;
   padding: 32px 24px;
@@ -105,7 +104,6 @@ body {
 
 .input-box {
   margin-bottom: 14px;
-  position: relative;
 }
 
 .input-box input {
@@ -164,34 +162,37 @@ body {
   display: none;
   flex-direction: column;
   flex: 1;
-  max-width: 440px;
+  max-width: 480px;
   width: 100%;
   margin: 0 auto;
   justify-content: space-between;
 }
 
-/* Верхнее табло очков */
+/* Табло участников */
 .scoreboard-arena {
   display: flex;
-  gap: 12px;
+  gap: 8px;
   margin-bottom: 12px;
+  overflow-x: auto;
+  padding-bottom: 4px;
 }
 
 .score-card {
   flex: 1;
+  min-width: 110px;
   background: var(--bg-card);
   backdrop-filter: blur(12px);
   border: 1px solid var(--border-subtle);
-  border-radius: 18px;
-  padding: 12px 14px;
+  border-radius: 16px;
+  padding: 10px 12px;
   text-align: center;
   transition: all 0.3s;
 }
 
 .score-card.my-card {
   border-color: var(--neon-cyan);
-  background: rgba(0, 240, 255, 0.04);
-  box-shadow: 0 0 20px rgba(0, 240, 255, 0.1);
+  background: rgba(0, 240, 255, 0.05);
+  box-shadow: 0 0 20px rgba(0, 240, 255, 0.15);
 }
 
 .score-card.opponent-card {
@@ -200,7 +201,7 @@ body {
 }
 
 .score-team-title {
-  font-size: 0.8em;
+  font-size: 0.75em;
   font-weight: 700;
   text-transform: uppercase;
   color: var(--text-dim);
@@ -211,7 +212,7 @@ body {
 
 .score-team-pts {
   font-family: 'Ubuntu Mono', monospace;
-  font-size: 2.2em;
+  font-size: 2em;
   font-weight: 700;
   line-height: 1;
   margin-top: 4px;
@@ -224,7 +225,6 @@ body {
 
 .opponent-card .score-team-pts {
   color: var(--neon-pink);
-  text-shadow: 0 0 15px rgba(255, 0, 85, 0.4);
 }
 
 /* Статус-панель раунда */
@@ -262,7 +262,6 @@ body {
   font-weight: 700;
   margin-top: 10px;
   display: none;
-  animation: pulse 1s infinite alternate;
 }
 
 /* 3D Неоновый баззер */
@@ -359,7 +358,6 @@ body {
   color: #000;
 }
 
-/* Нижний статус-бар */
 .hud-footer {
   background: var(--bg-card);
   backdrop-filter: blur(12px);
@@ -378,7 +376,6 @@ body {
 </head>
 <body>
 
-<!-- Экран подключения команды -->
 <div class="login-wrap" id="login-view">
   <div class="brand-icon"><i class="fas fa-bolt"></i></div>
   <h2>Вход в Арену</h2>
@@ -395,19 +392,9 @@ body {
   <div class="error-banner" id="login-error"></div>
 </div>
 
-<!-- Игровой экран участника -->
 <div id="game-view">
-  <!-- Табло очков -->
-  <div class="scoreboard-arena" id="scoreboard-wrap">
-    <div class="score-card my-card" id="my-score-card">
-      <div class="score-team-title" id="my-team-title">Моя команда</div>
-      <div class="score-team-pts" id="my-team-pts">0</div>
-    </div>
-    <div class="score-card opponent-card" id="opponent-score-card">
-      <div class="score-team-title" id="opponent-team-title">Соперник</div>
-      <div class="score-team-pts" id="opponent-team-pts">0</div>
-    </div>
-  </div>
+  <!-- Динамическое табло всех команд -->
+  <div class="scoreboard-arena" id="scoreboard-wrap"></div>
 
   <!-- Статус раунда -->
   <div>
@@ -430,7 +417,6 @@ body {
     </button>
   </div>
 
-  <!-- Информационная строка -->
   <div class="hud-footer" id="hud-footer">
     Ожидаем запуск раунда ведущим...
   </div>
@@ -477,7 +463,6 @@ function joinGame() {
   showError("Подключение к комнате...");
   var roomRef = db.ref("rooms/" + pin);
 
-  // Проверка существования комнаты
   roomRef.once("value").then(function(snapshot) {
     if (!snapshot.exists()) {
       showError("❌ Комната с PIN " + pin + " не найдена. Проверьте код у ведущего!");
@@ -488,7 +473,6 @@ function joinGame() {
     myTeamName = name;
     myTeamId = "team_" + Math.random().toString(36).substr(2, 6);
 
-    // Регистрируем команду в комнате
     roomRef.child("teams/" + myTeamId).set({
       name: myTeamName,
       ready: true,
@@ -499,11 +483,10 @@ function joinGame() {
 
     document.getElementById("login-view").style.display = "none";
     document.getElementById("game-view").style.display = "flex";
-    document.getElementById("my-team-title").textContent = myTeamName;
 
     listenToGameState();
   }).catch(function(e) {
-    showError("Ошибка подключения к серверу: " + e.message);
+    showError("Ошибка подключения: " + e.message);
   });
 }
 
@@ -521,43 +504,47 @@ function listenToGameState() {
     var trackBox = document.getElementById("revealed-track-box");
 
     var scoreboardWrap = document.getElementById("scoreboard-wrap");
-    var myScoreCard = document.getElementById("my-score-card");
-    var opponentScoreCard = document.getElementById("opponent-score-card");
 
-    // Управление отображением очков
     var showMyScore = data.showScore !== false;
     var showOppScore = data.showOpponentScore !== false;
+
+    // Рендер динамического табло участников
+    var teams = data.teams || {};
+    var teamKeys = Object.keys(teams);
 
     if (!showMyScore && !showOppScore) {
       scoreboardWrap.style.display = "none";
     } else {
       scoreboardWrap.style.display = "flex";
-      myScoreCard.style.display = showMyScore ? "block" : "none";
-      opponentScoreCard.style.display = showOppScore ? "block" : "none";
-    }
+      scoreboardWrap.innerHTML = "";
 
-    // Заполнение очков своей команды и соперника
-    var teams = data.teams || {};
-    var teamKeys = Object.keys(teams);
+      // Своя команда первой
+      if (showMyScore && teams[myTeamId]) {
+        var myCard = document.createElement("div");
+        myCard.className = "score-card my-card";
+        myCard.innerHTML = 
+          '<div class="score-team-title">' + (teams[myTeamId].name || myTeamName) + ' (Вы)</div>' +
+          '<div class="score-team-pts">' + (teams[myTeamId].score || 0) + '</div>';
+        scoreboardWrap.appendChild(myCard);
+      }
 
-    if (teams[myTeamId]) {
-      document.getElementById("my-team-pts").textContent = teams[myTeamId].score || 0;
-    }
-
-    var opponentKey = teamKeys.find(function(k) { return k !== myTeamId; });
-    if (opponentKey && teams[opponentKey]) {
-      document.getElementById("opponent-team-title").textContent = teams[opponentKey].name || "Соперник";
-      document.getElementById("opponent-team-pts").textContent = teams[opponentKey].score || 0;
-    } else {
-      document.getElementById("opponent-team-title").textContent = "Соперник";
-      document.getElementById("opponent-team-pts").textContent = "0";
+      // Все соперники следом
+      if (showOppScore) {
+        teamKeys.filter(function(k) { return k !== myTeamId; }).forEach(function(k) {
+          var oppCard = document.createElement("div");
+          oppCard.className = "score-card opponent-card";
+          oppCard.innerHTML = 
+            '<div class="score-team-title">' + (teams[k].name || "Соперник") + '</div>' +
+            '<div class="score-team-pts">' + (teams[k].score || 0) + '</div>';
+          scoreboardWrap.appendChild(oppCard);
+        });
+      }
     }
 
     var buzzer = data.buzzer || {};
     var passedBy = buzzer.passedBy || [];
     var haveIPassed = passedBy.indexOf(myTeamId) !== -1;
 
-    // Состояния раунда
     if (data.status === "playing") {
       trackBox.style.display = "none";
       roundStatusPill.className = "status-pill playing";
@@ -570,7 +557,7 @@ function listenToGameState() {
           buzzerBtn.disabled = true;
           buzzerBtn.className = "buzzer-3d-btn";
           buzzerBtn.innerHTML = '<i class="fas fa-forward"></i><span>ПАС</span>';
-          hudFooter.innerHTML = "Вы спасовали. Ожидаем ответа соперника...";
+          hudFooter.innerHTML = "Вы спасовали. Ожидаем соперников...";
         } else {
           buzzerBtn.disabled = false;
           buzzerBtn.className = "buzzer-3d-btn";
