@@ -1421,7 +1421,7 @@ function handleBuzzerTriggered(teamId, teamName) {
   }
   stopTimer();
 
-  // При баззере мгновенно глушим аудио у всех участников с точной секундой
+  // При баззере глушим аудио у всех участников и фиксируем секунду
   if (isInteractiveMode && roomRef) {
     roomRef.child("audioSync").update({ 
       playAction: "pause",
@@ -2011,7 +2011,6 @@ function hideTrackPopup() {
   if (popup) popup.style.opacity = 0;
 }
 
-// Запуск, пауза и продолжение с точной синхронизацией
 function toggleRevers() {
   var audio = document.getElementById("audio-revers");
   var normal = document.getElementById("audio-normal");
@@ -2026,7 +2025,7 @@ function toggleRevers() {
     stopTimer();
     hideBuzzerAlert();
 
-    // Если аудио уже на паузе посреди трека — мгновенное возобновление без ожидания буфера
+    // Если аудио уже на паузе посреди трека — мгновенное возобновление
     if (audio.currentTime > 0) {
       resumeSynchronizedPlayback();
     } else if (isInteractiveMode && streamAudioToPlayers && teamsData.length > 0) {
@@ -2103,8 +2102,9 @@ function startSynchronizedPlayback() {
       buzzer: { locked: false, pressedBy: null, pressedByName: null, passedBy: [] }
     });
 
+    // Отправляем команду воспроизведения аудио ТОЛЬКО если трансляция включена в настройках
     roomRef.child("audioSync").update({
-      playAction: "play_revers",
+      playAction: streamAudioToPlayers ? "play_revers" : "play_timer",
       startAt: serverStartAt,
       duration: audio.duration || 0,
       currentTime: 0
@@ -2130,7 +2130,7 @@ function startSynchronizedPlayback() {
   }, delayStart);
 }
 
-// Возобновление после паузы
+// Возобновление после паузы с жесткой проверкой флага streamAudioToPlayers
 function resumeSynchronizedPlayback() {
   var audio = document.getElementById("audio-revers");
   var icon = document.getElementById("revers-play-icon");
@@ -2142,9 +2142,11 @@ function resumeSynchronizedPlayback() {
       buzzer: { locked: false, pressedBy: null, pressedByName: null, passedBy: [] }
     });
 
+    // БАГ ИСПРАВЛЕН: Если трансляция выключена, отправляем "resume_timer", а не "resume_revers"
     roomRef.child("audioSync").update({
-      playAction: "resume_revers",
+      playAction: streamAudioToPlayers ? "resume_revers" : "resume_timer",
       currentTime: audio.currentTime,
+      duration: audio.duration || 0,
       startAt: serverStartAt
     });
   }
