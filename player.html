@@ -4,6 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover" />
 <meta name="theme-color" content="#030407" />
+<meta name="referrer" content="no-referrer" />
 <title>⚡ Revers Quiz — Экран команды</title>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -54,14 +55,12 @@ body {
   overflow: hidden;
 }
 
-/* Экран логина */
 .login-wrap {
   margin: auto;
   width: 100%;
   max-width: 380px;
   background: var(--bg-card);
   backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
   border: 1px solid var(--border-glow);
   border-radius: 28px;
   padding: 32px 24px;
@@ -158,7 +157,6 @@ body {
   display: none;
 }
 
-/* Игровой экран */
 #game-view {
   display: none;
   flex-direction: column;
@@ -372,7 +370,6 @@ body {
   color: #fff;
 }
 
-/* Экран окончания игры */
 #game-over-view {
   display: none;
   flex-direction: column;
@@ -457,8 +454,8 @@ body {
 <body>
 
 <!-- Аудио-плееры для синхронной трансляции -->
-<audio id="player-audio-revers" preload="auto" playsinline style="display:none;"></audio>
-<audio id="player-audio-normal" preload="auto" playsinline style="display:none;"></audio>
+<audio id="player-audio-revers" preload="auto" playsinline crossorigin="anonymous" style="display:none;"></audio>
+<audio id="player-audio-normal" preload="auto" playsinline crossorigin="anonymous" style="display:none;"></audio>
 
 <!-- 1. Экран логина команды -->
 <div class="login-wrap" id="login-view">
@@ -539,18 +536,20 @@ var myTeamName = "";
 var gameOverTimer = null;
 var currentLoadedReversUrl = "";
 
-// Разблокировка мобильного аудио по первому тапу
-function unlockMobileAudio() {
+// Принудительная разблокировка Audio Context браузера (для обхода Autoplay Policy)
+function unlockBrowserAudio() {
   ['player-audio-revers', 'player-audio-normal'].forEach(function(id) {
     var a = document.getElementById(id);
     if (a) {
-      a.play().catch(function() {});
-      a.pause();
+      a.play().then(function() {
+        a.pause();
+        a.currentTime = 0;
+      }).catch(function() {});
     }
   });
 }
-document.addEventListener('click', unlockMobileAudio, { once: true });
-document.addEventListener('touchstart', unlockMobileAudio, { once: true });
+document.addEventListener('click', unlockBrowserAudio);
+document.addEventListener('touchstart', unlockBrowserAudio);
 
 function showError(msg) {
   var err = document.getElementById("login-error");
@@ -559,6 +558,8 @@ function showError(msg) {
 }
 
 function joinGame() {
+  unlockBrowserAudio(); // Разблокируем аудио прямо по клику на кнопку входа
+
   var pin = document.getElementById("room-pin").value.trim();
   var name = document.getElementById("team-name").value.trim();
 
@@ -603,7 +604,6 @@ function joinGame() {
   });
 }
 
-// Слушатель фоновой трансляции и синхронизации аудио
 function listenToAudioStream() {
   var audioSyncRef = db.ref("rooms/" + currentRoom + "/audioSync");
   var aRevers = document.getElementById("player-audio-revers");
@@ -613,38 +613,45 @@ function listenToAudioStream() {
     var sync = snapshot.val();
     if (!sync) return;
 
-    // Фоновая загрузка в буфер без показа названия
+    // Фоновая загрузка аудио
     if (sync.reversUrl && sync.reversUrl !== currentLoadedReversUrl) {
       currentLoadedReversUrl = sync.reversUrl;
 
       aRevers.src = sync.reversUrl;
-      aRevers.preload = "auto";
       aRevers.load();
 
       if (sync.normalUrl) {
         aNormal.src = sync.normalUrl;
-        aNormal.preload = "auto";
         aNormal.load();
       }
 
-      // Как только трек готов играть без запинок, рапортуем ведущему
-      aRevers.oncanplaythrough = function() {
+      aRevers.oncanplay = function() {
         if (currentRoom && myTeamId) {
           db.ref("rooms/" + currentRoom + "/teams/" + myTeamId + "/readyToPlay").set(true);
         }
-        aRevers.oncanplaythrough = null;
+        aRevers.oncanplay = null;
       };
     }
 
-    // Управление синхронным воспроизведением
+    // Управление воспроизведением
     if (sync.playAction === "play_revers") {
       aNormal.pause();
       aRevers.currentTime = sync.targetTime || 0;
-      aRevers.play().catch(function(e) { console.warn(e); });
+      var playPromise = aRevers.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(function(err) {
+          console.warn("Браузер заблокировал автовоспроизведение, кликните по экрану:", err);
+        });
+      }
     } else if (sync.playAction === "play_normal") {
       aRevers.pause();
       aNormal.currentTime = sync.targetTime || 0;
-      aNormal.play().catch(function(e) { console.warn(e); });
+      var playNormPromise = aNormal.play();
+      if (playNormPromise !== undefined) {
+        playNormPromise.catch(function(err) {
+          console.warn("Браузер заблокировал автовоспроизведение оригинала:", err);
+        });
+      }
     } else if (sync.playAction === "pause") {
       aRevers.pause();
       aNormal.pause();
