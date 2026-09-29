@@ -589,6 +589,7 @@ var hasWaitedForNewTrack = false;
 var timerRunning = false;
 var timerStartTime = 0;
 var timerTotalDuration = 0;
+var isStreamAudioAllowed = false; // Флаг разрешения звука от комнаты ведущего
 
 function formatTime(seconds) {
   seconds = Math.floor(seconds || 0);
@@ -597,7 +598,7 @@ function formatTime(seconds) {
   return String(mins).padStart(2, '0') + ":" + String(secs).padStart(2, '0');
 }
 
-// Однократная тихая разблокировка при клике на "Подключиться"
+// Однократная тихая подготовка элементов аудио при входе
 function primeAudioElements() {
   ['player-audio-revers', 'player-audio-normal'].forEach(function(id) {
     var a = document.getElementById(id);
@@ -732,6 +733,7 @@ function listenToAudioStream() {
       }
     }
 
+    // Предзагрузка аудиофайла
     if (sync.reversUrl && sync.reversUrl !== currentLoadedReversUrl) {
       currentLoadedReversUrl = sync.reversUrl;
 
@@ -751,27 +753,37 @@ function listenToAudioStream() {
       };
     }
 
-    // Обработка действий плеера ведущего
-    if (sync.playAction === "play_revers") {
+    // Обработка действий плеера
+    if (sync.playAction === "play_revers" || sync.playAction === "play_timer") {
       aNormal.pause();
       var targetDelay = Math.max(0, (sync.startAt || Date.now()) - Date.now());
       var duration = sync.duration || currentTrackDuration || 0;
 
       setTimeout(function() {
-        aRevers.currentTime = 0;
-        aRevers.play().catch(function() {});
+        // Звук включается ТОЛЬКО если трансляция разрешена настройками комнаты
+        if (isStreamAudioAllowed && sync.playAction === "play_revers") {
+          aRevers.currentTime = 0;
+          aRevers.play().catch(function() {});
+        } else {
+          aRevers.pause();
+        }
         startSyntheticTimer(0, duration);
       }, targetDelay);
 
-    } else if (sync.playAction === "resume_revers") {
+    } else if (sync.playAction === "resume_revers" || sync.playAction === "resume_timer") {
       aNormal.pause();
       var resumeTime = sync.currentTime || 0;
       var resumeDelay = Math.max(0, (sync.startAt || Date.now()) - Date.now());
       var rDur = sync.duration || currentTrackDuration || 0;
 
       setTimeout(function() {
-        aRevers.currentTime = resumeTime;
-        aRevers.play().catch(function() {});
+        // БАГ ИСПРАВЛЕН: проверяем флаг трансляции при выходе из паузы
+        if (isStreamAudioAllowed && sync.playAction === "resume_revers") {
+          aRevers.currentTime = resumeTime;
+          aRevers.play().catch(function() {});
+        } else {
+          aRevers.pause();
+        }
         startSyntheticTimer(resumeTime, rDur);
       }, resumeDelay);
 
@@ -787,8 +799,10 @@ function listenToAudioStream() {
       stopSyntheticTimer();
       var normDelay = Math.max(0, (sync.startAt || Date.now()) - Date.now());
       setTimeout(function() {
-        aNormal.currentTime = 0;
-        aNormal.play().catch(function() {});
+        if (isStreamAudioAllowed) {
+          aNormal.currentTime = 0;
+          aNormal.play().catch(function() {});
+        }
       }, normDelay);
 
     } else if (sync.playAction === "stop") {
@@ -812,6 +826,17 @@ function listenToGameState() {
     if (data.status === "game_over") {
       showGameOverScreen(data.leaderboard || []);
       return;
+    }
+
+    // Сохраняем глобальный флаг трансляции аудио для текущей комнаты
+    isStreamAudioAllowed = (data.streamAudio === true);
+
+    // Если трансляция выключена ведущим, глушим аудио, если оно играло
+    if (!isStreamAudioAllowed) {
+      var aR = document.getElementById("player-audio-revers");
+      var aN = document.getElementById("player-audio-normal");
+      if (aR && !aR.paused) aR.pause();
+      if (aN && !aN.paused) aN.pause();
     }
 
     var buzzerBtn = document.getElementById("buzzer-btn");
