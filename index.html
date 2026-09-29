@@ -814,7 +814,6 @@ button:active {
   cursor: pointer;
 }
 
-/* Окно QR-кода */
 .qr-modal-content {
   background: var(--bg-surface);
   border: 1px solid var(--neon-cyan);
@@ -1076,7 +1075,6 @@ button:active {
       <option value="true">Интерактивный (онлайн для участников)</option>
     </select>
 
-    <!-- Переключатель аудиотрансляции на устройства участников -->
     <div id="stream-audio-wrap">
       <label for="stream-audio-toggle">Трансляция аудио участникам</label>
       <select id="stream-audio-toggle">
@@ -1267,8 +1265,9 @@ function initHostRoom() {
     audioSync: {
       reversUrl: "",
       normalUrl: "",
+      duration: 0,
       playAction: "stop",
-      targetTime: 0
+      startAt: 0
     }
   });
 
@@ -1427,7 +1426,6 @@ function handleBuzzerTriggered(teamId, teamName) {
   }
   stopTimer();
 
-  // При баззере глушим аудио у всех участников
   if (isInteractiveMode && roomRef && streamAudioToPlayers) {
     roomRef.child("audioSync").update({ playAction: "pause" });
   }
@@ -1699,11 +1697,10 @@ function startOriginalPlayback() {
     if (i) i.classList.replace("fa-play", "fa-pause");
     updateNormalProgress();
 
-    // Синхронный запуск оригинала на телефонах игроков
     if (isInteractiveMode && roomRef && streamAudioToPlayers) {
       roomRef.child("audioSync").update({
         playAction: "play_normal",
-        targetTime: 0
+        startAt: Date.now() + 150
       });
     }
   }).catch(function(err) {
@@ -1940,7 +1937,23 @@ function playTrack(name) {
       hideTrackPopup();
     };
     audioRevers.onloadedmetadata = function() {
-      document.getElementById("revers-duration").textContent = formatTime(audioRevers.duration);
+      var dur = audioRevers.duration || 0;
+      document.getElementById("revers-duration").textContent = formatTime(dur);
+
+      // Передаём участникам URLs и длительность реверса
+      if (isInteractiveMode && roomRef) {
+        teamsData.forEach(function(t) {
+          roomRef.child("teams/" + t.id + "/readyToPlay").set(false);
+        });
+
+        roomRef.child("audioSync").set({
+          reversUrl: track.revers || "",
+          normalUrl: track.normal || "",
+          duration: dur,
+          playAction: "prepare",
+          startAt: 0
+        });
+      }
     };
 
     if (track.normal) {
@@ -1950,21 +1963,6 @@ function playTrack(name) {
       audioNormal.onloadedmetadata = function() {
         document.getElementById("normal-duration").textContent = formatTime(audioNormal.duration);
       };
-    }
-
-    // Фоновая трансляция аудио в базу для предзагрузки на телефоны участников
-    if (isInteractiveMode && roomRef) {
-      // Сбрасываем готовность всех команд
-      teamsData.forEach(function(t) {
-        roomRef.child("teams/" + t.id + "/readyToPlay").set(false);
-      });
-
-      roomRef.child("audioSync").set({
-        reversUrl: track.revers || "",
-        normalUrl: track.normal || "",
-        playAction: "prepare",
-        targetTime: 0
-      });
     }
 
     toggleRevers();
@@ -2008,7 +2006,6 @@ function hideTrackPopup() {
   if (popup) popup.style.opacity = 0;
 }
 
-// Запуск реверса с синхронизацией аудиопотока
 function toggleRevers() {
   var audio = document.getElementById("audio-revers");
   var normal = document.getElementById("audio-normal");
@@ -2023,13 +2020,13 @@ function toggleRevers() {
     stopTimer();
     hideBuzzerAlert();
 
-    // Если включена трансляция аудио участникам, проверяем буферизацию
+    // Проверяем готовность участников и буфера ведущего
     if (isInteractiveMode && streamAudioToPlayers && teamsData.length > 0) {
-      waitForPlayersAudioReady(function() {
-        startReversPlaybackLocallyAndRemotely();
+      waitForAllDevicesReady(audio, function() {
+        startSynchronizedPlayback();
       });
     } else {
-      startReversPlaybackLocallyAndRemotely();
+      startSynchronizedPlayback();
     }
   } else {
     audio.pause();
@@ -2047,39 +2044,52 @@ function toggleRevers() {
   updateNextTrackButton();
 }
 
-// Ожидание подтверждения загрузки трека в буфер от всех смартфонов
-function waitForPlayersAudioReady(callback) {
-  var timeoutTriggered = false;
-  var timer = setTimeout(function() {
-    timeoutTriggered = true;
-    callback();
-  }, 2500); // Страховочный тайм-аут на случай медленного интернета
-
-  var listener = roomRef.child("teams").on("value", function(snapshot) {
-    if (timeoutTriggered) {
-      roomRef.child("teams").off("value", listener);
-      return;
-    }
-    var raw = snapshot.val() || {};
-    var allReady = true;
-    var count = 0;
-
-    Object.keys(raw).forEach(function(k) {
-      count++;
-      if (!raw[k].readyToPlay) allReady = false;
-    });
-
-    if (count > 0 && allReady) {
-      clearTimeout(timer);
-      roomRef.child("teams").off("value", listener);
+// Ожидание готовности буфера у самого ведущего и всех подключённых игроков
+function waitForAllDevicesReady(localAudio, callback) {
+  var isDone = false;
+  var fallbackTimer = setTimeout(function() {
+    if (!isDone) {
+      isDone = true;
       callback();
     }
+  }, 2500);
+
+  function checkEverythingReady() {
+    if (isDone) return;
+    
+    // Проверка локального буфера ведущего
+    var hostBuffered = localAudio.readyState >= 3;
+
+    // Проверка всех команд
+    var teamsReady = true;
+    teamsData.forEach(function(t) {
+      if (!t.readyToPlay) teamsReady = false;
+    });
+
+    if (hostBuffered && teamsReady) {
+      isDone = true;
+      clearTimeout(fallbackTimer);
+      callback();
+    }
+  }
+
+  // Слушаем статус готовности в базе
+  var unwatch = roomRef.child("teams").on("value", function() {
+    checkEverythingReady();
   });
+
+  localAudio.oncanplay = function() {
+    checkEverythingReady();
+  };
+
+  checkEverythingReady();
 }
 
-function startReversPlaybackLocallyAndRemotely() {
+// Запуск воспроизведения с меткой времени startAt для строгого синхрона
+function startSynchronizedPlayback() {
   var audio = document.getElementById("audio-revers");
   var icon = document.getElementById("revers-play-icon");
+  var serverStartAt = Date.now() + 250; // Точка старта с зазором на передачу
 
   if (isInteractiveMode && roomRef) {
     clearTeamHighlight();
@@ -2092,24 +2102,28 @@ function startReversPlaybackLocallyAndRemotely() {
     if (streamAudioToPlayers) {
       roomRef.child("audioSync").update({
         playAction: "play_revers",
-        targetTime: 0
+        startAt: serverStartAt,
+        duration: audio.duration || 0
       });
     }
   }
 
-  audio.play().then(function() {
-    icon.classList.replace("fa-play", "fa-pause");
-    showTrackPopup(currentTrackName);
-    updateReversProgress();
+  var delayStart = Math.max(0, serverStartAt - Date.now());
+  setTimeout(function() {
+    audio.play().then(function() {
+      icon.classList.replace("fa-play", "fa-pause");
+      showTrackPopup(currentTrackName);
+      updateReversProgress();
 
-    if (!isInteractiveMode && currentTrackName !== lastPlayedTrack) {
-      cycleNextOfflineTeam();
-      lastPlayedTrack = currentTrackName;
-      saveState();
-    }
-  }).catch(function(err) {
-    console.warn("Воспроизведение заблокировано:", err);
-  });
+      if (!isInteractiveMode && currentTrackName !== lastPlayedTrack) {
+        cycleNextOfflineTeam();
+        lastPlayedTrack = currentTrackName;
+        saveState();
+      }
+    }).catch(function(err) {
+      console.warn("Воспроизведение ведущего ожидает разрешения:", err);
+    });
+  }, delayStart);
 }
 
 function cycleNextOfflineTeam() {
@@ -2204,7 +2218,7 @@ function toggleNormal() {
       if (isInteractiveMode && roomRef && streamAudioToPlayers) {
         roomRef.child("audioSync").update({
           playAction: "play_normal",
-          targetTime: 0
+          startAt: Date.now() + 150
         });
       }
     }).catch(function(err) {
