@@ -62,7 +62,7 @@ body {
 }
 
 .container {
-  max-width: 860px;
+  max-width: 900px;
   margin: 0 auto;
   background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
@@ -230,10 +230,51 @@ select {
   background-size: 14px;
 }
 
-.team-input {
+.teams-input-list {
   display: flex;
   flex-direction: column;
   gap: 10px;
+}
+
+.team-input-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.team-input-row button.btn-del-team {
+  background: rgba(255, 0, 85, 0.1);
+  border: 1px solid rgba(255, 0, 85, 0.3);
+  color: var(--neon-pink);
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.team-input-row button.btn-del-team:hover {
+  background: var(--neon-pink);
+  color: #fff;
+}
+
+.add-team-btn {
+  background: transparent;
+  border: 1px dashed var(--neon-cyan);
+  color: var(--neon-cyan);
+  width: 100%;
+  padding: 12px;
+  border-radius: 12px;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  cursor: pointer;
+  margin-top: 6px;
+  transition: all 0.2s;
+}
+
+.add-team-btn:hover {
+  background: rgba(0, 229, 255, 0.1);
 }
 
 button {
@@ -253,7 +294,7 @@ button:active {
   transform: scale(0.98);
 }
 
-.team-input button, #load-songs-btn {
+#save-teams-btn, #load-songs-btn {
   width: 100%;
   padding: 15px;
   font-size: 15px;
@@ -261,10 +302,11 @@ button:active {
   letter-spacing: 1px;
 }
 
-.team-input button {
+#save-teams-btn {
   background: var(--neon-cyan);
   color: #000;
   box-shadow: 0 4px 20px rgba(0, 229, 255, 0.35);
+  margin-top: 10px;
 }
 
 #load-songs-btn {
@@ -289,31 +331,30 @@ button:active {
   color: var(--neon-yellow);
 }
 
+/* Динамическая сетка счёта команд */
 .score-controls {
-  display: flex;
-  gap: 14px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 12px;
   margin-top: 6px;
-  flex-wrap: wrap;
 }
 
 .score-team-group {
-  flex: 1;
-  min-width: 240px;
   background: var(--bg-deep);
   border: 1px solid var(--border-subtle);
   border-radius: 16px;
-  padding: 16px;
+  padding: 16px 12px;
   cursor: pointer;
   transition: all 0.25s ease;
 }
 
 .score-team-header {
   text-align: center;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
 
 .score-team-label {
-  font-size: 0.95em;
+  font-size: 0.9em;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 1px;
@@ -325,16 +366,16 @@ button:active {
 
 .score-display {
   font-family: 'Ubuntu Mono', monospace;
-  font-size: 3em;
+  font-size: 2.6em;
   font-weight: 700;
   color: var(--text-pure);
   line-height: 1;
-  margin: 8px 0;
+  margin: 6px 0;
 }
 
 .score-team-group.active {
   border-color: var(--neon-cyan);
-  background: rgba(0, 229, 255, 0.03);
+  background: rgba(0, 229, 255, 0.04);
   box-shadow: 0 0 25px rgba(0, 229, 255, 0.25), inset 0 0 15px rgba(0, 229, 255, 0.05);
 }
 
@@ -346,14 +387,14 @@ button:active {
 
 .score-btn-row {
   display: flex;
-  gap: 6px;
-  margin-top: 6px;
+  gap: 5px;
+  margin-top: 5px;
 }
 
 .btn {
   flex: 1;
-  padding: 10px 4px;
-  font-size: 0.85em;
+  padding: 9px 2px;
+  font-size: 0.8em;
   font-weight: 700;
   border-radius: 8px;
 }
@@ -364,10 +405,22 @@ button:active {
   border: 1px solid rgba(0, 255, 102, 0.25);
 }
 
+.btn.add:hover {
+  background: var(--neon-lime);
+  color: #000;
+  box-shadow: 0 0 12px rgba(0, 255, 102, 0.4);
+}
+
 .btn.remove {
   background: rgba(255, 0, 85, 0.1);
   color: var(--neon-pink);
   border: 1px solid rgba(255, 0, 85, 0.25);
+}
+
+.btn.remove:hover {
+  background: var(--neon-pink);
+  color: #fff;
+  box-shadow: 0 0 12px rgba(255, 0, 85, 0.4);
 }
 
 .result-sounds {
@@ -753,7 +806,7 @@ button:active {
     <div class="subtitle" id="game-subtitle">Угадай трек наоборот</div>
   </div>
 
-  <!-- Блок интерактивной комнаты (только онлайн) -->
+  <!-- Блок интерактивной комнаты (онлайн) -->
   <div class="section" id="host-online-section" style="display:none;">
     <div class="online-box">
       <div>
@@ -774,14 +827,14 @@ button:active {
     </div>
   </div>
 
-  <!-- Блок локальных команд (только оффлайн) -->
+  <!-- Блок локальных команд (оффлайн) с добавлением новых -->
   <div class="section" id="local-teams-section">
-    <h2 class="section-title"><i class="fas fa-users"></i> Команды</h2>
-    <div class="team-input">
-      <input type="text" id="team1" placeholder="Команда 1" value="Команда А" />
-      <input type="text" id="team2" placeholder="Команда 2" value="Команда Б" />
-      <button onclick="setTeams()">Сохранить команды</button>
-    </div>
+    <h2 class="section-title"><i class="fas fa-users"></i> Команды игры</h2>
+    <div class="teams-input-list" id="teams-input-container"></div>
+    <button class="add-team-btn" onclick="addNewOfflineTeam()">
+      <i class="fas fa-plus-circle"></i> Добавить команду
+    </button>
+    <button id="save-teams-btn" onclick="saveOfflineTeams()">Сохранить составы</button>
   </div>
 
   <div class="section" id="folder-section">
@@ -813,41 +866,9 @@ button:active {
 
     <div class="section">
       <h2 class="section-title"><i class="fas fa-trophy"></i> Счёт игры</h2>
-      <div class="score-controls">
-        <div class="score-team-group" id="score-group-1" onclick="manualActivateTeam(1)">
-          <div class="score-team-header">
-            <div class="score-team-label" id="team1-label">Команда 1</div>
-            <div class="score-display" id="score1">0</div>
-          </div>
-          <div class="score-btn-row remove">
-            <button class="btn remove" onclick="event.stopPropagation(); removeScore(1, 0.5)">-0.5</button>
-            <button class="btn remove" onclick="event.stopPropagation(); removeScore(1, 1)">-1</button>
-            <button class="btn remove" onclick="event.stopPropagation(); removeScore(1, 2)">-2</button>
-          </div>
-          <div class="score-btn-row add">
-            <button class="btn add" onclick="event.stopPropagation(); addScore(1, 0.5)">+0.5</button>
-            <button class="btn add" onclick="event.stopPropagation(); addScore(1, 1)">+1</button>
-            <button class="btn add" onclick="event.stopPropagation(); addScore(1, 2)">+2</button>
-          </div>
-        </div>
-
-        <div class="score-team-group" id="score-group-2" onclick="manualActivateTeam(2)">
-          <div class="score-team-header">
-            <div class="score-team-label" id="team2-label">Команда 2</div>
-            <div class="score-display" id="score2">0</div>
-          </div>
-          <div class="score-btn-row remove">
-            <button class="btn remove" onclick="event.stopPropagation(); removeScore(2, 0.5)">-0.5</button>
-            <button class="btn remove" onclick="event.stopPropagation(); removeScore(2, 1)">-1</button>
-            <button class="btn remove" onclick="event.stopPropagation(); removeScore(2, 2)">-2</button>
-          </div>
-          <div class="score-btn-row add">
-            <button class="btn add" onclick="event.stopPropagation(); addScore(2, 0.5)">+0.5</button>
-            <button class="btn add" onclick="event.stopPropagation(); addScore(2, 1)">+1</button>
-            <button class="btn add" onclick="event.stopPropagation(); addScore(2, 2)">+2</button>
-          </div>
-        </div>
-      </div>
+      
+      <!-- Динамический контейнер карточек команд -->
+      <div class="score-controls" id="teams-scoreboard-grid"></div>
 
       <div class="result-sounds">
         <button class="result-btn winner" onclick="playSound('winner')">
@@ -952,7 +973,7 @@ button:active {
     </div>
 
     <div id="show-opponent-score-wrap">
-      <label for="show-opponent-score-toggle">Показывать счёт соперника участникам</label>
+      <label for="show-opponent-score-toggle">Показывать счёт соперников участникам</label>
       <select id="show-opponent-score-toggle">
         <option value="true">Да, показывать</option>
         <option value="false">Нет, скрывать</option>
@@ -997,15 +1018,19 @@ var firebaseConfig = {
 var db = null;
 var currentRoomPin = null;
 var roomRef = null;
-var connectedTeamsMap = {};
 var isInteractiveMode = false;
 var showScoreToPlayers = true;
 var showOpponentScore = true;
 
+// Динамический массив команд: [{ id: 'team_1', name: 'Команда 1', score: 0 }]
+var teamsData = [
+  { id: 'team_1', name: 'Команда 1', score: 0 },
+  { id: 'team_2', name: 'Команда 2', score: 0 }
+];
+
+var activeTeamId = null;
+
 var PUBLIC_KEY = "https://yadi.sk/d/WuP3cXvzcoZxVg";
-var team1Name = "Команда А";
-var team2Name = "Команда Б";
-var score1 = 0, score2 = 0;
 var files = {};
 var playedTracks = new Set();
 var currentTrackName = null;
@@ -1017,8 +1042,6 @@ var mixMode = false;
 var timerValue = 0;
 var timerInterval = null;
 var isTimerActive = false;
-var activeTeam = null;
-var shouldAutoSwitch = true;
 var lastPlayedTrack = null;
 var trackOrder = {};
 
@@ -1031,7 +1054,6 @@ var soundUrls = {
   gameOver: null
 };
 
-// Генерация абсолютно нового PIN-кода для каждой игры
 function generateNewRoomPin() {
   var newPin = Math.floor(1000 + Math.random() * 9000).toString();
   localStorage.setItem("host_room_pin", newPin);
@@ -1062,10 +1084,22 @@ function initHostRoom() {
     revealedTrack: ""
   });
 
+  // Отслеживаем команды в комнате
   roomRef.child("teams").on("value", function(snapshot) {
-    var teams = snapshot.val() || {};
-    connectedTeamsMap = teams;
-    renderConnectedTeams(teams);
+    var rawTeams = snapshot.val() || {};
+    var cloudKeys = Object.keys(rawTeams);
+
+    if (cloudKeys.length > 0) {
+      teamsData = cloudKeys.map(function(key) {
+        return {
+          id: key,
+          name: rawTeams[key].name || "Команда",
+          score: rawTeams[key].score || 0
+        };
+      });
+    }
+    renderHostTeamsList();
+    renderScoreboardGrid();
   });
 
   roomRef.child("buzzer").on("value", function(snapshot) {
@@ -1076,34 +1110,119 @@ function initHostRoom() {
   });
 }
 
-function renderConnectedTeams(teams) {
+function renderHostTeamsList() {
   var container = document.getElementById("host-teams-container");
-  var teamKeys = Object.keys(teams);
+  if (!container) return;
 
-  if (teamKeys.length === 0) {
+  if (teamsData.length === 0) {
     container.innerHTML = '<div style="color:var(--text-dim); font-size:0.9em;">Ожидание подключения участников...</div>';
     return;
   }
 
   container.innerHTML = "";
-  teamKeys.forEach(function(key, idx) {
-    var t = teams[key];
+  teamsData.forEach(function(t) {
     var pill = document.createElement("div");
     pill.className = "team-pill ready";
-    pill.innerHTML = '<i class="fas fa-check-circle"></i> ' + t.name + ' (' + (t.score || 0) + ')';
+    pill.innerHTML = '<i class="fas fa-check-circle"></i> ' + t.name + ' (' + formatScore(t.score) + ')';
     container.appendChild(pill);
-
-    if (idx === 0) {
-      team1Name = t.name;
-      document.getElementById("team1-label").textContent = t.name;
-    } else if (idx === 1) {
-      team2Name = t.name;
-      document.getElementById("team2-label").textContent = t.name;
-    }
   });
 }
 
-// При нажатии кнопки участником: останавливаем трек и подсвечиваем блок команды
+// Отрисовка полей ввода команд в оффлайн режиме
+function renderOfflineTeamsInputs() {
+  var container = document.getElementById("teams-input-container");
+  if (!container) return;
+  container.innerHTML = "";
+
+  teamsData.forEach(function(t, idx) {
+    var row = document.createElement("div");
+    row.className = "team-input-row";
+
+    var input = document.createElement("input");
+    input.type = "text";
+    input.value = t.name;
+    input.placeholder = "Команда " + (idx + 1);
+    input.id = "input-team-" + idx;
+
+    row.appendChild(input);
+
+    // Удалять можно только если команд больше 2
+    if (teamsData.length > 2) {
+      var delBtn = document.createElement("button");
+      delBtn.className = "btn-del-team";
+      delBtn.innerHTML = '<i class="fas fa-trash-alt"></i>';
+      delBtn.onclick = function() { removeOfflineTeam(idx); };
+      row.appendChild(delBtn);
+    }
+
+    container.appendChild(row);
+  });
+}
+
+function addNewOfflineTeam() {
+  var newIdx = teamsData.length + 1;
+  teamsData.push({
+    id: "team_" + Date.now() + "_" + Math.random().toString(36).substr(2, 4),
+    name: "Команда " + newIdx,
+    score: 0
+  });
+  renderOfflineTeamsInputs();
+  renderScoreboardGrid();
+  saveState();
+}
+
+function removeOfflineTeam(index) {
+  if (teamsData.length <= 2) return;
+  teamsData.splice(index, 1);
+  renderOfflineTeamsInputs();
+  renderScoreboardGrid();
+  saveState();
+}
+
+function saveOfflineTeams() {
+  teamsData.forEach(function(t, idx) {
+    var el = document.getElementById("input-team-" + idx);
+    if (el && el.value.trim()) {
+      t.name = el.value.trim();
+    }
+  });
+  renderScoreboardGrid();
+  saveState();
+  showActionNotification('✅ Составы команд сохранены!');
+}
+
+// Отрисовка неоновых блоков счёта для всех команд
+function renderScoreboardGrid() {
+  var grid = document.getElementById("teams-scoreboard-grid");
+  if (!grid) return;
+  grid.innerHTML = "";
+
+  teamsData.forEach(function(t) {
+    var group = document.createElement("div");
+    group.className = "score-team-group" + (activeTeamId === t.id ? " active" : "");
+    group.id = "score-card-" + t.id;
+    group.onclick = function() { manualActivateTeam(t.id); };
+
+    group.innerHTML = 
+      '<div class="score-team-header">' +
+        '<div class="score-team-label">' + t.name + '</div>' +
+        '<div class="score-display">' + formatScore(t.score) + '</div>' +
+      '</div>' +
+      '<div class="score-btn-row remove">' +
+        '<button class="btn remove" onclick="event.stopPropagation(); changeScore(\'' + t.id + '\', -0.5)">-0.5</button>' +
+        '<button class="btn remove" onclick="event.stopPropagation(); changeScore(\'' + t.id + '\', -1)">-1</button>' +
+        '<button class="btn remove" onclick="event.stopPropagation(); changeScore(\'' + t.id + '\', -2)">-2</button>' +
+      '</div>' +
+      '<div class="score-btn-row add">' +
+        '<button class="btn add" onclick="event.stopPropagation(); changeScore(\'' + t.id + '\', 0.5)">+0.5</button>' +
+        '<button class="btn add" onclick="event.stopPropagation(); changeScore(\'' + t.id + '\', 1)">+1</button>' +
+        '<button class="btn add" onclick="event.stopPropagation(); changeScore(\'' + t.id + '\', 2)">+2</button>' +
+      '</div>';
+
+    grid.appendChild(group);
+  });
+}
+
 function handleBuzzerTriggered(teamId, teamName) {
   var r = document.getElementById("audio-revers");
   if (r && !r.paused) {
@@ -1112,12 +1231,7 @@ function handleBuzzerTriggered(teamId, teamName) {
   }
   stopTimer();
 
-  var teamKeys = Object.keys(connectedTeamsMap);
-  if (teamKeys[0] === teamId) {
-    activateTeam(1);
-  } else if (teamKeys[1] === teamId) {
-    activateTeam(2);
-  }
+  activateTeam(teamId);
 
   if (soundUrls.ring) {
     var a = document.getElementById("audio-ring");
@@ -1203,6 +1317,8 @@ document.addEventListener('touchstart', unlockMobileAudio, { once: true });
 window.addEventListener('load', function() {
   restoreSession();
   applyGameModeUI();
+  renderOfflineTeamsInputs();
+  renderScoreboardGrid();
   initHostRoom();
 });
 
@@ -1230,35 +1346,22 @@ function restoreSession() {
       isInteractiveMode = data.isInteractiveMode === true;
       showScoreToPlayers = data.showScoreToPlayers !== false;
       showOpponentScore = data.showOpponentScore !== false;
-      team1Name = data.team1 || "Команда А";
-      team2Name = data.team2 || "Команда Б";
-      score1 = parseFloat(data.score1) || 0;
-      score2 = parseFloat(data.score2) || 0;
+      
+      if (Array.isArray(data.teamsData) && data.teamsData.length >= 2) {
+        teamsData = data.teamsData;
+      }
+      
       playedTracks = new Set(data.playedTracks || []);
       selectedFolder = data.selectedFolder || "";
       timerDuration = typeof data.timerDuration !== 'undefined' ? data.timerDuration : 10;
       originalDelay = typeof data.originalDelay !== 'undefined' ? data.originalDelay : 2;
       mixMode = data.mixMode || false;
-      activeTeam = data.activeTeam || null;
-      shouldAutoSwitch = data.shouldAutoSwitch !== false;
+      activeTeamId = data.activeTeamId || null;
       lastPlayedTrack = data.lastPlayedTrack || null;
       trackOrder = data.trackOrder || {};
       files = data.files || {};
 
-      var t1 = document.getElementById("team1");
-      var t2 = document.getElementById("team2");
-      var t1L = document.getElementById("team1-label");
-      var t2L = document.getElementById("team2-label");
-      var s1 = document.getElementById("score1");
-      var s2 = document.getElementById("score2");
       var fSel = document.getElementById("folder-select");
-
-      if (t1) t1.value = team1Name;
-      if (t2) t2.value = team2Name;
-      if (t1L) t1L.textContent = team1Name;
-      if (t2L) t2L.textContent = team2Name;
-      if (s1) s1.textContent = formatScore(score1);
-      if (s2) s2.textContent = formatScore(score2);
       if (fSel) fSel.value = selectedFolder;
 
       updateFolderSection();
@@ -1267,7 +1370,6 @@ function restoreSession() {
         if (qArea) qArea.style.display = "block";
         generateSongButtons();
         updateTrackCounter();
-        activateTeam(activeTeam);
         updateShuffleButtonState();
         updateNextTrackButton();
         preloadAllSounds();
@@ -1284,17 +1386,13 @@ function saveState() {
       isInteractiveMode: isInteractiveMode,
       showScoreToPlayers: showScoreToPlayers,
       showOpponentScore: showOpponentScore,
-      team1: team1Name,
-      team2: team2Name,
-      score1: score1,
-      score2: score2,
+      teamsData: teamsData,
       playedTracks: Array.from(playedTracks),
       selectedFolder: selectedFolder,
       timerDuration: timerDuration,
       originalDelay: originalDelay,
       mixMode: mixMode,
-      activeTeam: activeTeam,
-      shouldAutoSwitch: shouldAutoSwitch,
+      activeTeamId: activeTeamId,
       lastPlayedTrack: lastPlayedTrack,
       trackOrder: trackOrder,
       files: files
@@ -1405,21 +1503,6 @@ function formatTime(seconds) {
   var mins = Math.floor(seconds / 60);
   var secs = seconds % 60;
   return String(mins).padStart(2, '0') + ":" + String(secs).padStart(2, '0');
-}
-
-function setTeams() {
-  var t1 = document.getElementById("team1").value.trim();
-  var t2 = document.getElementById("team2").value.trim();
-  if (!t1 || !t2) {
-    alert("Введите оба названия команд!");
-    return;
-  }
-  team1Name = t1;
-  team2Name = t2;
-  document.getElementById("team1-label").textContent = t1;
-  document.getElementById("team2-label").textContent = t2;
-  saveState();
-  showActionNotification('✅ Составы обновлены!');
 }
 
 function updateFolderSection() {
@@ -1624,7 +1707,7 @@ function playTrack(name) {
   stopAllSounds();
   hideTrackPopup();
 
-  // В интерактиве сбрасываем подсветку команд до нажатия кнопки
+  // В интерактиве сбрасываем подсветку команд до физического нажатия
   if (isInteractiveMode) {
     clearTeamHighlight();
   }
@@ -1723,12 +1806,10 @@ function toggleRevers() {
       icon.classList.replace("fa-play", "fa-pause");
       showTrackPopup(currentTrackName);
       updateReversProgress();
+
+      // В оффлайн режиме — циклическое переключение хода
       if (!isInteractiveMode && currentTrackName !== lastPlayedTrack) {
-        if (shouldAutoSwitch && activeTeam !== null) {
-          var next = activeTeam === 1 ? 2 : 1;
-          activateTeam(next);
-        }
-        shouldAutoSwitch = true;
+        cycleNextOfflineTeam();
         lastPlayedTrack = currentTrackName;
         saveState();
       }
@@ -1747,29 +1828,60 @@ function toggleRevers() {
   updateNextTrackButton();
 }
 
-function manualActivateTeam(team) {
-  activateTeam(team);
-  shouldAutoSwitch = false;
+function cycleNextOfflineTeam() {
+  if (teamsData.length === 0) return;
+  var currIdx = teamsData.findIndex(function(t) { return t.id === activeTeamId; });
+  var nextIdx = (currIdx + 1) % teamsData.length;
+  activateTeam(teamsData[nextIdx].id);
+}
+
+function manualActivateTeam(teamId) {
+  activateTeam(teamId);
   saveState();
 }
 
-function activateTeam(team) {
-  var g1 = document.getElementById("score-group-1");
-  var g2 = document.getElementById("score-group-2");
-  if (g1) g1.classList.remove("active");
-  if (g2) g2.classList.remove("active");
-  if (team === 1 && g1) g1.classList.add("active");
-  if (team === 2 && g2) g2.classList.add("active");
-  activeTeam = team;
-  saveState();
+function activateTeam(teamId) {
+  activeTeamId = teamId;
+  document.querySelectorAll('.score-team-group').forEach(function(el) {
+    el.classList.remove('active');
+  });
+  var activeCard = document.getElementById('score-card-' + teamId);
+  if (activeCard) {
+    activeCard.classList.add('active');
+  }
 }
 
 function clearTeamHighlight() {
-  var g1 = document.getElementById("score-group-1");
-  var g2 = document.getElementById("score-group-2");
-  if (g1) g1.classList.remove("active");
-  if (g2) g2.classList.remove("active");
-  activeTeam = null;
+  activeTeamId = null;
+  document.querySelectorAll('.score-team-group').forEach(function(el) {
+    el.classList.remove('active');
+  });
+}
+
+function changeScore(teamId, delta) {
+  var team = teamsData.find(function(t) { return t.id === teamId; });
+  if (!team) return;
+
+  team.score = Math.max(0, team.score + delta);
+  renderScoreboardGrid();
+  saveState();
+
+  if (delta > 0) {
+    if (soundUrls.ring) {
+      var a = document.getElementById("audio-ring");
+      a.src = soundUrls.ring;
+      a.currentTime = 0;
+      a.play().catch(function() {});
+    }
+    showNotification('+' + delta + ' (' + team.name + ')', true);
+  } else {
+    showNotification(delta + ' (' + team.name + ')', false);
+  }
+
+  // Синхронизация с облаком в интерактиве
+  if (isInteractiveMode && roomRef) {
+    roomRef.child("teams/" + teamId + "/score").set(team.score);
+  }
 }
 
 function showOriginal() {
@@ -1878,39 +1990,6 @@ function showNotification(text, isAddition) {
   }
 }
 
-function addScore(team, points) {
-  if (team === 1) score1 += points;
-  else if (team === 2) score2 += points;
-  document.getElementById("score1").textContent = formatScore(score1);
-  document.getElementById("score2").textContent = formatScore(score2);
-  saveState();
-  syncTeamScoresToCloud();
-  if (soundUrls.ring) {
-    var a = document.getElementById("audio-ring");
-    a.src = soundUrls.ring;
-    a.currentTime = 0;
-    a.play().catch(function() {});
-  }
-  showNotification('+' + points + ' (' + (team === 1 ? team1Name : team2Name) + ')', true);
-}
-
-function removeScore(team, points) {
-  if (team === 1) score1 = Math.max(0, score1 - points);
-  else if (team === 2) score2 = Math.max(0, score2 - points);
-  document.getElementById("score1").textContent = formatScore(score1);
-  document.getElementById("score2").textContent = formatScore(score2);
-  saveState();
-  syncTeamScoresToCloud();
-  showNotification('-' + points + ' (' + (team === 1 ? team1Name : team2Name) + ')', false);
-}
-
-function syncTeamScoresToCloud() {
-  if (!isInteractiveMode || !roomRef) return;
-  var teamKeys = Object.keys(connectedTeamsMap);
-  if (teamKeys[0]) roomRef.child("teams/" + teamKeys[0] + "/score").set(score1);
-  if (teamKeys[1]) roomRef.child("teams/" + teamKeys[1] + "/score").set(score2);
-}
-
 function stopAllSounds() {
   if (originalTimeout) {
     clearTimeout(originalTimeout);
@@ -1938,7 +2017,7 @@ function endQuiz() {
   localStorage.removeItem('reversQuiz');
   stopAllSounds();
 
-  // Удаляем старый PIN, чтобы при следующей игре был сгенерирован новый
+  // Удаляем старый PIN, чтобы в следующий раз был сгенерирован новый
   localStorage.removeItem("host_room_pin");
 
   var aGameOver = document.getElementById("audio-game-over");
@@ -1950,12 +2029,26 @@ function endQuiz() {
   purgeAudioBuffer(document.getElementById("audio-revers"));
   purgeAudioBuffer(document.getElementById("audio-normal"));
 
+  // Сортируем команды по убыванию очков
+  var sortedTeams = teamsData.slice().sort(function(a, b) { return b.score - a.score; });
+  var winnerText = sortedTeams[0].score === sortedTeams[1].score ? "Боевая ничья!" : sortedTeams[0].name + " побеждает!";
+
   var quizArea = document.getElementById("quiz-area");
   quizArea.innerHTML = '';
+  
   var resultDiv = document.createElement('div');
   resultDiv.className = 'winner-screen';
-  resultDiv.innerHTML = '<h2>🏆 Итоги битвы:<br><strong>' + (score1 > score2 ? team1Name : score2 > score1 ? team2Name : "Ничья!") + '</strong></h2><div class="final-scores"><div>' + team1Name + ': <strong>' + formatScore(score1) + '</strong></div><div>' + team2Name + ': <strong>' + formatScore(score2) + '</strong></div></div>';
+  
+  var scoreListHtml = sortedTeams.map(function(t, idx) {
+    return '<div>' + (idx + 1) + '. ' + t.name + ': <strong>' + formatScore(t.score) + '</strong></div>';
+  }).join('');
+
+  resultDiv.innerHTML = 
+    '<h2>🏆 Итоги битвы:<br><strong>' + winnerText + '</strong></h2>' +
+    '<div class="final-scores">' + scoreListHtml + '</div>';
+
   quizArea.appendChild(resultDiv);
+
   var restartBtn = document.createElement("button");
   restartBtn.innerHTML = '<i class="fas fa-redo"></i> Новая игра';
   restartBtn.style.cssText = 'width: 100%; padding: 16px; margin-top: 24px; background: var(--neon-cyan); color: #000; font-size: 15px; text-transform: uppercase; letter-spacing: 1px;';
