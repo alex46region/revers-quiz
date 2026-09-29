@@ -814,6 +814,7 @@ button:active {
   cursor: pointer;
 }
 
+/* Окно QR-кода */
 .qr-modal-content {
   background: var(--bg-surface);
   border: 1px solid var(--neon-cyan);
@@ -1263,6 +1264,7 @@ function initHostRoom() {
     buzzer: { locked: true, pressedBy: null, passedBy: [] },
     revealedTrack: "",
     audioSync: {
+      trackSessionId: "",
       reversUrl: "",
       normalUrl: "",
       duration: 0,
@@ -1936,17 +1938,20 @@ function playTrack(name) {
       if (timerDuration > 0) startTimer();
       hideTrackPopup();
     };
+
+    var newTrackSessionId = "track_" + Date.now();
+
     audioRevers.onloadedmetadata = function() {
       var dur = audioRevers.duration || 0;
       document.getElementById("revers-duration").textContent = formatTime(dur);
 
-      // Передаём участникам URLs и длительность реверса
       if (isInteractiveMode && roomRef) {
         teamsData.forEach(function(t) {
           roomRef.child("teams/" + t.id + "/readyToPlay").set(false);
         });
 
         roomRef.child("audioSync").set({
+          trackSessionId: newTrackSessionId,
           reversUrl: track.revers || "",
           normalUrl: track.normal || "",
           duration: dur,
@@ -2020,7 +2025,6 @@ function toggleRevers() {
     stopTimer();
     hideBuzzerAlert();
 
-    // Проверяем готовность участников и буфера ведущего
     if (isInteractiveMode && streamAudioToPlayers && teamsData.length > 0) {
       waitForAllDevicesReady(audio, function() {
         startSynchronizedPlayback();
@@ -2044,7 +2048,6 @@ function toggleRevers() {
   updateNextTrackButton();
 }
 
-// Ожидание готовности буфера у самого ведущего и всех подключённых игроков
 function waitForAllDevicesReady(localAudio, callback) {
   var isDone = false;
   var fallbackTimer = setTimeout(function() {
@@ -2057,10 +2060,8 @@ function waitForAllDevicesReady(localAudio, callback) {
   function checkEverythingReady() {
     if (isDone) return;
     
-    // Проверка локального буфера ведущего
     var hostBuffered = localAudio.readyState >= 3;
 
-    // Проверка всех команд
     var teamsReady = true;
     teamsData.forEach(function(t) {
       if (!t.readyToPlay) teamsReady = false;
@@ -2073,8 +2074,7 @@ function waitForAllDevicesReady(localAudio, callback) {
     }
   }
 
-  // Слушаем статус готовности в базе
-  var unwatch = roomRef.child("teams").on("value", function() {
+  roomRef.child("teams").on("value", function() {
     checkEverythingReady();
   });
 
@@ -2085,11 +2085,10 @@ function waitForAllDevicesReady(localAudio, callback) {
   checkEverythingReady();
 }
 
-// Запуск воспроизведения с меткой времени startAt для строгого синхрона
 function startSynchronizedPlayback() {
   var audio = document.getElementById("audio-revers");
   var icon = document.getElementById("revers-play-icon");
-  var serverStartAt = Date.now() + 250; // Точка старта с зазором на передачу
+  var serverStartAt = Date.now() + 250;
 
   if (isInteractiveMode && roomRef) {
     clearTeamHighlight();
