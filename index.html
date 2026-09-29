@@ -814,7 +814,6 @@ button:active {
   cursor: pointer;
 }
 
-/* Окно QR-кода */
 .qr-modal-content {
   background: var(--bg-surface);
   border: 1px solid var(--neon-cyan);
@@ -903,7 +902,6 @@ button:active {
     <div class="subtitle" id="game-subtitle">Угадай трек наоборот</div>
   </div>
 
-  <!-- Блок интерактивной комнаты (онлайн) -->
   <div class="section" id="host-online-section" style="display:none;">
     <div class="online-box">
       <div class="online-row-top">
@@ -938,7 +936,6 @@ button:active {
     </div>
   </div>
 
-  <!-- Блок локальных команд (оффлайн) с добавлением новых -->
   <div class="section" id="local-teams-section">
     <h2 class="section-title"><i class="fas fa-users"></i> Команды игры</h2>
     <div class="teams-input-list" id="teams-input-container"></div>
@@ -970,15 +967,12 @@ button:active {
   </div>
 
   <div id="quiz-area" style="display: none;">
-    <!-- Баннер нажатия кнопки командой -->
     <div class="buzzer-alert-overlay" id="buzzer-alert-box">
       🔔 <span id="buzzer-alert-team">Команда</span> НАЖАЛА КНОПКУ!
     </div>
 
     <div class="section">
       <h2 class="section-title"><i class="fas fa-trophy"></i> Счёт игры</h2>
-      
-      <!-- Динамический контейнер карточек команд -->
       <div class="score-controls" id="teams-scoreboard-grid"></div>
 
       <div class="result-sounds">
@@ -1064,7 +1058,6 @@ button:active {
 
 <div id="timer-circle">0</div>
 
-<!-- Модальное окно настроек -->
 <div id="settings-modal">
   <div class="modal-content">
     <button class="close-modal" onclick="closeSettings()">&times;</button>
@@ -1123,7 +1116,6 @@ button:active {
   </div>
 </div>
 
-<!-- Модальное окно с QR-кодом -->
 <div id="qr-modal">
   <div class="qr-modal-content">
     <button class="close-modal" onclick="closeQrModal()">&times;</button>
@@ -1268,6 +1260,7 @@ function initHostRoom() {
       reversUrl: "",
       normalUrl: "",
       duration: 0,
+      currentTime: 0,
       playAction: "stop",
       startAt: 0
     }
@@ -1428,8 +1421,12 @@ function handleBuzzerTriggered(teamId, teamName) {
   }
   stopTimer();
 
-  if (isInteractiveMode && roomRef && streamAudioToPlayers) {
-    roomRef.child("audioSync").update({ playAction: "pause" });
+  // При баззере мгновенно глушим аудио у всех участников с точной секундой
+  if (isInteractiveMode && roomRef) {
+    roomRef.child("audioSync").update({ 
+      playAction: "pause",
+      currentTime: r ? r.currentTime : 0
+    });
   }
 
   activateTeam(teamId);
@@ -1702,6 +1699,7 @@ function startOriginalPlayback() {
     if (isInteractiveMode && roomRef && streamAudioToPlayers) {
       roomRef.child("audioSync").update({
         playAction: "play_normal",
+        currentTime: 0,
         startAt: Date.now() + 150
       });
     }
@@ -1950,11 +1948,13 @@ function playTrack(name) {
           roomRef.child("teams/" + t.id + "/readyToPlay").set(false);
         });
 
+        // Передаем уникальный ID сессии трека и длительность
         roomRef.child("audioSync").set({
           trackSessionId: newTrackSessionId,
           reversUrl: track.revers || "",
           normalUrl: track.normal || "",
           duration: dur,
+          currentTime: 0,
           playAction: "prepare",
           startAt: 0
         });
@@ -2011,6 +2011,7 @@ function hideTrackPopup() {
   if (popup) popup.style.opacity = 0;
 }
 
+// Запуск, пауза и продолжение с точной синхронизацией
 function toggleRevers() {
   var audio = document.getElementById("audio-revers");
   var normal = document.getElementById("audio-normal");
@@ -2025,7 +2026,10 @@ function toggleRevers() {
     stopTimer();
     hideBuzzerAlert();
 
-    if (isInteractiveMode && streamAudioToPlayers && teamsData.length > 0) {
+    // Если аудио уже на паузе посреди трека — мгновенное возобновление без ожидания буфера
+    if (audio.currentTime > 0) {
+      resumeSynchronizedPlayback();
+    } else if (isInteractiveMode && streamAudioToPlayers && teamsData.length > 0) {
       waitForAllDevicesReady(audio, function() {
         startSynchronizedPlayback();
       });
@@ -2033,15 +2037,17 @@ function toggleRevers() {
       startSynchronizedPlayback();
     }
   } else {
+    // Пауза у ведущего -> Пауза у всех участников с точной фиксацией секунды
     audio.pause();
     icon.classList.replace("fa-pause", "fa-play");
     hideTrackPopup();
 
     if (isInteractiveMode && roomRef) {
       roomRef.update({ status: "idle" });
-      if (streamAudioToPlayers) {
-        roomRef.child("audioSync").update({ playAction: "pause" });
-      }
+      roomRef.child("audioSync").update({ 
+        playAction: "pause",
+        currentTime: audio.currentTime
+      });
     }
   }
   updateShuffleButtonState();
@@ -2061,7 +2067,6 @@ function waitForAllDevicesReady(localAudio, callback) {
     if (isDone) return;
     
     var hostBuffered = localAudio.readyState >= 3;
-
     var teamsReady = true;
     teamsData.forEach(function(t) {
       if (!t.readyToPlay) teamsReady = false;
@@ -2098,17 +2103,17 @@ function startSynchronizedPlayback() {
       buzzer: { locked: false, pressedBy: null, pressedByName: null, passedBy: [] }
     });
 
-    if (streamAudioToPlayers) {
-      roomRef.child("audioSync").update({
-        playAction: "play_revers",
-        startAt: serverStartAt,
-        duration: audio.duration || 0
-      });
-    }
+    roomRef.child("audioSync").update({
+      playAction: "play_revers",
+      startAt: serverStartAt,
+      duration: audio.duration || 0,
+      currentTime: 0
+    });
   }
 
   var delayStart = Math.max(0, serverStartAt - Date.now());
   setTimeout(function() {
+    audio.currentTime = 0;
     audio.play().then(function() {
       icon.classList.replace("fa-play", "fa-pause");
       showTrackPopup(currentTrackName);
@@ -2121,6 +2126,37 @@ function startSynchronizedPlayback() {
       }
     }).catch(function(err) {
       console.warn("Воспроизведение ведущего ожидает разрешения:", err);
+    });
+  }, delayStart);
+}
+
+// Возобновление после паузы
+function resumeSynchronizedPlayback() {
+  var audio = document.getElementById("audio-revers");
+  var icon = document.getElementById("revers-play-icon");
+  var serverStartAt = Date.now() + 150;
+
+  if (isInteractiveMode && roomRef) {
+    roomRef.update({
+      status: "playing",
+      buzzer: { locked: false, pressedBy: null, pressedByName: null, passedBy: [] }
+    });
+
+    roomRef.child("audioSync").update({
+      playAction: "resume_revers",
+      currentTime: audio.currentTime,
+      startAt: serverStartAt
+    });
+  }
+
+  var delayStart = Math.max(0, serverStartAt - Date.now());
+  setTimeout(function() {
+    audio.play().then(function() {
+      icon.classList.replace("fa-play", "fa-pause");
+      showTrackPopup(currentTrackName);
+      updateReversProgress();
+    }).catch(function(err) {
+      console.warn("Возобновление:", err);
     });
   }, delayStart);
 }
@@ -2217,6 +2253,7 @@ function toggleNormal() {
       if (isInteractiveMode && roomRef && streamAudioToPlayers) {
         roomRef.child("audioSync").update({
           playAction: "play_normal",
+          currentTime: 0,
           startAt: Date.now() + 150
         });
       }
