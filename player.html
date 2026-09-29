@@ -167,6 +167,7 @@ body {
   justify-content: space-between;
 }
 
+/* Адаптивное табло */
 .scoreboard-arena {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(75px, 1fr));
@@ -229,6 +230,13 @@ body {
   color: var(--neon-pink);
 }
 
+/* Статус-панель и плеер раунда у участника */
+.player-status-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
 .status-pill {
   background: var(--bg-card);
   border: 1px solid var(--border-subtle);
@@ -252,6 +260,42 @@ body {
   box-shadow: 0 0 15px rgba(255, 230, 0, 0.15);
 }
 
+/* Блок таймера трека */
+.track-timer-bar {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  padding: 8px 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.progress-track {
+  flex: 1;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--neon-cyan);
+  box-shadow: 0 0 8px var(--neon-cyan);
+  width: 0%;
+  transition: width 0.1s linear;
+}
+
+.track-time-text {
+  font-family: 'Ubuntu Mono', monospace;
+  font-size: 0.85em;
+  color: var(--neon-yellow);
+  min-width: 80px;
+  text-align: right;
+  font-weight: 700;
+}
+
 .revealed-track-box {
   background: rgba(0, 255, 102, 0.1);
   border: 1px solid var(--neon-lime);
@@ -261,10 +305,11 @@ body {
   text-align: center;
   font-size: 0.95em;
   font-weight: 700;
-  margin-top: 8px;
+  margin-top: 4px;
   display: none;
 }
 
+/* 3D Баззер */
 .buzzer-stage {
   flex: 1;
   display: flex;
@@ -478,10 +523,20 @@ body {
 <div id="game-view">
   <div class="scoreboard-arena" id="scoreboard-wrap"></div>
 
-  <div>
+  <div class="player-status-wrapper">
     <div class="status-pill" id="round-status-pill">
       <i class="fas fa-hourglass-half"></i> <span>Ожидание раунда</span>
     </div>
+
+    <!-- Таймер и прогресс-бар длительности реверса -->
+    <div class="track-timer-bar" id="player-timer-bar">
+      <i class="fas fa-music" style="color:var(--neon-cyan); font-size:0.9em;"></i>
+      <div class="progress-track">
+        <div class="progress-fill" id="player-progress-fill"></div>
+      </div>
+      <div class="track-time-text" id="player-time-display">00:00 / 00:00</div>
+    </div>
+
     <div class="revealed-track-box" id="revealed-track-box"></div>
   </div>
 
@@ -535,8 +590,16 @@ var myTeamId = null;
 var myTeamName = "";
 var gameOverTimer = null;
 var currentLoadedReversUrl = "";
+var currentTrackDuration = 0;
+var progressAnimFrame = null;
 
-// Принудительная разблокировка Audio Context браузера (для обхода Autoplay Policy)
+function formatTime(seconds) {
+  seconds = Math.floor(seconds || 0);
+  var mins = Math.floor(seconds / 60);
+  var secs = seconds % 60;
+  return String(mins).padStart(2, '0') + ":" + String(secs).padStart(2, '0');
+}
+
 function unlockBrowserAudio() {
   ['player-audio-revers', 'player-audio-normal'].forEach(function(id) {
     var a = document.getElementById(id);
@@ -558,7 +621,7 @@ function showError(msg) {
 }
 
 function joinGame() {
-  unlockBrowserAudio(); // Разблокируем аудио прямо по клику на кнопку входа
+  unlockBrowserAudio();
 
   var pin = document.getElementById("room-pin").value.trim();
   var name = document.getElementById("team-name").value.trim();
@@ -604,6 +667,23 @@ function joinGame() {
   });
 }
 
+function updatePlayerProgress() {
+  var a = document.getElementById("player-audio-revers");
+  var fill = document.getElementById("player-progress-fill");
+  var timeDisplay = document.getElementById("player-time-display");
+
+  var dur = currentTrackDuration || a.duration || 0;
+  var cur = a.currentTime || 0;
+
+  var pct = dur > 0 ? (cur / dur) * 100 : 0;
+  fill.style.width = Math.min(100, Math.max(0, pct)) + "%";
+  timeDisplay.textContent = formatTime(cur) + " / " + formatTime(dur);
+
+  if (!a.paused) {
+    progressAnimFrame = requestAnimationFrame(updatePlayerProgress);
+  }
+}
+
 function listenToAudioStream() {
   var audioSyncRef = db.ref("rooms/" + currentRoom + "/audioSync");
   var aRevers = document.getElementById("player-audio-revers");
@@ -613,7 +693,12 @@ function listenToAudioStream() {
     var sync = snapshot.val();
     if (!sync) return;
 
-    // Фоновая загрузка аудио
+    if (sync.duration) {
+      currentTrackDuration = sync.duration;
+      document.getElementById("player-time-display").textContent = "00:00 / " + formatTime(currentTrackDuration);
+    }
+
+    // Фоновая предзагрузка аудиофайлов
     if (sync.reversUrl && sync.reversUrl !== currentLoadedReversUrl) {
       currentLoadedReversUrl = sync.reversUrl;
 
@@ -633,33 +718,43 @@ function listenToAudioStream() {
       };
     }
 
-    // Управление воспроизведением
+    // Воспроизведение по точной метке времени startAt
     if (sync.playAction === "play_revers") {
       aNormal.pause();
-      aRevers.currentTime = sync.targetTime || 0;
-      var playPromise = aRevers.play();
-      if (playPromise !== undefined) {
-        playPromise.catch(function(err) {
-          console.warn("Браузер заблокировал автовоспроизведение, кликните по экрану:", err);
-        });
-      }
+      
+      var targetDelay = Math.max(0, (sync.startAt || Date.now()) - Date.now());
+      setTimeout(function() {
+        aRevers.currentTime = 0;
+        var p = aRevers.play();
+        if (p !== undefined) {
+          p.then(function() {
+            updatePlayerProgress();
+          }).catch(function(e) {
+            console.warn("Автовоспроизведение заблокировано браузером:", e);
+          });
+        }
+      }, targetDelay);
+
     } else if (sync.playAction === "play_normal") {
       aRevers.pause();
-      aNormal.currentTime = sync.targetTime || 0;
-      var playNormPromise = aNormal.play();
-      if (playNormPromise !== undefined) {
-        playNormPromise.catch(function(err) {
-          console.warn("Браузер заблокировал автовоспроизведение оригинала:", err);
-        });
-      }
+      var normDelay = Math.max(0, (sync.startAt || Date.now()) - Date.now());
+      setTimeout(function() {
+        aNormal.currentTime = 0;
+        aNormal.play().catch(function() {});
+      }, normDelay);
+
     } else if (sync.playAction === "pause") {
       aRevers.pause();
       aNormal.pause();
+      if (progressAnimFrame) cancelAnimationFrame(progressAnimFrame);
     } else if (sync.playAction === "stop") {
       aRevers.pause();
       aNormal.pause();
       aRevers.currentTime = 0;
       aNormal.currentTime = 0;
+      if (progressAnimFrame) cancelAnimationFrame(progressAnimFrame);
+      document.getElementById("player-progress-fill").style.width = "0%";
+      document.getElementById("player-time-display").textContent = "00:00 / " + formatTime(currentTrackDuration);
     }
   });
 }
@@ -788,6 +883,7 @@ function showGameOverScreen(leaderboard) {
   var aNormal = document.getElementById("player-audio-normal");
   if (aRevers) aRevers.pause();
   if (aNormal) aNormal.pause();
+  if (progressAnimFrame) cancelAnimationFrame(progressAnimFrame);
 
   document.getElementById("game-view").style.display = "none";
   var overView = document.getElementById("game-over-view");
