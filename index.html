@@ -2,14 +2,21 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover" />
-<meta name="theme-color" content="#030407" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+<meta name="theme-color" content="#05060a" />
 <meta name="referrer" content="no-referrer" />
-<title>⚡ Revers Quiz — Экран команды</title>
+<title>🎧 Revers Викторина: Neon Stage</title>
+
+<link rel="manifest" href="manifest.json">
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(function(e) { console.warn(e); });
+  }
+</script>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Syne:wght@800&family=Ubuntu+Mono:wght@700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Syne:wght@700;800&family=Ubuntu+Mono:wght@700&display=swap" rel="stylesheet">
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
 
 <!-- Firebase App & Database -->
@@ -18,17 +25,20 @@
 
 <style>
 :root {
-  --bg-deep: #030407;
-  --bg-card: rgba(14, 18, 26, 0.75);
-  --neon-cyan: #00f0ff;
-  --neon-pink: #ff0055;
-  --neon-yellow: #ffe600;
+  --bg-deep: #05060a;
+  --bg-surface: #0e121a;
+  --bg-elevated: #161c28;
+  
+  --neon-yellow: #ffea00;
   --neon-lime: #00ff66;
+  --neon-pink: #ff0055;
+  --neon-cyan: #00e5ff;
   --neon-purple: #7000ff;
+  
   --text-pure: #ffffff;
-  --text-dim: #7d8ea6;
-  --border-glow: rgba(0, 240, 255, 0.2);
-  --border-subtle: rgba(255, 255, 255, 0.08);
+  --text-dim: #8b9bb4;
+  --border-subtle: rgba(255, 255, 255, 0.07);
+  --border-glow: rgba(0, 229, 255, 0.4);
 }
 
 * {
@@ -37,709 +47,1487 @@
   padding: 0;
   font-family: 'Space Grotesk', sans-serif;
   -webkit-tap-highlight-color: transparent;
-  user-select: none;
 }
 
 body {
   background-color: var(--bg-deep);
   background-image: 
-    radial-gradient(circle at 50% 10%, rgba(0, 240, 255, 0.12) 0%, transparent 50%),
-    radial-gradient(circle at 10% 90%, rgba(112, 0, 255, 0.12) 0%, transparent 50%),
-    radial-gradient(circle at 90% 90%, rgba(255, 0, 85, 0.12) 0%, transparent 50%);
+    radial-gradient(ellipse at 50% 0%, rgba(112, 0, 255, 0.25) 0%, transparent 60%),
+    radial-gradient(circle at 100% 100%, rgba(255, 0, 85, 0.15) 0%, transparent 40%),
+    radial-gradient(circle at 0% 100%, rgba(0, 229, 255, 0.15) 0%, transparent 40%);
+  background-attachment: fixed;
   color: var(--text-pure);
   min-height: 100vh;
-  min-height: 100dvh;
-  display: flex;
-  flex-direction: column;
-  padding: 14px;
-  overflow: hidden;
-  position: relative;
+  padding: 16px 8px 80px;
 }
 
-.login-wrap {
-  margin: auto;
-  width: 100%;
-  max-width: 380px;
-  background: var(--bg-card);
-  backdrop-filter: blur(20px);
-  border: 1px solid var(--border-glow);
-  border-radius: 28px;
-  padding: 32px 24px;
-  text-align: center;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.9), 0 0 30px rgba(0, 240, 255, 0.1);
-  animation: fadeIn 0.4s ease;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(15px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.brand-icon {
-  width: 58px;
-  height: 58px;
-  background: linear-gradient(135deg, var(--neon-cyan), var(--neon-purple));
-  border-radius: 18px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0 auto 14px;
-  font-size: 1.6em;
-  color: #000;
-  box-shadow: 0 0 25px rgba(0, 240, 255, 0.4);
-}
-
-.login-wrap h2 {
-  font-family: 'Syne', sans-serif;
-  font-size: 1.7em;
-  margin-bottom: 6px;
-  letter-spacing: 0.5px;
-}
-
-.login-wrap p {
-  color: var(--text-dim);
-  font-size: 0.85em;
-  margin-bottom: 22px;
-  line-height: 1.4;
-}
-
-.input-box {
-  margin-bottom: 12px;
-}
-
-.input-box input {
-  width: 100%;
-  padding: 15px 16px;
-  background: rgba(5, 6, 10, 0.8);
-  border: 1px solid var(--border-subtle);
-  border-radius: 14px;
-  color: #fff;
-  font-size: 17px;
-  font-weight: 700;
-  text-align: center;
-  outline: none;
-  transition: all 0.2s;
-}
-
-.input-box input:focus {
-  border-color: var(--neon-cyan);
-  box-shadow: 0 0 20px rgba(0, 240, 255, 0.25);
-}
-
-.btn-join {
-  width: 100%;
-  padding: 16px;
-  margin-top: 6px;
-  background: linear-gradient(90deg, var(--neon-cyan), #00aaff);
-  color: #000;
-  border: none;
-  border-radius: 14px;
-  font-size: 16px;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 1.5px;
-  cursor: pointer;
-  box-shadow: 0 6px 25px rgba(0, 240, 255, 0.35);
-}
-
-.btn-join:active {
-  transform: scale(0.98);
-}
-
-.error-banner {
-  color: var(--neon-pink);
-  background: rgba(255, 0, 85, 0.1);
-  border: 1px solid rgba(255, 0, 85, 0.3);
-  padding: 10px 14px;
-  border-radius: 12px;
-  font-size: 0.85em;
-  font-weight: 700;
-  margin-top: 14px;
-  display: none;
-}
-
-#game-view {
-  display: none;
-  flex-direction: column;
-  flex: 1;
-  max-width: 480px;
-  width: 100%;
+.container {
+  max-width: 900px;
   margin: 0 auto;
-  justify-content: space-between;
-}
-
-/* Верхняя панель со счётом и кнопкой чата */
-.top-action-bar {
-  display: flex;
-  gap: 8px;
-  align-items: stretch;
-  margin-bottom: 10px;
-}
-
-.scoreboard-arena {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(75px, 1fr));
-  gap: 6px;
-  flex: 1;
-}
-
-.player-chat-trigger-btn {
-  background: var(--bg-card);
-  border: 1px solid var(--neon-cyan);
-  color: var(--neon-cyan);
-  border-radius: 14px;
-  padding: 0 14px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.2em;
-  position: relative;
-  cursor: pointer;
-  box-shadow: 0 0 15px rgba(0, 229, 255, 0.15);
-  flex-shrink: 0;
-}
-
-.player-chat-unread-badge {
-  position: absolute;
-  top: -4px;
-  right: -4px;
-  background: var(--neon-pink);
-  color: #fff;
-  font-size: 10px;
-  font-weight: 800;
-  padding: 2px 6px;
-  border-radius: 10px;
-  box-shadow: 0 0 8px rgba(255, 0, 85, 0.6);
-  display: none;
-}
-
-.score-card {
-  background: var(--bg-card);
-  backdrop-filter: blur(12px);
+  background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
-  border-radius: 12px;
-  padding: 6px 4px;
-  text-align: center;
-  transition: all 0.2s;
-  min-width: 0;
-}
-
-.score-card.my-card {
-  border-color: var(--neon-cyan);
-  background: rgba(0, 240, 255, 0.08);
-  box-shadow: 0 0 14px rgba(0, 240, 255, 0.2);
-}
-
-.score-card.opponent-card {
-  border-color: rgba(255, 0, 85, 0.25);
-  background: rgba(255, 0, 85, 0.03);
-}
-
-.score-team-title {
-  font-size: 0.68em;
-  font-weight: 700;
-  text-transform: uppercase;
-  color: var(--text-dim);
-  white-space: nowrap;
+  border-radius: 24px;
+  box-shadow: 0 25px 60px -10px rgba(0, 0, 0, 0.9), 0 0 1px 1px var(--border-subtle);
   overflow: hidden;
-  text-overflow: ellipsis;
-  padding: 0 2px;
+  position: relative;
 }
 
-.my-card .score-team-title {
-  color: var(--neon-cyan);
+.container::before {
+  content: '';
+  display: block;
+  height: 4px;
+  background: linear-gradient(90deg, var(--neon-cyan), var(--neon-purple), var(--neon-pink), var(--neon-yellow));
 }
 
-.score-team-pts {
-  font-family: 'Ubuntu Mono', monospace;
-  font-size: 1.45em;
-  font-weight: 700;
-  line-height: 1.1;
-  margin-top: 2px;
-}
-
-.my-card .score-team-pts {
-  color: var(--neon-cyan);
-  text-shadow: 0 0 10px rgba(0, 240, 255, 0.4);
-}
-
-.opponent-card .score-team-pts {
-  color: var(--neon-pink);
-}
-
-.player-status-wrapper {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.status-pill {
-  background: var(--bg-card);
-  border: 1px solid var(--border-subtle);
-  border-radius: 14px;
-  padding: 8px 14px;
+.header {
+  padding: 32px 20px 20px;
   text-align: center;
-  font-size: 0.85em;
-  font-weight: 700;
-  color: var(--text-dim);
+}
+
+h1 {
+  font-family: 'Syne', sans-serif;
+  font-size: 2.2em;
+  font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 1px;
+  background: linear-gradient(180deg, #ffffff 30%, #a5b4fc 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-}
-
-.status-pill.playing {
-  border-color: var(--neon-yellow);
-  color: var(--neon-yellow);
-  box-shadow: 0 0 15px rgba(255, 230, 0, 0.15);
-}
-
-.track-timer-bar {
-  background: var(--bg-card);
-  border: 1px solid var(--border-subtle);
-  border-radius: 14px;
-  padding: 8px 14px;
-  display: flex;
-  align-items: center;
   gap: 12px;
 }
 
-.progress-track {
-  flex: 1;
-  height: 6px;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 4px;
-  overflow: hidden;
+h1 i {
+  -webkit-text-fill-color: var(--neon-cyan);
+  filter: drop-shadow(0 0 12px var(--neon-cyan));
 }
 
-.progress-fill {
-  height: 100%;
-  background: var(--neon-cyan);
-  box-shadow: 0 0 8px var(--neon-cyan);
-  width: 0%;
-  transition: width 0.1s linear;
-}
-
-.track-time-text {
-  font-family: 'Ubuntu Mono', monospace;
+.subtitle {
   font-size: 0.85em;
+  font-weight: 700;
   color: var(--neon-yellow);
-  min-width: 80px;
-  text-align: right;
-  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  margin-top: 6px;
 }
 
-.revealed-track-box {
-  background: rgba(0, 255, 102, 0.1);
-  border: 1px solid var(--neon-lime);
-  color: var(--neon-lime);
-  border-radius: 12px;
-  padding: 10px 14px;
-  text-align: center;
-  font-size: 0.95em;
-  font-weight: 700;
-  margin-top: 4px;
-  display: none;
+.section {
+  background: var(--bg-elevated);
+  margin: 16px 20px;
+  padding: 20px;
+  border-radius: 18px;
+  border: 1px solid var(--border-subtle);
+  position: relative;
 }
 
-.buzzer-stage {
-  flex: 1;
+.section-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 1.1em;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--text-dim);
+  margin-bottom: 16px;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  position: relative;
-  gap: 16px;
-  padding: 8px 0;
+  gap: 10px;
 }
 
-.buzzer-halo {
-  position: relative;
-  border-radius: 50%;
-  padding: 12px;
-  background: radial-gradient(circle, rgba(255, 0, 85, 0.15) 0%, transparent 70%);
+.section-title i {
+  color: var(--neon-cyan);
 }
 
-.buzzer-3d-btn {
-  width: 220px;
-  height: 220px;
-  border-radius: 50%;
-  border: 4px solid rgba(255, 255, 255, 0.15);
-  background: radial-gradient(circle at 35% 35%, #ff2a70, #c40042 60%, #700024 100%);
-  color: #fff;
-  font-family: 'Syne', sans-serif;
-  font-size: 1.7em;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 2px;
-  cursor: pointer;
-  box-shadow: 
-    0 15px 35px rgba(255, 0, 85, 0.4),
-    0 0 50px rgba(255, 0, 85, 0.25),
-    inset 0 4px 8px rgba(255, 255, 255, 0.4),
-    inset 0 -8px 16px rgba(0, 0, 0, 0.6);
-  transition: all 0.12s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+.online-box {
+  background: rgba(0, 229, 255, 0.05);
+  border: 1px solid var(--neon-cyan);
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 16px;
   display: flex;
   flex-direction: column;
+  gap: 14px;
+}
+
+.online-row-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.pin-display {
+  font-family: 'Ubuntu Mono', monospace;
+  font-size: 1.8em;
+  font-weight: 700;
+  color: var(--neon-yellow);
+  letter-spacing: 3px;
+}
+
+.online-link-area {
+  background: rgba(5, 6, 10, 0.6);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.link-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.copy-link-btn {
+  flex: 1;
+  min-width: 0;
+  font-family: 'Ubuntu Mono', monospace;
+  font-size: 0.9em;
+  font-weight: 700;
+  color: var(--neon-cyan);
+  background: rgba(0, 229, 255, 0.08);
+  border: 1px dashed var(--neon-cyan);
+  padding: 10px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.buzzer-3d-btn:active:not(:disabled) {
-  transform: scale(0.92) translateY(6px);
-  box-shadow: 0 5px 15px rgba(255, 0, 85, 0.5);
-}
-
-.buzzer-3d-btn:disabled {
-  background: radial-gradient(circle, #252a36 0%, #151821 100%);
-  border-color: rgba(255, 255, 255, 0.05);
-  color: #4a5468;
-  cursor: not-allowed;
-  transform: none !important;
-  box-shadow: none;
-}
-
-.buzzer-3d-btn.winner-turn {
-  background: radial-gradient(circle at 35% 35%, #2eff84, #00bd4c 60%, #006b2b 100%);
-  box-shadow: 0 0 70px rgba(0, 255, 102, 0.7), inset 0 4px 10px rgba(255, 255, 255, 0.6);
+.copy-link-btn:active {
+  background: var(--neon-cyan);
   color: #000;
-  animation: pulseTurn 0.8s infinite alternate;
 }
 
-@keyframes pulseTurn {
-  0% { transform: scale(0.97); }
-  100% { transform: scale(1.03); }
-}
-
-.pass-turn-btn {
-  background: rgba(255, 230, 0, 0.08);
+.qr-trigger-btn {
+  background: rgba(255, 234, 0, 0.1);
   border: 1px solid var(--neon-yellow);
   color: var(--neon-yellow);
-  padding: 10px 22px;
-  border-radius: 12px;
-  font-weight: 800;
-  font-size: 0.85em;
-  text-transform: uppercase;
-  letter-spacing: 1px;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 0.9em;
+  font-weight: 700;
   cursor: pointer;
-  display: none;
-  animation: fadeIn 0.3s;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
 }
 
-.pass-turn-btn:active {
+.qr-trigger-btn:active {
   background: var(--neon-yellow);
   color: #000;
 }
 
-.hud-footer {
-  background: var(--bg-card);
-  backdrop-filter: blur(12px);
+.connected-teams-list {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.team-pill {
+  background: var(--bg-deep);
   border: 1px solid var(--border-subtle);
-  border-radius: 14px;
-  padding: 12px;
-  text-align: center;
+  border-radius: 10px;
+  padding: 8px 14px;
   font-size: 0.9em;
-  color: var(--text-dim);
-}
-
-.hud-footer strong {
-  color: #fff;
-}
-
-#game-over-view {
-  display: none;
-  flex-direction: column;
-  margin: auto;
-  width: 100%;
-  max-width: 400px;
-  background: var(--bg-card);
-  backdrop-filter: blur(20px);
-  border: 1px solid var(--neon-yellow);
-  box-shadow: 0 0 50px rgba(255, 230, 0, 0.2);
-  border-radius: 28px;
-  padding: 28px 20px;
-  text-align: center;
-  animation: fadeIn 0.4s ease;
-}
-
-.trophy-icon {
-  font-size: 3em;
-  color: var(--neon-yellow);
-  filter: drop-shadow(0 0 18px var(--neon-yellow));
-  margin-bottom: 10px;
-}
-
-.game-over-title {
-  font-family: 'Syne', sans-serif;
-  font-size: 1.8em;
-  margin-bottom: 4px;
-}
-
-.winner-name-badge {
-  font-size: 1.3em;
-  font-weight: 800;
-  color: var(--neon-lime);
-  margin-bottom: 16px;
-  text-shadow: 0 0 15px rgba(0, 255, 102, 0.5);
-}
-
-.final-leaderboard {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-bottom: 20px;
-  text-align: left;
-}
-
-.leaderboard-row {
-  display: flex;
-  justify-content: space-between;
+  font-weight: 700;
+  display: inline-flex;
   align-items: center;
-  background: rgba(5, 6, 10, 0.8);
-  border: 1px solid var(--border-subtle);
-  border-radius: 12px;
-  padding: 10px 14px;
-  font-size: 0.95em;
-  font-weight: 700;
+  gap: 8px;
 }
 
-.leaderboard-row.gold {
-  border-color: var(--neon-yellow);
-  background: rgba(255, 230, 0, 0.08);
+.team-pill.ready {
+  border-color: var(--neon-lime);
+  color: var(--neon-lime);
 }
 
-.leaderboard-row .pts {
-  font-family: 'Ubuntu Mono', monospace;
-  font-size: 1.2em;
-  color: var(--neon-cyan);
-}
-
-.countdown-box {
-  font-size: 0.85em;
-  color: var(--text-dim);
-}
-
-.countdown-box span {
-  font-family: 'Ubuntu Mono', monospace;
-  font-weight: 700;
-  color: var(--neon-pink);
-  font-size: 1.2em;
-}
-
-/* Модальное окно чата участника */
-#player-chat-modal {
+.buzzer-wave-overlay {
   position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.85);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  z-index: 3000;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.8);
+  z-index: 5000;
   display: none;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 14px;
+  gap: 12px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.25s ease, transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-.player-chat-card {
-  background: var(--bg-surface);
-  border: 1px solid var(--border-glow);
-  border-radius: 24px;
-  width: 100%;
-  max-width: 440px;
-  height: 80vh;
+.buzzer-wave-overlay.show {
   display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.9);
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
 }
 
-.player-chat-head {
-  padding: 14px 18px;
-  background: var(--bg-elevated);
+.wave-hand-halo {
+  width: clamp(100px, 24vw, 150px);
+  height: clamp(100px, 24vw, 150px);
+  background: rgba(14, 18, 26, 0.85);
+  backdrop-filter: blur(16px);
+  border: 2px solid var(--neon-pink);
+  border-radius: 50%;
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid var(--border-subtle);
-  font-family: 'Syne', sans-serif;
-  font-size: 1.1em;
-  font-weight: 800;
+  justify-content: center;
+  box-shadow: 0 0 30px rgba(255, 0, 85, 0.5), 0 0 60px rgba(255, 0, 85, 0.25);
 }
 
-.player-chat-messages {
-  flex: 1;
-  padding: 14px;
-  overflow-y: auto;
+.wave-hand-emoji {
+  font-size: clamp(3em, 8vw, 4.5em);
+  display: inline-block;
+  transform-origin: 70% 70%;
+  animation: waveMotion 1.2s infinite ease-in-out;
+}
+
+@keyframes waveMotion {
+  0% { transform: rotate(0deg); }
+  15% { transform: rotate(16deg); }
+  30% { transform: rotate(-10deg); }
+  45% { transform: rotate(14deg); }
+  60% { transform: rotate(-6deg); }
+  75% { transform: rotate(10deg); }
+  100% { transform: rotate(0deg); }
+}
+
+.wave-team-badge {
+  background: rgba(5, 6, 10, 0.9);
+  backdrop-filter: blur(14px);
+  border: 1px solid var(--neon-cyan);
+  color: #fff;
+  padding: 10px 22px;
+  border-radius: 16px;
+  font-family: 'Syne', sans-serif;
+  font-size: clamp(1em, 3.2vw, 1.4em);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  text-align: center;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8), 0 0 20px rgba(0, 229, 255, 0.3);
+  max-width: 85vw;
+}
+
+.wave-team-badge span {
+  color: var(--neon-cyan);
+  text-shadow: 0 0 10px rgba(0, 229, 255, 0.5);
+}
+
+input[type="text"], input[type="number"], select {
+  width: 100%;
+  padding: 14px 16px;
+  background: var(--bg-deep);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  color: var(--text-pure);
+  font-size: 15px;
+  outline: none;
+  transition: 0.2s ease;
+}
+
+input[type="text"]:focus, input[type="number"]:focus, select:focus {
+  border-color: var(--neon-cyan);
+  box-shadow: 0 0 15px rgba(0, 229, 255, 0.2);
+}
+
+select {
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2300e5ff' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  background-size: 14px;
+}
+
+.teams-input-list {
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
 
-.chat-msg {
+.team-input-row {
   display: flex;
-  flex-direction: column;
-  font-size: 0.9em;
-  line-height: 1.3;
+  gap: 8px;
+  align-items: center;
 }
 
-.chat-msg .name {
+.team-input-row button.btn-del-team {
+  background: rgba(255, 0, 85, 0.1);
+  border: 1px solid rgba(255, 0, 85, 0.3);
+  color: var(--neon-pink);
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.add-team-btn {
+  background: transparent;
+  border: 1px dashed var(--neon-cyan);
+  color: var(--neon-cyan);
+  width: 100%;
+  padding: 12px;
+  border-radius: 12px;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  cursor: pointer;
+  margin-top: 6px;
+}
+
+button {
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 700;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+button:active {
+  transform: scale(0.98);
+}
+
+#save-teams-btn, #load-songs-btn {
+  width: 100%;
+  padding: 15px;
+  font-size: 15px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+#save-teams-btn {
+  background: var(--neon-cyan);
+  color: #000;
+  box-shadow: 0 4px 20px rgba(0, 229, 255, 0.35);
+  margin-top: 10px;
+}
+
+#load-songs-btn {
+  background: linear-gradient(135deg, var(--neon-purple), var(--neon-pink));
+  color: #fff;
+  box-shadow: 0 4px 20px rgba(255, 0, 85, 0.35);
+}
+
+#shuffle-btn {
+  width: 100%;
+  padding: 14px;
+  background: transparent;
+  border: 1px solid var(--border-subtle);
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-size: 14px;
+}
+
+.score-controls {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 12px;
+  margin-top: 6px;
+}
+
+.score-team-group {
+  background: var(--bg-deep);
+  border: 1px solid var(--border-subtle);
+  border-radius: 16px;
+  padding: 16px 12px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.score-team-header {
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+.score-team-label {
+  font-size: 0.9em;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.score-display {
+  font-family: 'Ubuntu Mono', monospace;
+  font-size: 2.6em;
+  font-weight: 700;
+  color: var(--text-pure);
+  line-height: 1;
+  margin: 6px 0;
+}
+
+.score-team-group.active {
+  border-color: var(--neon-cyan);
+  background: rgba(0, 229, 255, 0.04);
+  box-shadow: 0 0 25px rgba(0, 229, 255, 0.25), inset 0 0 15px rgba(0, 229, 255, 0.05);
+}
+
+.score-team-group.active .score-team-label,
+.score-team-group.active .score-display {
+  color: var(--neon-cyan);
+  text-shadow: 0 0 15px rgba(0, 229, 255, 0.5);
+}
+
+.score-btn-row {
+  display: flex;
+  gap: 5px;
+  margin-top: 5px;
+}
+
+.btn {
+  flex: 1;
+  padding: 9px 2px;
   font-size: 0.8em;
   font-weight: 700;
-  color: var(--neon-cyan);
-  margin-bottom: 3px;
+  border-radius: 8px;
 }
 
-.chat-msg.mine .name {
+.btn.add {
+  background: rgba(0, 255, 102, 0.1);
   color: var(--neon-lime);
+  border: 1px solid rgba(0, 255, 102, 0.25);
 }
 
-.chat-msg.host .name {
+.btn.remove {
+  background: rgba(255, 0, 85, 0.1);
+  color: var(--neon-pink);
+  border: 1px solid rgba(255, 0, 85, 0.25);
+}
+
+.result-sounds {
+  display: flex;
+  gap: 12px;
+  margin: 18px 0 6px;
+  flex-wrap: wrap;
+}
+
+.result-btn {
+  flex: 1;
+  min-width: 140px;
+  padding: 16px;
+  font-size: 1em;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  border-radius: 14px;
+}
+
+.result-btn.winner {
+  background: var(--neon-lime);
+  color: #000;
+  box-shadow: 0 4px 20px rgba(0, 255, 102, 0.3);
+}
+
+.result-btn.lost {
+  background: var(--neon-pink);
+  color: #fff;
+  box-shadow: 0 4px 20px rgba(255, 0, 85, 0.3);
+}
+
+.player-container {
+  background: var(--bg-deep);
+  border: 1px solid var(--border-subtle);
+  border-radius: 16px;
+  padding: 14px 16px;
+  margin: 10px 0;
+}
+
+.player-label {
+  font-size: 0.85em;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--neon-cyan);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.player-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.play-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: var(--neon-cyan);
+  color: #000;
+  font-size: 14px;
+  flex-shrink: 0;
+  box-shadow: 0 0 15px rgba(0, 229, 255, 0.3);
+}
+
+.progress-bar {
+  flex: 1;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: var(--neon-cyan);
+  box-shadow: 0 0 8px var(--neon-cyan);
+  width: 0%;
+}
+
+.time-info {
+  font-family: 'Ubuntu Mono', monospace;
+  font-size: 0.85em;
+  color: var(--text-dim);
+  min-width: 85px;
+  text-align: right;
+}
+
+#next-track-btn {
+  width: 100%;
+  padding: 16px;
+  margin-top: 10px;
+  background: var(--neon-yellow);
+  color: #000;
+  font-size: 15px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+#normal-toggle {
+  width: 100%;
+  padding: 12px;
+  margin-top: 8px;
+  background: transparent;
+  border: 1px solid var(--border-subtle);
+  color: var(--text-dim);
+}
+
+.song-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.song-list button {
+  background: var(--bg-deep);
+  border: 1px solid var(--border-subtle);
+  padding: 12px 14px;
+  font-size: 13px;
+  color: var(--text-pure);
+  justify-content: flex-start;
+  text-align: left;
+  border-radius: 12px;
+}
+
+.song-number {
+  font-family: 'Ubuntu Mono', monospace;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--neon-cyan);
+  font-weight: 700;
+  font-size: 0.9em;
+  flex-shrink: 0;
+}
+
+.song-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.song-list button.played {
+  opacity: 0.35;
+  filter: grayscale(1);
+  border-color: transparent !important;
+  cursor: not-allowed;
+}
+
+#end-quiz-btn {
+  width: 100%;
+  padding: 18px;
+  margin-top: 20px;
+  background: transparent;
+  border: 1px solid var(--neon-pink);
+  color: var(--neon-pink);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-size: 14px;
+}
+
+#timer-circle {
+  font-family: 'Ubuntu Mono', monospace;
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  width: 60px;
+  height: 60px;
+  border-radius: 16px;
+  background: rgba(5, 6, 10, 0.85);
+  backdrop-filter: blur(10px);
+  border: 2px solid var(--neon-cyan);
+  color: var(--neon-cyan);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.6em;
+  font-weight: 700;
+  box-shadow: 0 0 20px rgba(0, 229, 255, 0.4);
+  z-index: 1000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s;
+}
+
+#timer-circle.active {
+  opacity: 1;
+}
+
+#settings-btn {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  width: 44px;
+  height: 44px;
+  background: rgba(5, 6, 10, 0.85);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  color: var(--text-dim);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 1000;
+}
+
+#track-name-popup {
+  position: fixed;
+  top: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(5, 6, 10, 0.95);
+  border: 1px solid var(--neon-cyan);
+  color: var(--neon-cyan);
+  padding: 10px 20px;
+  border-radius: 12px;
+  font-size: 1.1em;
+  font-weight: 700;
+  z-index: 1000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s;
+}
+
+.score-notification, .action-notification {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--bg-surface);
+  border: 1px solid var(--neon-cyan);
+  padding: 14px 22px;
+  border-radius: 14px;
+  font-size: 1.1em;
+  font-weight: 700;
+  z-index: 3000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
+
+.action-notification {
+  top: 75px;
+  border-color: var(--neon-yellow);
   color: var(--neon-yellow);
 }
 
-.chat-msg .text {
+.score-notification.show, .action-notification.show {
+  opacity: 1;
+}
+
+#settings-modal, #qr-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
+
+#settings-modal.active, #qr-modal.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.modal-content.settings-redesign {
+  background: var(--bg-surface);
+  padding: 24px 20px;
+  border-radius: 24px;
+  width: 94%;
+  max-width: 440px;
+  max-height: 88vh;
+  overflow-y: auto;
+  border: 1px solid var(--border-glow);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.9), 0 0 30px rgba(0, 229, 255, 0.1);
+  position: relative;
+}
+
+.settings-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 18px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.settings-header h3 {
+  font-family: 'Syne', sans-serif;
+  font-size: 1.4em;
+  margin: 0;
+  color: #fff;
+}
+
+.settings-group {
   background: var(--bg-deep);
   border: 1px solid var(--border-subtle);
-  padding: 8px 14px;
-  border-radius: 12px;
+  border-radius: 16px;
+  padding: 14px;
+  margin-bottom: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.settings-group-title {
+  font-size: 0.75em;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--neon-cyan);
+  letter-spacing: 1.2px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 2px;
+}
+
+.settings-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.settings-field.row {
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.settings-field label {
+  font-size: 0.85em;
+  color: var(--text-pure);
+  font-weight: 600;
+  margin: 0;
+}
+
+.settings-field input, .settings-field select {
+  padding: 10px 14px;
+  font-size: 14px;
+  border-radius: 10px;
+}
+
+.settings-field.row select {
+  max-width: 170px;
+}
+
+.settings-save-btn {
+  width: 100%;
+  padding: 15px;
+  margin-top: 10px;
+  background: var(--neon-cyan);
+  color: #000;
+  font-size: 15px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  border-radius: 14px;
+  box-shadow: 0 4px 20px rgba(0, 229, 255, 0.35);
+}
+
+.close-modal {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  font-size: 1.3em;
+  cursor: pointer;
+}
+
+.qr-modal-content {
+  background: var(--bg-surface);
+  border: 1px solid var(--neon-cyan);
+  border-radius: 24px;
+  padding: 28px 24px;
+  width: 90%;
+  max-width: 340px;
+  text-align: center;
+  position: relative;
+  box-shadow: 0 0 50px rgba(0, 229, 255, 0.25);
+}
+
+.qr-box-img {
+  background: #fff;
+  border-radius: 16px;
+  padding: 14px;
+  margin: 16px auto;
+  display: inline-block;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+}
+
+.qr-box-img img {
+  width: 190px;
+  height: 190px;
+  display: block;
+}
+
+.winner-screen {
+  text-align: center;
+  padding: 20px;
+}
+
+.winner-screen h2 {
+  font-family: 'Syne', sans-serif;
+  font-size: 1.8em;
+  margin-bottom: 20px;
+}
+
+.winner-screen h2 strong {
+  color: var(--neon-yellow);
+}
+
+.final-scores {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 1.1em;
+  color: var(--text-dim);
+}
+
+.settings-update-box {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-subtle);
+  text-align: center;
+}
+
+.settings-update-box button {
+  background: transparent !important;
+  border: 1px solid var(--neon-cyan) !important;
+  color: var(--neon-cyan) !important;
+  padding: 10px 14px !important;
+  font-size: 0.85em !important;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.update-status-msg {
+  font-family: 'Ubuntu Mono', monospace;
+  font-size: 0.8em;
+  color: var(--neon-yellow);
+  margin-top: 6px;
+  min-height: 1.2em;
+}
+
+/* Виджет чата ведущего с пульсацией ореола при входящих */
+#host-chat-toggle-btn {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--neon-cyan), #0077ff);
+  color: #000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3em;
+  cursor: pointer;
+  z-index: 2500;
+  box-shadow: 0 8px 25px rgba(0, 229, 255, 0.4);
+  border: none;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+#host-chat-toggle-btn.has-pulse {
+  animation: chatButtonGlowPulse 1.4s infinite alternate;
+}
+
+@keyframes chatButtonGlowPulse {
+  0% {
+    box-shadow: 0 0 15px rgba(0, 229, 255, 0.6), 0 0 30px rgba(0, 229, 255, 0.3);
+    transform: scale(1);
+  }
+  100% {
+    box-shadow: 0 0 35px var(--neon-pink), 0 0 60px rgba(255, 0, 85, 0.6);
+    transform: scale(1.08);
+  }
+}
+
+.chat-unread-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: var(--neon-pink);
   color: #fff;
-  word-break: break-word;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(255, 0, 85, 0.6);
+  display: none;
 }
 
-.chat-msg.mine .text {
-  border-color: rgba(0, 255, 102, 0.3);
-  background: rgba(0, 255, 102, 0.05);
+#host-chat-box {
+  position: fixed;
+  bottom: 82px;
+  right: 20px;
+  width: min(350px, calc(100vw - 32px));
+  height: 420px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-glow);
+  border-radius: 20px;
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.9);
+  display: none;
+  flex-direction: column;
+  z-index: 2500;
+  overflow: hidden;
+  backdrop-filter: blur(16px);
 }
 
-.chat-msg.host .text {
-  border-color: rgba(255, 234, 0, 0.3);
-  background: rgba(255, 234, 0, 0.05);
+.host-chat-head {
+  background: var(--bg-elevated);
+  padding: 12px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border-subtle);
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 0.95em;
 }
 
-.chat-msg.system {
+.host-chat-msgs {
+  flex: 1;
+  padding: 12px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.chat-msg-row {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.85em;
+  line-height: 1.3;
+}
+
+.chat-msg-row .author {
+  font-weight: 700;
+  font-size: 0.8em;
+  color: var(--neon-cyan);
+  margin-bottom: 2px;
+}
+
+.chat-msg-row.host-author .author {
+  color: var(--neon-yellow);
+}
+
+.chat-msg-row.system-event {
   background: rgba(255, 0, 85, 0.1);
   border-left: 3px solid var(--neon-pink);
-  padding: 6px 12px;
+  padding: 6px 10px;
   border-radius: 8px;
+}
+
+.chat-msg-row.system-event .body {
   color: var(--neon-pink);
   font-weight: 700;
 }
 
-.player-chat-input-bar {
-  padding: 10px 14px;
+.chat-msg-row .bubble {
+  background: var(--bg-deep);
+  border: 1px solid var(--border-subtle);
+  padding: 8px 12px;
+  border-radius: 12px;
+  color: var(--text-pure);
+  word-break: break-word;
+}
+
+.chat-msg-row.host-author .bubble {
+  border-color: rgba(255, 234, 0, 0.3);
+  background: rgba(255, 234, 0, 0.05);
+}
+
+/* Быстрые ответы ведущего */
+.host-quick-replies {
+  display: flex;
+  gap: 6px;
+  padding: 6px 10px;
+  background: var(--bg-elevated);
+  border-top: 1px solid var(--border-subtle);
+  overflow-x: auto;
+}
+
+.quick-reply-btn {
+  background: var(--bg-deep);
+  border: 1px solid var(--border-subtle);
+  color: #fff;
+  padding: 5px 9px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.15s;
+}
+
+.quick-reply-btn:hover {
+  border-color: var(--neon-cyan);
+  color: var(--neon-cyan);
+}
+
+.quick-reply-btn.correct {
+  border-color: var(--neon-lime);
+  color: var(--neon-lime);
+}
+
+.quick-reply-btn.wrong {
+  border-color: var(--neon-pink);
+  color: var(--neon-pink);
+}
+
+/* Панель эмодзи */
+.emoji-popover {
+  position: absolute;
+  bottom: 85px;
+  left: 10px;
+  right: 10px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-glow);
+  border-radius: 14px;
+  padding: 10px;
+  display: none;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+  font-size: 1.4em;
+  text-align: center;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+  max-height: 170px;
+  overflow-y: auto;
+  z-index: 2600;
+}
+
+.emoji-popover span {
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 8px;
+  transition: background 0.1s;
+}
+
+.emoji-popover span:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.host-chat-footer {
+  padding: 8px 10px;
   background: var(--bg-deep);
   border-top: 1px solid var(--border-subtle);
   display: flex;
-  gap: 8px;
+  gap: 6px;
+  align-items: center;
+  position: relative;
 }
 
-.player-chat-input-bar input {
+.btn-emoji-toggle {
+  background: transparent;
+  border: 1px solid var(--border-subtle);
+  color: var(--neon-yellow);
+  font-size: 1.1em;
+  padding: 8px 10px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.host-chat-footer input {
   flex: 1;
-  padding: 12px 14px;
-  border-radius: 12px;
+  padding: 8px 12px;
+  font-size: 13px;
   margin: 0;
-  font-size: 15px;
+  border-radius: 10px;
 }
 
-.player-chat-input-bar button {
+.host-chat-footer button.btn-send {
   background: var(--neon-cyan);
   color: #000;
-  padding: 12px 18px;
-  border-radius: 12px;
-  font-size: 15px;
-  flex-shrink: 0;
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-size: 13px;
 }
 </style>
 </head>
 <body>
 
-<audio id="player-audio-revers" preload="auto" playsinline crossorigin="anonymous" style="display:none;"></audio>
-<audio id="player-audio-normal" preload="auto" playsinline crossorigin="anonymous" style="display:none;"></audio>
+<div id="track-name-popup"></div>
+<div id="score-notification" class="score-notification"></div>
+<div id="action-notification" class="action-notification"></div>
 
-<div class="login-wrap" id="login-view">
-  <div class="brand-icon"><i class="fas fa-bolt"></i></div>
-  <h2>Вход в игру</h2>
-  <p>Введите PIN-код с экрана ведущего и назовите команду</p>
-  
-  <div class="input-box">
-    <input type="number" id="room-pin" placeholder="PIN код" pattern="[0-9]*" />
+<div class="buzzer-wave-overlay" id="buzzer-wave-popup">
+  <div class="wave-hand-halo">
+    <span class="wave-hand-emoji">👋</span>
   </div>
-  <div class="input-box">
-    <input type="text" id="team-name" placeholder="Название команды" maxlength="20" />
+  <div class="wave-team-badge" id="buzzer-wave-team">
+    Команда
   </div>
-
-  <button class="btn-join" onclick="joinGame()">Подключиться</button>
-  <div class="error-banner" id="login-error"></div>
 </div>
 
-<div id="game-view">
-  <!-- Верхняя строка: Табло + Кнопка ЧАТА -->
-  <div class="top-action-bar">
-    <div class="scoreboard-arena" id="scoreboard-wrap"></div>
-    <button class="player-chat-trigger-btn" onclick="togglePlayerChat()" title="Открыть чат">
-      <i class="fas fa-comments"></i>
-      <span class="player-chat-unread-badge" id="player-chat-unread">0</span>
+<div class="container">
+  <div class="header">
+    <h1><i class="fas fa-bolt"></i> Revers Quiz</h1>
+    <div class="subtitle" id="game-subtitle">Угадай трек наоборот</div>
+  </div>
+
+  <div class="section" id="host-online-section" style="display:none;">
+    <div class="online-box">
+      <div class="online-row-top">
+        <div>
+          <span style="font-size:0.8em; color:var(--text-dim); text-transform:uppercase;">PIN Комнаты:</span>
+          <div class="pin-display" id="host-pin">----</div>
+        </div>
+        <div>
+          <span style="font-size:0.8em; color:var(--text-dim); text-transform:uppercase;">Для участников:</span>
+          <div style="font-size:0.85em; color:var(--neon-cyan); font-weight:700;">/player.html</div>
+        </div>
+      </div>
+
+      <div class="online-link-area">
+        <span style="font-size:0.8em; color:var(--text-dim);">Быстрая ссылка:</span>
+        <div class="link-actions">
+          <div class="copy-link-btn" onclick="copyPlayerLink()" title="Нажмите, чтобы скопировать">
+            <i class="fas fa-copy"></i> https://clck.ru/3WBWUq
+          </div>
+          <button class="qr-trigger-btn" onclick="openQrModal()">
+            <i class="fas fa-qrcode"></i> QR
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div style="font-size:0.9em; color:var(--text-dim); text-transform:uppercase; letter-spacing:1px; margin-bottom:6px;">
+      Подключённые команды:
+    </div>
+    <div class="connected-teams-list" id="host-teams-container">
+      <div style="color:var(--text-dim); font-size:0.9em;">Ожидание подключения участников...</div>
+    </div>
+  </div>
+
+  <div class="section" id="local-teams-section">
+    <h2 class="section-title"><i class="fas fa-users"></i> Команды игры</h2>
+    <div class="teams-input-list" id="teams-input-container"></div>
+    <button class="add-team-btn" onclick="addNewOfflineTeam()">
+      <i class="fas fa-plus-circle"></i> Добавить команду
+    </button>
+    <button id="save-teams-btn" onclick="saveOfflineTeams()">Сохранить составы</button>
+  </div>
+
+  <div class="section" id="folder-section">
+    <h2 class="section-title"><i class="fas fa-folder"></i> Категория</h2>
+    <select id="folder-select" onchange="saveState()">
+      <option value="">-- Выберите категорию --</option>
+      <option value="/Зарубежные">🎵 Зарубежные</option>
+      <option value="/Русские">🇷🇺 Русские</option>
+    </select>
+  </div>
+
+  <div class="section">
+    <button id="load-songs-btn" onclick="loadFiles()">
+      <i class="fas fa-cloud-download-alt"></i> Загрузить треки
     </button>
   </div>
 
-  <div class="player-status-wrapper">
-    <div class="status-pill" id="round-status-pill">
-      <i class="fas fa-hourglass-half"></i> <span>Ожидание раунда</span>
-    </div>
-
-    <div class="track-timer-bar" id="player-timer-bar">
-      <i class="fas fa-music" style="color:var(--neon-cyan); font-size:0.9em;"></i>
-      <div class="progress-track">
-        <div class="progress-fill" id="player-progress-fill"></div>
-      </div>
-      <div class="track-time-text" id="player-time-display">00:00 / 00:00</div>
-    </div>
-
-    <div class="revealed-track-box" id="revealed-track-box"></div>
+  <div class="section">
+    <button id="shuffle-btn" onclick="shuffleTracks()">
+      <i class="fas fa-random"></i> Перемешать
+    </button>
   </div>
 
-  <div class="buzzer-stage">
-    <div class="buzzer-halo">
-      <button class="buzzer-3d-btn" id="buzzer-btn" disabled onclick="pressBuzzer()">
-        <i class="fas fa-hand-paper" style="font-size:1.1em; margin-bottom:2px;"></i>
-        <span>ЖДИ</span>
+  <div id="quiz-area" style="display: none;">
+    <div class="section">
+      <h2 class="section-title"><i class="fas fa-trophy"></i> Счёт игры</h2>
+      <div class="score-controls" id="teams-scoreboard-grid"></div>
+
+      <div class="result-sounds">
+        <button class="result-btn winner" onclick="playSound('winner')">
+          <i class="fas fa-check"></i> Правильно
+        </button>
+        <button class="result-btn lost" onclick="playSound('lost')">
+          <i class="fas fa-times"></i> Мимо
+        </button>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2 class="section-title">
+        <i class="fas fa-play"></i> Плеер
+        <span style="font-size:0.8em; color:var(--neon-yellow); margin-left:6px;">
+          (Осталось: <span id="track-counter">0</span>)
+        </span>
+      </h2>
+
+      <div class="player-container">
+        <div class="player-label"><i class="fas fa-backward"></i> Реверс трек</div>
+        <div class="player-controls">
+          <button class="play-btn" onclick="toggleRevers()">
+            <i class="fas fa-play" id="revers-play-icon"></i>
+          </button>
+          <div class="progress-bar" id="revers-progress-bar" onclick="seekRevers(event)">
+            <div class="progress-bar-fill" id="revers-progress-fill"></div>
+          </div>
+          <div class="time-info">
+            <span id="revers-current-time">00:00</span> / <span id="revers-duration">00:00</span>
+          </div>
+        </div>
+      </div>
+
+      <button id="next-track-btn" onclick="playNextTrack()">
+        <i class="fas fa-forward"></i> Следующий трек
+      </button>
+
+      <div class="player-container" id="original-player" style="display: none; margin-top: 10px;">
+        <div class="player-label" style="color: var(--neon-lime);"><i class="fas fa-music"></i> Оригинал трек</div>
+        <div class="player-controls">
+          <button class="play-btn" style="background: var(--neon-lime);" onclick="toggleNormal()">
+            <i class="fas fa-play" id="normal-play-icon"></i>
+          </button>
+          <div class="progress-bar" id="normal-progress-bar" onclick="seekNormal(event)">
+            <div class="progress-bar-fill" id="normal-progress-fill" style="background: var(--neon-lime);"></div>
+          </div>
+          <div class="time-info">
+            <span id="normal-current-time">00:00</span> / <span id="normal-duration">00:00</span>
+          </div>
+        </div>
+      </div>
+
+      <button id="normal-toggle" onclick="showOriginal()">
+        Показать оригинал
       </button>
     </div>
-    <button class="pass-turn-btn" id="pass-btn" onclick="passTurn()">
-      <i class="fas fa-forward"></i> Пас / Пропустить ход
+
+    <div class="section">
+      <h2 class="section-title"><i class="fas fa-list-ol"></i> Список треков</h2>
+      <div class="song-list" id="song-buttons"></div>
+    </div>
+
+    <button id="end-quiz-btn" onclick="endQuiz()">
+      <i class="fas fa-flag-checkered"></i> Завершить игру
     </button>
   </div>
+</div>
 
-  <div class="hud-footer" id="hud-footer">
-    Ожидаем запуск раунда ведущим...
+<!-- Плавающий чат ведущего -->
+<button id="host-chat-toggle-btn" onclick="toggleHostChat()">
+  <i class="fas fa-comments"></i>
+  <span class="chat-unread-badge" id="host-unread-badge">0</span>
+</button>
+
+<div id="host-chat-box">
+  <div class="host-chat-head">
+    <span><i class="fas fa-comment-dots" style="color:var(--neon-cyan);"></i> Чат ведущего</span>
+    <i class="fas fa-times" onclick="toggleHostChat()" style="cursor:pointer; color:var(--text-dim);"></i>
+  </div>
+  
+  <div class="host-chat-msgs" id="host-chat-messages"></div>
+
+  <!-- Панель быстрых ответов -->
+  <div class="host-quick-replies">
+    <button class="quick-reply-btn correct" onclick="sendQuickReply('✅ Абсолютно верно!')">✅ Верно!</button>
+    <button class="quick-reply-btn wrong" onclick="sendQuickReply('❌ Неверно!')">❌ Неверно!</button>
+    <button class="quick-reply-btn" onclick="sendQuickReply('⏳ Почти... Вспоминайте!')">⏳ Близко...</button>
+    <button class="quick-reply-btn" onclick="sendQuickReply('🔥 В точку!')">🔥 В точку!</button>
+  </div>
+
+  <!-- Меню эмодзи -->
+  <div class="emoji-popover" id="host-emoji-popover"></div>
+
+  <div class="host-chat-footer">
+    <button class="btn-emoji-toggle" onclick="toggleHostEmojiPopover()">😊</button>
+    <input type="text" id="host-chat-input" placeholder="Ответ или подсказка..." onkeydown="if(event.key==='Enter') sendHostChatMessage();" />
+    <button class="btn-send" onclick="sendHostChatMessage()"><i class="fas fa-paper-plane"></i></button>
   </div>
 </div>
 
-<div id="game-over-view">
-  <div class="trophy-icon"><i class="fas fa-trophy"></i></div>
-  <div class="game-over-title">Итоги игры</div>
-  <div class="winner-name-badge" id="winner-badge-text">Победитель!</div>
-  
-  <div class="final-leaderboard" id="final-leaderboard-list"></div>
-  
-  <div class="countdown-box">
-    Возврат к вводу PIN через: <span id="reset-seconds">10</span> сек.
-  </div>
+<audio id="audio-revers" preload="auto" playsinline style="display:none;"></audio>
+<audio id="audio-normal" preload="auto" playsinline style="display:none;"></audio>
+<audio id="audio-winner" preload="auto" playsinline style="display:none;"></audio>
+<audio id="audio-lost" preload="auto" playsinline style="display:none;"></audio>
+<audio id="audio-ring" preload="auto" playsinline style="display:none;"></audio>
+<audio id="audio-start" preload="auto" playsinline style="display:none;"></audio>
+<audio id="audio-final" preload="auto" playsinline style="display:none;"></audio>
+<audio id="audio-game-over" preload="auto" playsinline style="display:none;"></audio>
+
+<div id="settings-btn" onclick="openSettings()">
+  <i class="fas fa-sliders-h"></i>
 </div>
 
-<!-- Модальное окно чата участника -->
-<div id="player-chat-modal">
-  <div class="player-chat-card">
-    <div class="player-chat-head">
-      <span><i class="fas fa-comment-dots" style="color:var(--neon-cyan);"></i> Чат игры</span>
-      <i class="fas fa-times" onclick="togglePlayerChat()" style="cursor:pointer; color:var(--text-dim);"></i>
+<div id="timer-circle">0</div>
+
+<div id="settings-modal">
+  <div class="modal-content settings-redesign">
+    <button class="close-modal" onclick="closeSettings()">&times;</button>
+    
+    <div class="settings-header">
+      <i class="fas fa-sliders-h" style="color:var(--neon-cyan); font-size:1.2em;"></i>
+      <h3>Параметры игры</h3>
     </div>
-    <div class="player-chat-messages" id="player-chat-messages"></div>
-    <div class="player-chat-input-bar">
-      <input type="text" id="player-chat-input" placeholder="Введите ваш ответ..." onkeydown="if(event.key==='Enter') sendPlayerChatMessage();" />
-      <button onclick="sendPlayerChatMessage()"><i class="fas fa-paper-plane"></i></button>
+
+    <div class="settings-group">
+      <div class="settings-group-title">
+        <i class="fas fa-gamepad"></i> Режим игры и сеть
+      </div>
+      <div class="settings-field">
+        <select id="interactive-mode-toggle" onchange="toggleInteractiveSettingsVisibility()">
+          <option value="false">🕹️ Обычный режим (оффлайн табло)</option>
+          <option value="true">🌐 Интерактивный (онлайн для команд)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="settings-group" id="interactive-sub-settings" style="display:none;">
+      <div class="settings-group-title">
+        <i class="fas fa-users-cog"></i> Онлайн-участники
+      </div>
+
+      <div class="settings-field row">
+        <label for="stream-audio-toggle">Трансляция звука на телефоны</label>
+        <select id="stream-audio-toggle">
+          <option value="false">❌ Выкл (звук у ведущего)</option>
+          <option value="true">🔊 Вкл (звук у всех)</option>
+        </select>
+      </div>
+
+      <div class="settings-field row">
+        <label for="show-score-toggle">Показ своих очков игрокам</label>
+        <select id="show-score-toggle">
+          <option value="true">✅ Показывать</option>
+          <option value="false">🚫 Скрывать</option>
+        </select>
+      </div>
+
+      <div class="settings-field row">
+        <label for="show-opponent-score-toggle">Показ очков соперников</label>
+        <select id="show-opponent-score-toggle">
+          <option value="true">✅ Показывать</option>
+          <option value="false">🚫 Скрывать</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="settings-group">
+      <div class="settings-group-title">
+        <i class="fas fa-stopwatch"></i> Тайминги и воспроизведение
+      </div>
+
+      <div class="settings-field row">
+        <label for="timer-input">Таймер на ответ (сек)</label>
+        <input type="number" id="timer-input" min="1" max="300" value="10" style="max-width:90px; text-align:center;">
+      </div>
+
+      <div class="settings-field row">
+        <label for="original-delay-input">Задержка оригинала (сек)</label>
+        <input type="number" id="original-delay-input" min="0" max="30" value="2" style="max-width:90px; text-align:center;">
+      </div>
+
+      <div class="settings-field row">
+        <label for="mix-mode">Категории треков</label>
+        <select id="mix-mode" style="max-width:170px;">
+          <option value="normal">По категориям</option>
+          <option value="mixed">Mix Mode (микс)</option>
+        </select>
+      </div>
+    </div>
+
+    <button class="settings-save-btn" onclick="setSettings()">
+      <i class="fas fa-check"></i> Сохранить настройки
+    </button>
+
+    <div class="settings-update-box">
+      <button id="manual-check-update-btn" onclick="manualCheckAppUpdate()">
+        <i class="fas fa-sync-alt"></i> Проверить обновление
+      </button>
+      <div id="manual-update-status" class="update-status-msg"></div>
+    </div>
+  </div>
+</div>
+
+<div id="qr-modal">
+  <div class="qr-modal-content">
+    <button class="close-modal" onclick="closeQrModal()">&times;</button>
+    <h3 style="font-family:'Syne',sans-serif; color:var(--neon-cyan); margin-bottom:4px;">
+      <i class="fas fa-qrcode"></i> Вход для команд
+    </h3>
+    <p style="font-size:0.85em; color:var(--text-dim);">
+      Отсканируйте камерой телефона для перехода
+    </p>
+
+    <div class="qr-box-img">
+      <img src="https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=https%3A%2F%2Fclck.ru%2F3WBWUq" alt="QR Code" />
+    </div>
+
+    <div style="font-family:'Ubuntu Mono',monospace; font-size:1.1em; color:var(--neon-yellow); font-weight:700;">
+      https://clck.ru/3WBWUq
     </div>
   </div>
 </div>
@@ -756,26 +1544,733 @@ var firebaseConfig = {
   measurementId: "G-93CJT9ZT4G"
 };
 
-firebase.initializeApp(firebaseConfig);
-var db = firebase.database();
+var db = null;
+var currentRoomPin = null;
+var roomRef = null;
+var isInteractiveMode = false;
+var showScoreToPlayers = true;
+var showOpponentScore = true;
+var streamAudioToPlayers = false;
 
-var currentRoom = null;
-var myTeamId = null;
-var myTeamName = "";
-var gameOverTimer = null;
-var currentLoadedReversUrl = "";
-var currentTrackDuration = 0;
-var progressAnimFrame = null;
+var teamsData = [
+  { id: 'team_1', name: 'Команда 1', score: 0 },
+  { id: 'team_2', name: 'Команда 2', score: 0 }
+];
 
-var joinedTrackSessionId = null;
-var hasWaitedForNewTrack = false;
-var timerRunning = false;
-var timerStartTime = 0;
-var timerTotalDuration = 0;
-var isStreamAudioAllowed = false;
+var activeTeamId = null;
+var buzzerWaveTimer = null;
+var hostChatOpen = false;
+var hostUnreadCount = 0;
 
-var isChatOpen = false;
-var unreadChatCount = 0;
+var PUBLIC_KEY = "https://yadi.sk/d/WuP3cXvzcoZxVg";
+var files = {};
+var playedTracks = new Set();
+var currentTrackName = null;
+var selectedFolder = "";
+var timerDuration = 10;
+var originalDelay = 2;
+var originalTimeout = null;
+var mixMode = false;
+var timerValue = 0;
+var timerInterval = null;
+var isTimerActive = false;
+var lastPlayedTrack = null;
+var trackOrder = {};
+
+var soundUrls = {
+  winner: null,
+  lost: null,
+  ring: null,
+  start: null,
+  final: null,
+  gameOver: null
+};
+
+// Звуковой синтезатор уведомления чата (Web Audio)
+function playMessageNotificationSound() {
+  try {
+    var ctx = new (window.AudioContext || window.webkitAudioContext)();
+    var osc = ctx.createOscillator();
+    var gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
+    osc.frequency.setValueAtTime(880, ctx.currentTime + 0.08); // A5
+    gain.gain.setValueAtTime(0.15, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.35);
+  } catch(e) {}
+}
+
+var POPULAR_EMOJIS = ["👍","👏","🔥","🎉","😂","😎","🤩","🤔","😮","🎵","🎶","🎤","🎧","🏆","⭐","💯","❤️","👋","🤐","🚀","💃"];
+
+function initEmojiPicker(containerId, inputId) {
+  var container = document.getElementById(containerId);
+  if (!container) return;
+  container.innerHTML = "";
+  POPULAR_EMOJIS.forEach(function(em) {
+    var s = document.createElement("span");
+    s.textContent = em;
+    s.onclick = function(e) {
+      e.stopPropagation();
+      var input = document.getElementById(inputId);
+      input.value += em;
+      input.focus();
+    };
+    container.appendChild(s);
+  });
+}
+
+function toggleHostEmojiPopover() {
+  var p = document.getElementById("host-emoji-popover");
+  p.style.display = p.style.display === "grid" ? "none" : "grid";
+}
+
+function copyPlayerLink() {
+  var link = "https://clck.ru/3WBWUq";
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(link).then(function() {
+      showActionNotification("📋 Ссылка скопирована!");
+    }).catch(function() {
+      fallbackCopyText(link);
+    });
+  } else {
+    fallbackCopyText(link);
+  }
+}
+
+function fallbackCopyText(text) {
+  var textArea = document.createElement("textarea");
+  textArea.value = text;
+  textArea.style.position = "fixed";
+  document.body.appendChild(textArea);
+  textArea.focus();
+  textArea.select();
+  try {
+    document.execCommand('copy');
+    showActionNotification("📋 Ссылка скопирована!");
+  } catch (err) {
+    alert("Ссылка: " + text);
+  }
+  document.body.removeChild(textArea);
+}
+
+function openQrModal() {
+  var modal = document.getElementById("qr-modal");
+  if (modal) modal.classList.add("active");
+}
+
+function closeQrModal() {
+  var modal = document.getElementById("qr-modal");
+  if (modal) modal.classList.remove("active");
+}
+
+function generateNewRoomPin() {
+  var newPin = Math.floor(1000 + Math.random() * 9000).toString();
+  localStorage.setItem("host_room_pin", newPin);
+  return newPin;
+}
+
+function initHostRoom() {
+  if (!isInteractiveMode) return;
+  
+  if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+  }
+  db = firebase.database();
+
+  currentRoomPin = localStorage.getItem("host_room_pin");
+  if (!currentRoomPin) {
+    currentRoomPin = generateNewRoomPin();
+  }
+  document.getElementById("host-pin").textContent = currentRoomPin;
+
+  roomRef = db.ref("rooms/" + currentRoomPin);
+  
+  roomRef.update({
+    status: "idle",
+    showScore: showScoreToPlayers,
+    showOpponentScore: showOpponentScore,
+    streamAudio: streamAudioToPlayers,
+    buzzer: { locked: true, pressedBy: null, passedBy: [] },
+    revealedTrack: "",
+    audioSync: {
+      trackSessionId: "",
+      reversUrl: "",
+      normalUrl: "",
+      duration: 0,
+      currentTime: 0,
+      playAction: "stop",
+      startAt: 0
+    }
+  });
+
+  teamsData = [];
+  renderHostTeamsList();
+  renderScoreboardGrid();
+
+  document.getElementById("host-chat-toggle-btn").style.display = "flex";
+  initEmojiPicker("host-emoji-popover", "host-chat-input");
+  listenToChatMessages();
+
+  roomRef.child("teams").on("value", function(snapshot) {
+    var rawTeams = snapshot.val() || {};
+    var cloudKeys = Object.keys(rawTeams);
+
+    if (cloudKeys.length > 0) {
+      teamsData = cloudKeys.map(function(key) {
+        return {
+          id: key,
+          name: rawTeams[key].name || "Команда",
+          score: rawTeams[key].score || 0,
+          readyToPlay: rawTeams[key].readyToPlay || false
+        };
+      });
+    } else {
+      teamsData = [];
+    }
+    renderHostTeamsList();
+    renderScoreboardGrid();
+  });
+
+  roomRef.child("buzzer").on("value", function(snapshot) {
+    var buzzer = snapshot.val();
+    if (buzzer && buzzer.locked && buzzer.pressedByName) {
+      handleBuzzerTriggered(buzzer.pressedBy, buzzer.pressedByName);
+    }
+  });
+}
+
+function renderHostTeamsList() {
+  var container = document.getElementById("host-teams-container");
+  if (!container) return;
+
+  if (teamsData.length === 0) {
+    container.innerHTML = '<div style="color:var(--text-dim); font-size:0.9em;"><i class="fas fa-spinner fa-spin" style="margin-right:6px;"></i>Ожидание подключения участников...</div>';
+    return;
+  }
+
+  container.innerHTML = "";
+  teamsData.forEach(function(t) {
+    var pill = document.createElement("div");
+    pill.className = "team-pill ready";
+    pill.innerHTML = '<i class="fas fa-check-circle"></i> ' + t.name + ' (' + formatScore(t.score) + ')';
+    container.appendChild(pill);
+  });
+}
+
+function renderOfflineTeamsInputs() {
+  var container = document.getElementById("teams-input-container");
+  if (!container) return;
+  container.innerHTML = "";
+
+  teamsData.forEach(function(t, idx) {
+    var row = document.createElement("div");
+    row.className = "team-input-row";
+
+    var input = document.createElement("input");
+    input.type = "text";
+    input.value = t.name;
+    input.placeholder = "Команда " + (idx + 1);
+    input.id = "input-team-" + idx;
+
+    row.appendChild(input);
+
+    if (teamsData.length > 2) {
+      var delBtn = document.createElement("button");
+      delBtn.className = "btn-del-team";
+      delBtn.innerHTML = '<i class="fas fa-trash-alt"></i>';
+      delBtn.onclick = function() { removeOfflineTeam(idx); };
+      row.appendChild(delBtn);
+    }
+
+    container.appendChild(row);
+  });
+}
+
+function addNewOfflineTeam() {
+  var newIdx = teamsData.length + 1;
+  teamsData.push({
+    id: "team_" + Date.now() + "_" + Math.random().toString(36).substr(2, 4),
+    name: "Команда " + newIdx,
+    score: 0
+  });
+  renderOfflineTeamsInputs();
+  renderScoreboardGrid();
+  saveState();
+}
+
+function removeOfflineTeam(index) {
+  if (teamsData.length <= 2) return;
+  teamsData.splice(index, 1);
+  renderOfflineTeamsInputs();
+  renderScoreboardGrid();
+  saveState();
+}
+
+function saveOfflineTeams() {
+  teamsData.forEach(function(t, idx) {
+    var el = document.getElementById("input-team-" + idx);
+    if (el && el.value.trim()) {
+      t.name = el.value.trim();
+    }
+  });
+  renderScoreboardGrid();
+  saveState();
+  showActionNotification('✅ Составы команд сохранены!');
+}
+
+function renderScoreboardGrid() {
+  var grid = document.getElementById("teams-scoreboard-grid");
+  if (!grid) return;
+  grid.innerHTML = "";
+
+  if (isInteractiveMode && teamsData.length === 0) {
+    grid.innerHTML = '<div style="color:var(--text-dim); text-align:center; grid-column: 1 / -1; padding:20px;">Участники пока не подключились к комнате</div>';
+    return;
+  }
+
+  teamsData.forEach(function(t) {
+    var group = document.createElement("div");
+    group.className = "score-team-group" + (activeTeamId === t.id ? " active" : "");
+    group.id = "score-card-" + t.id;
+    group.onclick = function() { manualActivateTeam(t.id); };
+
+    group.innerHTML = 
+      '<div class="score-team-header">' +
+        '<div class="score-team-label">' + t.name + '</div>' +
+        '<div class="score-display">' + formatScore(t.score) + '</div>' +
+      '</div>' +
+      '<div class="score-btn-row remove">' +
+        '<button class="btn remove" onclick="event.stopPropagation(); changeScore(\'' + t.id + '\', -0.5)">-0.5</button>' +
+        '<button class="btn remove" onclick="event.stopPropagation(); changeScore(\'' + t.id + '\', -1)">-1</button>' +
+        '<button class="btn remove" onclick="event.stopPropagation(); changeScore(\'' + t.id + '\', -2)">-2</button>' +
+      '</div>' +
+      '<div class="score-btn-row add">' +
+        '<button class="btn add" onclick="event.stopPropagation(); changeScore(\'' + t.id + '\', 0.5)">+0.5</button>' +
+        '<button class="btn add" onclick="event.stopPropagation(); changeScore(\'' + t.id + '\', 1)">+1</button>' +
+        '<button class="btn add" onclick="event.stopPropagation(); changeScore(\'' + t.id + '\', 2)">+2</button>' +
+      '</div>';
+
+    grid.appendChild(group);
+  });
+}
+
+function showWaveHandPopup(teamName) {
+  var popup = document.getElementById("buzzer-wave-popup");
+  var teamText = document.getElementById("buzzer-wave-team");
+  if (!popup || !teamText) return;
+
+  teamText.innerHTML = '<span>' + teamName + '</span> отвечает!';
+
+  popup.style.display = "flex";
+  popup.offsetHeight;
+  popup.classList.add("show");
+
+  if (buzzerWaveTimer) clearTimeout(buzzerWaveTimer);
+
+  buzzerWaveTimer = setTimeout(function() {
+    popup.classList.remove("show");
+    setTimeout(function() {
+      if (!popup.classList.contains("show")) {
+        popup.style.display = "none";
+      }
+    }, 250);
+  }, 2400);
+}
+
+function hideBuzzerAlert() {
+  var popup = document.getElementById("buzzer-wave-popup");
+  if (popup) {
+    popup.classList.remove("show");
+    popup.style.display = "none";
+  }
+}
+
+function handleBuzzerTriggered(teamId, teamName) {
+  var r = document.getElementById("audio-revers");
+  if (r && !r.paused) {
+    r.pause();
+    document.getElementById("revers-play-icon").classList.replace("fa-pause", "fa-play");
+  }
+  stopTimer();
+
+  if (isInteractiveMode && roomRef) {
+    roomRef.child("audioSync").update({ 
+      playAction: "pause",
+      currentTime: r ? r.currentTime : 0
+    });
+  }
+
+  activateTeam(teamId);
+
+  if (soundUrls.ring) {
+    var a = document.getElementById("audio-ring");
+    a.src = soundUrls.ring;
+    a.currentTime = 0;
+    a.play().catch(function() {});
+  }
+
+  showWaveHandPopup(teamName);
+}
+
+/* Логика чата ведущего */
+function toggleHostChat() {
+  var chatBox = document.getElementById("host-chat-box");
+  var toggleBtn = document.getElementById("host-chat-toggle-btn");
+  hostChatOpen = !hostChatOpen;
+  chatBox.style.display = hostChatOpen ? "flex" : "none";
+
+  if (hostChatOpen) {
+    hostUnreadCount = 0;
+    updateHostUnreadBadge();
+    toggleBtn.classList.remove("has-pulse"); // Снимаем пульсирующий ореол
+    var msgs = document.getElementById("host-chat-messages");
+    msgs.scrollTop = msgs.scrollHeight;
+    document.getElementById("host-chat-input").focus();
+  } else {
+    document.getElementById("host-emoji-popover").style.display = "none";
+  }
+}
+
+function updateHostUnreadBadge() {
+  var badge = document.getElementById("host-unread-badge");
+  if (!badge) return;
+  if (hostUnreadCount > 0) {
+    badge.textContent = hostUnreadCount;
+    badge.style.display = "inline-block";
+  } else {
+    badge.style.display = "none";
+  }
+}
+
+function listenToChatMessages() {
+  if (!roomRef) return;
+  var chatRef = roomRef.child("chat");
+  var msgContainer = document.getElementById("host-chat-messages");
+  var toggleBtn = document.getElementById("host-chat-toggle-btn");
+
+  chatRef.limitToLast(50).on("child_added", function(snapshot) {
+    var msg = snapshot.val();
+    if (!msg) return;
+
+    var row = document.createElement("div");
+    row.className = "chat-msg-row" + 
+      (msg.isHost ? " host-author" : "") + 
+      (msg.isSystem ? " system-event" : "");
+
+    if (msg.isSystem) {
+      row.innerHTML = '<div class="body">🔔 ' + msg.text + '</div>';
+    } else {
+      row.innerHTML = 
+        '<div class="author">' + msg.author + '</div>' +
+        '<div class="bubble">' + msg.text + '</div>';
+    }
+
+    msgContainer.appendChild(row);
+    msgContainer.scrollTop = msgContainer.scrollHeight;
+
+    // Оповещение при закрытом чате
+    if (!hostChatOpen && !msg.isHost) {
+      hostUnreadCount++;
+      updateHostUnreadBadge();
+
+      // Добавляем пульсирующий ореол к кнопке чата
+      toggleBtn.classList.add("has-pulse");
+
+      // Вибрация и стандартный звуковой динь
+      if (navigator.vibrate) navigator.vibrate([30, 40, 30]);
+      playMessageNotificationSound();
+    }
+  });
+}
+
+function sendHostChatMessage() {
+  var input = document.getElementById("host-chat-input");
+  var text = input.value.trim();
+  if (!text || !roomRef) return;
+
+  roomRef.child("chat").push({
+    author: "🎙️ Ведущий",
+    text: text,
+    isHost: true,
+    time: Date.now()
+  });
+
+  input.value = "";
+  document.getElementById("host-emoji-popover").style.display = "none";
+}
+
+function sendQuickReply(replyText) {
+  if (!roomRef) return;
+  roomRef.child("chat").push({
+    author: "🎙️ Ведущий",
+    text: replyText,
+    isHost: true,
+    time: Date.now()
+  });
+}
+
+async function manualCheckAppUpdate() {
+  var statusEl = document.getElementById("manual-update-status");
+  var btn = document.getElementById("manual-check-update-btn");
+  if (!statusEl) return;
+
+  statusEl.textContent = "Проверка...";
+  btn.disabled = true;
+
+  try {
+    var res = await fetch("version.json?t=" + Date.now());
+    if (!res.ok) throw new Error("Файл не найден");
+    var data = await res.json();
+    
+    var localVer = parseInt(localStorage.getItem('app_version')) || 0;
+    var remoteVer = parseInt(data.nativeVersion) || 0;
+
+    if (remoteVer > localVer) {
+      statusEl.textContent = "Обновление до v" + remoteVer + "...";
+      localStorage.setItem('app_version', remoteVer);
+
+      if ('caches' in window) {
+        var keys = await caches.keys();
+        await Promise.all(keys.map(function(k) { return caches.delete(k); }));
+      }
+
+      if ('serviceWorker' in navigator) {
+        var registrations = await navigator.serviceWorker.getRegistrations();
+        for (var reg of registrations) {
+          await reg.update();
+        }
+      }
+
+      setTimeout(function() {
+        window.location.reload(true);
+      }, 800);
+    } else {
+      statusEl.textContent = "Актуальная версия (v" + (localVer || remoteVer) + ")";
+      btn.disabled = false;
+    }
+  } catch(e) {
+    statusEl.textContent = "Ошибка проверки сети";
+    btn.disabled = false;
+  }
+}
+
+function formatScore(val) {
+  var num = parseFloat(val) || 0;
+  return Number.isInteger(num) ? num.toString() : num.toFixed(1);
+}
+
+function unlockMobileAudio() {
+  var audios = ['audio-revers', 'audio-normal', 'audio-winner', 'audio-lost', 'audio-ring', 'audio-start', 'audio-final', 'audio-game-over'];
+  audios.forEach(function(id) {
+    var a = document.getElementById(id);
+    if (a) {
+      a.play().catch(function() {});
+      a.pause();
+    }
+  });
+}
+document.addEventListener('click', unlockMobileAudio, { once: true });
+document.addEventListener('touchstart', unlockMobileAudio, { once: true });
+
+window.addEventListener('load', function() {
+  restoreSession();
+  applyGameModeUI();
+  if (!isInteractiveMode) {
+    renderOfflineTeamsInputs();
+  }
+  renderScoreboardGrid();
+  initHostRoom();
+});
+
+function applyGameModeUI() {
+  var onlineSec = document.getElementById("host-online-section");
+  var localSec = document.getElementById("local-teams-section");
+  var sub = document.getElementById("game-subtitle");
+  
+  if (isInteractiveMode) {
+    onlineSec.style.display = "block";
+    localSec.style.display = "none";
+    sub.textContent = "Интерактивный режим ведущего";
+  } else {
+    onlineSec.style.display = "none";
+    localSec.style.display = "block";
+    sub.textContent = "Угадай трек наоборот";
+  }
+}
+
+function restoreSession() {
+  var saved = localStorage.getItem('reversQuiz');
+  if (saved) {
+    try {
+      var data = JSON.parse(saved);
+      isInteractiveMode = data.isInteractiveMode === true;
+      showScoreToPlayers = data.showScoreToPlayers !== false;
+      showOpponentScore = data.showOpponentScore !== false;
+      streamAudioToPlayers = data.streamAudioToPlayers === true;
+      
+      if (Array.isArray(data.teamsData) && data.teamsData.length >= 2) {
+        teamsData = data.teamsData;
+      }
+      
+      playedTracks = new Set(data.playedTracks || []);
+      selectedFolder = data.selectedFolder || "";
+      timerDuration = typeof data.timerDuration !== 'undefined' ? data.timerDuration : 10;
+      originalDelay = typeof data.originalDelay !== 'undefined' ? data.originalDelay : 2;
+      mixMode = data.mixMode || false;
+      activeTeamId = data.activeTeamId || null;
+      lastPlayedTrack = data.lastPlayedTrack || null;
+      trackOrder = data.trackOrder || {};
+      files = data.files || {};
+
+      var fSel = document.getElementById("folder-select");
+      if (fSel) fSel.value = selectedFolder;
+
+      updateFolderSection();
+      if (Object.keys(files).length > 0) {
+        var qArea = document.getElementById("quiz-area");
+        if (qArea) qArea.style.display = "block";
+        generateSongButtons();
+        updateTrackCounter();
+        updateShuffleButtonState();
+        updateNextTrackButton();
+        preloadAllSounds();
+      }
+    } catch(e) {
+      console.warn("Ошибка восстановления сессии:", e);
+    }
+  }
+}
+
+function saveState() {
+  try {
+    var state = {
+      isInteractiveMode: isInteractiveMode,
+      showScoreToPlayers: showScoreToPlayers,
+      showOpponentScore: showOpponentScore,
+      streamAudioToPlayers: streamAudioToPlayers,
+      teamsData: teamsData,
+      playedTracks: Array.from(playedTracks),
+      selectedFolder: selectedFolder,
+      timerDuration: timerDuration,
+      originalDelay: originalDelay,
+      mixMode: mixMode,
+      activeTeamId: activeTeamId,
+      lastPlayedTrack: lastPlayedTrack,
+      trackOrder: trackOrder,
+      files: files
+    };
+    localStorage.setItem('reversQuiz', JSON.stringify(state));
+  } catch(e) {
+    console.warn("Ошибка сохранения:", e);
+  }
+}
+
+async function preloadAllSounds() {
+  try {
+    var rootUrl = "https://cloud-api.yandex.net/v1/disk/public/resources?public_key=" + encodeURIComponent(PUBLIC_KEY) + "&limit=100";
+    var response = await fetch(rootUrl);
+    var data = await response.json();
+    var items = (data._embedded && data._embedded.items) || [];
+    items.forEach(function(f) {
+      var n = f.name.toLowerCase();
+      if (n.indexOf("time_start") !== -1 && n.endsWith(".mp3")) soundUrls.start = f.file;
+      if (n.indexOf("time_final") !== -1 && n.endsWith(".mp3")) soundUrls.final = f.file;
+      if (n.indexOf("winner") !== -1 && n.endsWith(".mp3")) soundUrls.winner = f.file;
+      if (n.indexOf("lost") !== -1 && n.endsWith(".mp3")) soundUrls.lost = f.file;
+      if (n.indexOf("ring_score") !== -1 && n.endsWith(".mp3")) soundUrls.ring = f.file;
+      if (n.indexOf("game_over") !== -1 && n.endsWith(".mp3")) {
+        soundUrls.gameOver = f.file;
+        var aGameOver = document.getElementById("audio-game-over");
+        if (aGameOver) {
+          aGameOver.src = f.file;
+          aGameOver.load();
+        }
+      }
+    });
+  } catch (e) {
+    console.error("Ошибка загрузки системных звуков:", e);
+  }
+}
+
+function playSound(type) {
+  var url = type === 'winner' ? soundUrls.winner : soundUrls.lost;
+  var audio = document.getElementById(type === 'winner' ? 'audio-winner' : 'audio-lost');
+
+  hideBuzzerAlert();
+
+  var r = document.getElementById("audio-revers");
+  if (r) {
+    r.pause();
+    var rIcon = document.getElementById("revers-play-icon");
+    if (rIcon) rIcon.classList.replace("fa-pause", "fa-play");
+  }
+  stopTimer();
+  hideTrackPopup();
+
+  if (url && audio) {
+    audio.src = url;
+    audio.currentTime = 0;
+    audio.play().catch(function(e) { console.warn(e); });
+  } else {
+    showActionNotification(type === 'winner' ? '🎉 Правильно!' : '😢 Мимо!');
+  }
+
+  if (isInteractiveMode && roomRef) {
+    roomRef.update({
+      status: "reveal",
+      revealedTrack: currentTrackName || "",
+      buzzer: { locked: true, pressedBy: null, passedBy: [] }
+    });
+  }
+
+  if (originalTimeout) {
+    clearTimeout(originalTimeout);
+    originalTimeout = null;
+  }
+
+  var delayMs = Math.max(0, originalDelay * 1000);
+  originalTimeout = setTimeout(function() {
+    startOriginalPlayback();
+    originalTimeout = null;
+  }, delayMs);
+}
+
+function startOriginalPlayback() {
+  var p = document.getElementById("original-player");
+  var b = document.getElementById("normal-toggle");
+  var a = document.getElementById("audio-normal");
+  var i = document.getElementById("normal-play-icon");
+
+  if (!currentTrackName || !files[currentTrackName] || !files[currentTrackName].normal) return;
+
+  if (p) p.style.display = "block";
+  if (b) b.textContent = "Скрыть оригинал";
+
+  if (!a.src || a.src === "" || a.src === window.location.href) {
+    a.src = files[currentTrackName].normal;
+    a.load();
+  }
+
+  a.currentTime = 0;
+  a.play().then(function() {
+    if (i) i.classList.replace("fa-play", "fa-pause");
+    updateNormalProgress();
+
+    if (isInteractiveMode && roomRef && streamAudioToPlayers) {
+      roomRef.child("audioSync").update({
+        playAction: "play_normal",
+        currentTime: 0,
+        startAt: Date.now() + 150
+      });
+    }
+  }).catch(function(err) {
+    console.warn("Автовоспроизведение оригинала:", err);
+  });
+}
 
 function formatTime(seconds) {
   seconds = Math.floor(seconds || 0);
@@ -784,559 +2279,864 @@ function formatTime(seconds) {
   return String(mins).padStart(2, '0') + ":" + String(secs).padStart(2, '0');
 }
 
-function primeAudioElements() {
-  ['player-audio-revers', 'player-audio-normal'].forEach(function(id) {
-    var a = document.getElementById(id);
-    if (a) {
-      a.play().then(function() {
-        a.pause();
-      }).catch(function() {});
-    }
-  });
+function updateFolderSection() {
+  var folderSection = document.getElementById("folder-section");
+  if (folderSection) {
+    folderSection.style.display = mixMode ? "none" : "block";
+  }
 }
 
-function showError(msg) {
-  var err = document.getElementById("login-error");
-  err.textContent = msg;
-  err.style.display = "block";
-}
-
-function joinGame() {
-  primeAudioElements();
-
-  var pin = document.getElementById("room-pin").value.trim();
-  var name = document.getElementById("team-name").value.trim();
-
-  if (!pin) {
-    showError("Введите PIN-код комнаты!");
-    return;
-  }
-  if (!name) {
-    showError("Укажите название вашей команды!");
-    return;
-  }
-
-  showError("Подключение к комнате...");
-  var roomRef = db.ref("rooms/" + pin);
-
-  roomRef.once("value").then(function(snapshot) {
-    if (!snapshot.exists()) {
-      showError("❌ Комната с PIN " + pin + " не найдена. Проверьте код у ведущего!");
-      return;
+async function fetchFolderFiles(path) {
+  var limit = 100;
+  var offset = 0;
+  var allItems = [];
+  var filesMap = {};
+  try {
+    while (true) {
+      var url = "https://cloud-api.yandex.net/v1/disk/public/resources?public_key=" + encodeURIComponent(PUBLIC_KEY) + "&path=" + encodeURIComponent(path) + "&limit=" + limit + "&offset=" + offset;
+      var response = await fetch(url);
+      if (!response.ok) break;
+      var data = await response.json();
+      var items = (data._embedded && data._embedded.items) || [];
+      if (!items || items.length === 0) break;
+      allItems.push.apply(allItems, items);
+      if (items.length < limit) break;
+      offset += limit;
     }
-
-    var currentData = snapshot.val();
-    if (currentData && currentData.audioSync && currentData.audioSync.trackSessionId) {
-      joinedTrackSessionId = currentData.audioSync.trackSessionId;
-      hasWaitedForNewTrack = false;
-    } else {
-      hasWaitedForNewTrack = true;
-    }
-
-    currentRoom = pin;
-    myTeamName = name;
-    myTeamId = "team_" + Math.random().toString(36).substr(2, 6);
-
-    roomRef.child("teams/" + myTeamId).set({
-      name: myTeamName,
-      ready: true,
-      readyToPlay: false,
-      score: 0
+    var mp3Files = allItems.filter(function(f) { return f.name && f.name.toLowerCase().endsWith('.mp3'); });
+    mp3Files.forEach(function(file) {
+      var cleanName = file.name.replace(/_(REVERS|NORMAL)\.mp3$/i, "");
+      if (!filesMap[cleanName]) filesMap[cleanName] = {};
+      if (file.name.indexOf("_REVERS") !== -1) filesMap[cleanName].revers = file.file;
+      if (file.name.indexOf("_NORMAL") !== -1) filesMap[cleanName].normal = file.file;
     });
-
-    roomRef.child("teams/" + myTeamId).onDisconnect().remove();
-
-    document.getElementById("login-view").style.display = "none";
-    document.getElementById("game-view").style.display = "flex";
-
-    listenToGameState();
-    listenToAudioStream();
-    listenToPlayerChat();
-  }).catch(function(e) {
-    showError("Ошибка подключения: " + e.message);
-  });
-}
-
-function updateProgressDisplay(currentTime, totalDuration) {
-  var fill = document.getElementById("player-progress-fill");
-  var timeDisplay = document.getElementById("player-time-display");
-
-  var dur = totalDuration || currentTrackDuration || 0;
-  var cur = currentTime || 0;
-
-  var pct = dur > 0 ? (cur / dur) * 100 : 0;
-  fill.style.width = Math.min(100, Math.max(0, pct)) + "%";
-  timeDisplay.textContent = formatTime(cur) + " / " + formatTime(dur);
-}
-
-function startSyntheticTimer(startFromSec, totalDur) {
-  stopSyntheticTimer();
-  timerRunning = true;
-  timerStartTime = Date.now() - (startFromSec * 1000);
-  timerTotalDuration = totalDur || currentTrackDuration || 0;
-
-  function tick() {
-    if (!timerRunning) return;
-    var elapsed = (Date.now() - timerStartTime) / 1000;
-    if (elapsed > timerTotalDuration) {
-      elapsed = timerTotalDuration;
-      timerRunning = false;
-    }
-    updateProgressDisplay(elapsed, timerTotalDuration);
-    if (timerRunning) {
-      progressAnimFrame = requestAnimationFrame(tick);
-    }
+    return filesMap;
+  } catch (e) {
+    console.error("Ошибка загрузки папки:", e);
+    return {};
   }
-  tick();
 }
 
-function stopSyntheticTimer() {
-  timerRunning = false;
-  if (progressAnimFrame) cancelAnimationFrame(progressAnimFrame);
+function isTrackOrderValid(filesMap) {
+  var fileNames = new Set(Object.keys(filesMap));
+  var orderNames = new Set(Object.keys(trackOrder));
+  if (fileNames.size !== orderNames.size) return false;
+  var valid = true;
+  fileNames.forEach(function(name) {
+    if (!orderNames.has(name)) valid = false;
+  });
+  return valid;
 }
 
-function listenToAudioStream() {
-  var audioSyncRef = db.ref("rooms/" + currentRoom + "/audioSync");
-  var aRevers = document.getElementById("player-audio-revers");
-  var aNormal = document.getElementById("player-audio-normal");
-
-  audioSyncRef.on("value", function(snapshot) {
-    var sync = snapshot.val();
-    if (!sync) return;
-
-    if (!hasWaitedForNewTrack) {
-      if (sync.trackSessionId === joinedTrackSessionId) {
-        return;
-      } else {
-        hasWaitedForNewTrack = true;
-      }
-    }
-
-    if (sync.duration) {
-      currentTrackDuration = sync.duration;
-      if (!timerRunning && sync.playAction !== "pause") {
-        updateProgressDisplay(0, currentTrackDuration);
-      }
-    }
-
-    if (sync.reversUrl && sync.reversUrl !== currentLoadedReversUrl) {
-      currentLoadedReversUrl = sync.reversUrl;
-
-      aRevers.src = sync.reversUrl;
-      aRevers.load();
-
-      if (sync.normalUrl) {
-        aNormal.src = sync.normalUrl;
-        aNormal.load();
-      }
-
-      aRevers.oncanplay = function() {
-        if (currentRoom && myTeamId) {
-          db.ref("rooms/" + currentRoom + "/teams/" + myTeamId + "/readyToPlay").set(true);
+async function loadFiles() {
+  var loadBtn = document.getElementById("load-songs-btn");
+  loadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Загрузка...';
+  try {
+    var allFiles = {};
+    if (mixMode) {
+      var rPromise = fetchFolderFiles("/Русские").catch(function() { return {}; });
+      var fPromise = fetchFolderFiles("/Зарубежные").catch(function() { return {}; });
+      var results = await Promise.all([rPromise, fPromise]);
+      var rFiles = results[0];
+      var fFiles = results[1];
+      var rNames = Object.keys(rFiles).sort(function() { return Math.random() - 0.5; });
+      var fNames = Object.keys(fFiles).sort(function() { return Math.random() - 0.5; });
+      var maxLength = Math.max(rNames.length, fNames.length);
+      var mixedFiles = {};
+      var newTrackOrder = {};
+      var index = 0;
+      for (var i = 0; i < maxLength; i++) {
+        if (rNames[i]) {
+          var nameR = rNames[i];
+          mixedFiles[nameR] = Object.assign({}, rFiles[nameR]);
+          newTrackOrder[nameR] = ++index;
         }
-        aRevers.oncanplay = null;
+        if (fNames[i]) {
+          var nameF = fNames[i];
+          mixedFiles[nameF] = Object.assign(mixedFiles[nameF] || {}, fFiles[nameF]);
+          if (!newTrackOrder[nameF]) newTrackOrder[nameF] = ++index;
+        }
+      }
+      allFiles = mixedFiles;
+      trackOrder = newTrackOrder;
+      var shuffleBtn = document.getElementById("shuffle-btn");
+      shuffleBtn.disabled = true;
+      shuffleBtn.textContent = '🔁 Чередование';
+    } else {
+      var path = document.getElementById("folder-select").value;
+      if (!path) {
+        loadBtn.innerHTML = '<i class="fas fa-cloud-download-alt"></i> Загрузить треки';
+        return alert("Выберите категорию!");
+      }
+      selectedFolder = path;
+      allFiles = await fetchFolderFiles(path);
+      if (Object.keys(trackOrder).length === 0 || !isTrackOrderValid(allFiles)) {
+        var names = Object.keys(allFiles).sort();
+        trackOrder = {};
+        names.forEach(function(name, idx) {
+          trackOrder[name] = idx + 1;
+        });
+      }
+      updateShuffleButtonState();
+    }
+    if (Object.keys(allFiles).length === 0) {
+      loadBtn.innerHTML = '<i class="fas fa-cloud-download-alt"></i> Загрузить треки';
+      return alert("Файлы не найдены.");
+    }
+    files = allFiles;
+    updateTrackCounter();
+    document.getElementById("quiz-area").style.display = "block";
+    generateSongButtons();
+    saveState();
+    preloadAllSounds();
+    updateNextTrackButton();
+  } catch (e) {
+    console.error("КРИТИЧЕСКАЯ ОШИБКА ЗАГРУЗКИ:", e);
+    alert("Ошибка загрузки.");
+  }
+  loadBtn.innerHTML = '<i class="fas fa-cloud-download-alt"></i> Загрузить треки';
+}
+
+function updateShuffleButtonState() {
+  var shuffleBtn = document.getElementById("shuffle-btn");
+  var hasStarted = lastPlayedTrack !== null;
+  if (shuffleBtn) {
+    shuffleBtn.disabled = hasStarted;
+    shuffleBtn.style.opacity = hasStarted ? 0.4 : 1;
+    shuffleBtn.style.cursor = hasStarted ? "not-allowed" : "pointer";
+    shuffleBtn.textContent = hasStarted ? '❌ Игра начата' : '🔄 Перемешать треки';
+  }
+}
+
+function shuffleTracks() {
+  if (lastPlayedTrack !== null) {
+    showActionNotification('❌ Нельзя перемешивать после начала!');
+    return;
+  }
+  var names = Object.keys(files);
+  var shuffled = names.slice().sort(function() { return Math.random() - 0.5; });
+  trackOrder = {};
+  shuffled.forEach(function(name, index) {
+    trackOrder[name] = index + 1;
+  });
+  generateSongButtons();
+  saveState();
+  showActionNotification('✅ Треки перемешаны!');
+  updateNextTrackButton();
+}
+
+function showActionNotification(text) {
+  var notif = document.getElementById("action-notification");
+  if (notif) {
+    notif.textContent = text;
+    notif.classList.add("show");
+    setTimeout(function() {
+      notif.classList.remove("show");
+    }, 2000);
+  }
+}
+
+function generateSongButtons() {
+  var container = document.getElementById("song-buttons");
+  if (!container) return;
+  container.innerHTML = "";
+  var sortedNames = Object.keys(files).sort(function(a, b) {
+    return (trackOrder[a] || 0) - (trackOrder[b] || 0);
+  });
+  sortedNames.forEach(function(name) {
+    var btn = document.createElement("button");
+    btn.setAttribute("data-song", name);
+    btn.onclick = function() {
+      playTrack(name);
+    };
+    if (playedTracks.has(name)) btn.classList.add("played");
+    var number = document.createElement("span");
+    number.className = "song-number";
+    number.textContent = trackOrder[name] || "?";
+    var title = document.createElement("span");
+    title.className = "song-name";
+    title.textContent = name;
+    btn.appendChild(number);
+    btn.appendChild(title);
+    container.appendChild(btn);
+  });
+  updateNextTrackButton();
+}
+
+function purgeAudioBuffer(audioEl) {
+  if (audioEl) {
+    audioEl.pause();
+    audioEl.removeAttribute("src");
+    audioEl.load();
+  }
+}
+
+function playTrack(name) {
+  hideBuzzerAlert();
+  if (originalTimeout) {
+    clearTimeout(originalTimeout);
+    originalTimeout = null;
+  }
+  hideOriginal();
+  stopAllSounds();
+  hideTrackPopup();
+
+  if (isInteractiveMode) {
+    clearTeamHighlight();
+  }
+
+  var audioRevers = document.getElementById("audio-revers");
+  var audioNormal = document.getElementById("audio-normal");
+  purgeAudioBuffer(audioRevers);
+  purgeAudioBuffer(audioNormal);
+
+  currentTrackName = name;
+  var track = files[name];
+
+  if (track && track.revers) {
+    audioRevers.src = track.revers;
+    audioRevers.load();
+    audioRevers.onended = function() {
+      if (timerDuration > 0) startTimer();
+      hideTrackPopup();
+    };
+
+    var newTrackSessionId = "track_" + Date.now();
+
+    audioRevers.onloadedmetadata = function() {
+      var dur = audioRevers.duration || 0;
+      document.getElementById("revers-duration").textContent = formatTime(dur);
+
+      if (isInteractiveMode && roomRef) {
+        teamsData.forEach(function(t) {
+          roomRef.child("teams/" + t.id + "/readyToPlay").set(false);
+        });
+
+        roomRef.child("audioSync").set({
+          trackSessionId: newTrackSessionId,
+          reversUrl: track.revers || "",
+          normalUrl: track.normal || "",
+          duration: dur,
+          currentTime: 0,
+          playAction: "prepare",
+          startAt: 0
+        });
+      }
+    };
+
+    if (track.normal) {
+      audioNormal.src = track.normal;
+      audioNormal.preload = "auto";
+      audioNormal.load();
+      audioNormal.onloadedmetadata = function() {
+        document.getElementById("normal-duration").textContent = formatTime(audioNormal.duration);
       };
     }
 
-    if (sync.playAction === "play_revers" || sync.playAction === "play_timer") {
-      aNormal.pause();
-      var targetDelay = Math.max(0, (sync.startAt || Date.now()) - Date.now());
-      var duration = sync.duration || currentTrackDuration || 0;
-
-      setTimeout(function() {
-        if (isStreamAudioAllowed && sync.playAction === "play_revers") {
-          aRevers.currentTime = 0;
-          aRevers.play().catch(function() {});
-        } else {
-          aRevers.pause();
-        }
-        startSyntheticTimer(0, duration);
-      }, targetDelay);
-
-    } else if (sync.playAction === "resume_revers" || sync.playAction === "resume_timer") {
-      aNormal.pause();
-      var resumeTime = sync.currentTime || 0;
-      var resumeDelay = Math.max(0, (sync.startAt || Date.now()) - Date.now());
-      var rDur = sync.duration || currentTrackDuration || 0;
-
-      setTimeout(function() {
-        if (isStreamAudioAllowed && sync.playAction === "resume_revers") {
-          aRevers.currentTime = resumeTime;
-          aRevers.play().catch(function() {});
-        } else {
-          aRevers.pause();
-        }
-        startSyntheticTimer(resumeTime, rDur);
-      }, resumeDelay);
-
-    } else if (sync.playAction === "pause") {
-      aRevers.pause();
-      aNormal.pause();
-      stopSyntheticTimer();
-      var pausedAt = typeof sync.currentTime !== 'undefined' ? sync.currentTime : aRevers.currentTime;
-      updateProgressDisplay(pausedAt, currentTrackDuration);
-
-    } else if (sync.playAction === "play_normal") {
-      aRevers.pause();
-      stopSyntheticTimer();
-      var normDelay = Math.max(0, (sync.startAt || Date.now()) - Date.now());
-      setTimeout(function() {
-        if (isStreamAudioAllowed) {
-          aNormal.currentTime = 0;
-          aNormal.play().catch(function() {});
-        }
-      }, normDelay);
-
-    } else if (sync.playAction === "stop") {
-      aRevers.pause();
-      aNormal.pause();
-      aRevers.currentTime = 0;
-      aNormal.currentTime = 0;
-      stopSyntheticTimer();
-      updateProgressDisplay(0, currentTrackDuration);
-    }
-  });
+    toggleRevers();
+  }
+  updateShuffleButtonState();
+  updateNextTrackButton();
+  saveState();
 }
 
-function listenToGameState() {
-  var roomRef = db.ref("rooms/" + currentRoom);
-
-  roomRef.on("value", function(snapshot) {
-    var data = snapshot.val();
-    if (!data) return;
-
-    if (data.status === "game_over") {
-      showGameOverScreen(data.leaderboard || []);
-      return;
-    }
-
-    isStreamAudioAllowed = (data.streamAudio === true);
-
-    if (!isStreamAudioAllowed) {
-      var aR = document.getElementById("player-audio-revers");
-      var aN = document.getElementById("player-audio-normal");
-      if (aR && !aR.paused) aR.pause();
-      if (aN && !aN.paused) aN.pause();
-    }
-
-    var buzzerBtn = document.getElementById("buzzer-btn");
-    var passBtn = document.getElementById("pass-btn");
-    var hudFooter = document.getElementById("hud-footer");
-    var roundStatusPill = document.getElementById("round-status-pill");
-    var trackBox = document.getElementById("revealed-track-box");
-    var scoreboardWrap = document.getElementById("scoreboard-wrap");
-
-    var showMyScore = data.showScore !== false;
-    var showOppScore = data.showOpponentScore !== false;
-
-    var teams = data.teams || {};
-    var teamKeys = Object.keys(teams);
-
-    if (!showMyScore && !showOppScore) {
-      scoreboardWrap.style.display = "none";
-    } else {
-      scoreboardWrap.style.display = "grid";
-      scoreboardWrap.innerHTML = "";
-
-      if (showMyScore && teams[myTeamId]) {
-        var myCard = document.createElement("div");
-        myCard.className = "score-card my-card";
-        myCard.innerHTML = 
-          '<div class="score-team-title">' + (teams[myTeamId].name || myTeamName) + ' (Вы)</div>' +
-          '<div class="score-team-pts">' + (teams[myTeamId].score || 0) + '</div>';
-        scoreboardWrap.appendChild(myCard);
-      }
-
-      if (showOppScore) {
-        teamKeys.filter(function(k) { return k !== myTeamId; }).forEach(function(k) {
-          var oppCard = document.createElement("div");
-          oppCard.className = "score-card opponent-card";
-          oppCard.innerHTML = 
-            '<div class="score-team-title">' + (teams[k].name || "Соперник") + '</div>' +
-            '<div class="score-team-pts">' + (teams[k].score || 0) + '</div>';
-          scoreboardWrap.appendChild(oppCard);
-        });
-      }
-    }
-
-    if (!hasWaitedForNewTrack) {
-      buzzerBtn.disabled = true;
-      buzzerBtn.className = "buzzer-3d-btn";
-      buzzerBtn.innerHTML = '<i class="fas fa-hourglass-start"></i><span>ЖДИ</span>';
-      roundStatusPill.className = "status-pill";
-      roundStatusPill.innerHTML = '<i class="fas fa-hourglass-start"></i> <span>Ожидание раунда</span>';
-      trackBox.style.display = "none";
-      hudFooter.innerHTML = "Вы подключились посреди игры. Вход со следующего трека...";
-      return;
-    }
-
-    var buzzer = data.buzzer || {};
-    var passedBy = buzzer.passedBy || [];
-    var haveIPassed = passedBy.indexOf(myTeamId) !== -1;
-
-    if (data.status === "playing") {
-      trackBox.style.display = "none";
-      roundStatusPill.className = "status-pill playing";
-      roundStatusPill.innerHTML = '<i class="fas fa-volume-up"></i> <span>Трек играет!</span>';
-      
-      if (!buzzer.locked) {
-        passBtn.style.display = "none";
-        
-        if (haveIPassed) {
-          buzzerBtn.disabled = true;
-          buzzerBtn.className = "buzzer-3d-btn";
-          buzzerBtn.innerHTML = '<i class="fas fa-forward"></i><span>ПАС</span>';
-          hudFooter.innerHTML = "Вы спасовали. Ожидаем соперников...";
-        } else {
-          buzzerBtn.disabled = false;
-          buzzerBtn.className = "buzzer-3d-btn";
-          buzzerBtn.innerHTML = '<i class="fas fa-bolt"></i><span>ЖМИ!</span>';
-          hudFooter.innerHTML = "Слушай внимательно и нажимай быстрее!";
-        }
-      } else {
-        if (buzzer.pressedBy === myTeamId) {
-          buzzerBtn.disabled = true;
-          buzzerBtn.className = "buzzer-3d-btn winner-turn";
-          buzzerBtn.innerHTML = '<i class="fas fa-microphone"></i><span>ОТВЕТ!</span>';
-          passBtn.style.display = "inline-flex";
-          hudFooter.innerHTML = "🏆 <strong style='color:var(--neon-lime)'>Вы успели первым! Напишите ответ в чат:</strong>";
-          
-          // Автооткрытие чата для отвечающей команды
-          if (!isChatOpen) {
-            togglePlayerChat();
-          }
-        } else {
-          passBtn.style.display = "none";
-          buzzerBtn.disabled = true;
-          buzzerBtn.className = "buzzer-3d-btn";
-          buzzerBtn.innerHTML = '<i class="fas fa-lock"></i><span>БЛОК</span>';
-          var fastTeam = buzzer.pressedByName || "Соперник";
-          hudFooter.innerHTML = "⛔ <strong>" + fastTeam + "</strong> отвечает!";
-        }
-      }
-    } else if (data.status === "reveal") {
-      passBtn.style.display = "none";
-      buzzerBtn.disabled = true;
-      buzzerBtn.className = "buzzer-3d-btn";
-      buzzerBtn.innerHTML = '<i class="fas fa-music"></i><span>ОТВЕТ</span>';
-      roundStatusPill.className = "status-pill";
-      roundStatusPill.innerHTML = '<i class="fas fa-check-circle"></i> <span>Раунд завершён</span>';
-      hudFooter.innerHTML = "Звучит оригинальная версия трека.";
-      
-      if (data.revealedTrack) {
-        trackBox.style.display = "block";
-        trackBox.innerHTML = '<i class="fas fa-play-circle"></i> ' + data.revealedTrack;
-      }
-    } else {
-      passBtn.style.display = "none";
-      buzzerBtn.disabled = true;
-      buzzerBtn.className = "buzzer-3d-btn";
-      buzzerBtn.innerHTML = '<i class="fas fa-hourglass-start"></i><span>ЖДИ</span>';
-      roundStatusPill.className = "status-pill";
-      roundStatusPill.innerHTML = '<i class="fas fa-hourglass-start"></i> <span>Подготовка</span>';
-      trackBox.style.display = "none";
-      hudFooter.innerHTML = "Ведущий выбирает следующий трек...";
-    }
+function playNextTrack() {
+  var allNames = Object.keys(files).sort(function(a, b) {
+    return (trackOrder[a] || 0) - (trackOrder[b] || 0);
   });
+  var unplayed = allNames.filter(function(name) { return !playedTracks.has(name); });
+  if (unplayed.length === 0) {
+    showActionNotification('❗ Все треки сыграны');
+    return;
+  }
+  var nextTrack = unplayed[0];
+  playTrack(nextTrack);
 }
 
-/* Логика чата участника */
-function togglePlayerChat() {
-  var modal = document.getElementById("player-chat-modal");
-  isChatOpen = !isChatOpen;
-  modal.style.display = isChatOpen ? "flex" : "none";
+function updateNextTrackButton() {
+  var btn = document.getElementById("next-track-btn");
+  if (!btn) return;
+  var allNames = Object.keys(files);
+  var unplayed = allNames.filter(function(name) { return !playedTracks.has(name); });
+  btn.disabled = unplayed.length === 0;
+}
 
-  if (isChatOpen) {
-    unreadChatCount = 0;
-    updatePlayerChatBadge();
-    var box = document.getElementById("player-chat-messages");
-    box.scrollTop = box.scrollHeight;
-    setTimeout(function() {
-      document.getElementById("player-chat-input").focus();
-    }, 150);
+function showTrackPopup(name) {
+  var popup = document.getElementById("track-name-popup");
+  if (popup) {
+    popup.textContent = name;
+    popup.style.opacity = 1;
   }
 }
 
-function updatePlayerChatBadge() {
-  var badge = document.getElementById("player-chat-unread");
-  if (!badge) return;
-  if (unreadChatCount > 0) {
-    badge.textContent = unreadChatCount;
-    badge.style.display = "inline-block";
+function hideTrackPopup() {
+  var popup = document.getElementById("track-name-popup");
+  if (popup) popup.style.opacity = 0;
+}
+
+function toggleRevers() {
+  var audio = document.getElementById("audio-revers");
+  var normal = document.getElementById("audio-normal");
+  var icon = document.getElementById("revers-play-icon");
+
+  if (!normal.paused) {
+    normal.pause();
+    document.getElementById("normal-play-icon").classList.replace("fa-pause", "fa-play");
+  }
+
+  if (audio.paused) {
+    stopTimer();
+    hideBuzzerAlert();
+
+    if (audio.currentTime > 0) {
+      resumeSynchronizedPlayback();
+    } else if (isInteractiveMode && streamAudioToPlayers && teamsData.length > 0) {
+      waitForAllDevicesReady(audio, function() {
+        startSynchronizedPlayback();
+      });
+    } else {
+      startSynchronizedPlayback();
+    }
   } else {
-    badge.style.display = "none";
+    audio.pause();
+    icon.classList.replace("fa-pause", "fa-play");
+    hideTrackPopup();
+
+    if (isInteractiveMode && roomRef) {
+      roomRef.update({ status: "idle" });
+      roomRef.child("audioSync").update({ 
+        playAction: "pause",
+        currentTime: audio.currentTime
+      });
+    }
   }
+  updateShuffleButtonState();
+  updateNextTrackButton();
 }
 
-function listenToPlayerChat() {
-  if (!currentRoom) return;
-  var chatRef = db.ref("rooms/" + currentRoom + "/chat");
-  var msgBox = document.getElementById("player-chat-messages");
-
-  chatRef.limitToLast(40).on("child_added", function(snapshot) {
-    var msg = snapshot.val();
-    if (!msg) return;
-
-    var row = document.createElement("div");
-    var isMine = msg.teamId === myTeamId;
-    row.className = "chat-msg" + 
-      (isMine ? " mine" : "") + 
-      (msg.isHost ? " host" : "") + 
-      (msg.isSystem ? " system" : "");
-
-    if (msg.isSystem) {
-      row.innerHTML = '<div>🔔 ' + msg.text + '</div>';
-    } else {
-      row.innerHTML = 
-        '<div class="name">' + msg.author + '</div>' +
-        '<div class="text">' + msg.text + '</div>';
+function waitForAllDevicesReady(localAudio, callback) {
+  var isDone = false;
+  var fallbackTimer = setTimeout(function() {
+    if (!isDone) {
+      isDone = true;
+      callback();
     }
+  }, 2500);
 
-    msgBox.appendChild(row);
-    msgBox.scrollTop = msgBox.scrollHeight;
+  function checkEverythingReady() {
+    if (isDone) return;
+    
+    var hostBuffered = localAudio.readyState >= 3;
+    var teamsReady = true;
+    teamsData.forEach(function(t) {
+      if (!t.readyToPlay) teamsReady = false;
+    });
 
-    if (!isChatOpen && !isMine) {
-      unreadChatCount++;
-      updatePlayerChatBadge();
+    if (hostBuffered && teamsReady) {
+      isDone = true;
+      clearTimeout(fallbackTimer);
+      callback();
     }
-  });
-}
+  }
 
-function sendPlayerChatMessage() {
-  var input = document.getElementById("player-chat-input");
-  var text = input.value.trim();
-  if (!text || !currentRoom) return;
-
-  db.ref("rooms/" + currentRoom + "/chat").push({
-    author: myTeamName,
-    teamId: myTeamId,
-    text: text,
-    isHost: false,
-    time: Date.now()
+  roomRef.child("teams").on("value", function() {
+    checkEverythingReady();
   });
 
-  input.value = "";
+  localAudio.oncanplay = function() {
+    checkEverythingReady();
+  };
+
+  checkEverythingReady();
 }
 
-function showGameOverScreen(leaderboard) {
-  if (gameOverTimer) return;
+function startSynchronizedPlayback() {
+  var audio = document.getElementById("audio-revers");
+  var icon = document.getElementById("revers-play-icon");
+  var serverStartAt = Date.now() + 250;
 
-  var aRevers = document.getElementById("player-audio-revers");
-  var aNormal = document.getElementById("player-audio-normal");
-  if (aRevers) aRevers.pause();
-  if (aNormal) aNormal.pause();
-  stopSyntheticTimer();
+  if (isInteractiveMode && roomRef) {
+    clearTeamHighlight();
+    roomRef.update({
+      status: "playing",
+      revealedTrack: "",
+      buzzer: { locked: false, pressedBy: null, pressedByName: null, passedBy: [] }
+    });
 
-  document.getElementById("game-view").style.display = "none";
-  var overView = document.getElementById("game-over-view");
-  overView.style.display = "flex";
-
-  var winnerBadge = document.getElementById("winner-badge-text");
-  var list = document.getElementById("final-leaderboard-list");
-  list.innerHTML = "";
-
-  if (leaderboard.length > 0) {
-    var topScore = leaderboard[0].score;
-    var winners = leaderboard.filter(function(t) { return t.score === topScore; });
-
-    if (winners.length > 1) {
-      winnerBadge.textContent = "🤝 Боевая ничья!";
-    } else {
-      winnerBadge.textContent = "🏆 " + winners[0].name + " побеждает!";
-    }
-
-    leaderboard.forEach(function(t, idx) {
-      var row = document.createElement("div");
-      row.className = "leaderboard-row" + (idx === 0 ? " gold" : "");
-      row.innerHTML = 
-        '<span>' + (idx === 0 ? '🥇 ' : (idx + 1) + '. ') + t.name + '</span>' +
-        '<span class="pts">' + t.score + '</span>';
-      list.appendChild(row);
+    roomRef.child("audioSync").update({
+      playAction: streamAudioToPlayers ? "play_revers" : "play_timer",
+      startAt: serverStartAt,
+      duration: audio.duration || 0,
+      currentTime: 0
     });
   }
 
-  var timeLeft = 10;
-  var secSpan = document.getElementById("reset-seconds");
-  secSpan.textContent = timeLeft;
+  var delayStart = Math.max(0, serverStartAt - Date.now());
+  setTimeout(function() {
+    audio.currentTime = 0;
+    audio.play().then(function() {
+      icon.classList.replace("fa-play", "fa-pause");
+      showTrackPopup(currentTrackName);
+      updateReversProgress();
 
-  gameOverTimer = setInterval(function() {
-    timeLeft--;
-    if (secSpan) secSpan.textContent = timeLeft;
+      if (!isInteractiveMode && currentTrackName !== lastPlayedTrack) {
+        cycleNextOfflineTeam();
+        lastPlayedTrack = currentTrackName;
+        saveState();
+      }
+    }).catch(function(err) {
+      console.warn("Воспроизведение ведущего ожидает разрешения:", err);
+    });
+  }, delayStart);
+}
 
-    if (timeLeft <= 0) {
-      clearInterval(gameOverTimer);
-      gameOverTimer = null;
-      window.location.reload();
+function resumeSynchronizedPlayback() {
+  var audio = document.getElementById("audio-revers");
+  var icon = document.getElementById("revers-play-icon");
+  var serverStartAt = Date.now() + 150;
+
+  if (isInteractiveMode && roomRef) {
+    roomRef.update({
+      status: "playing",
+      buzzer: { locked: false, pressedBy: null, pressedByName: null, passedBy: [] }
+    });
+
+    roomRef.child("audioSync").update({
+      playAction: streamAudioToPlayers ? "resume_revers" : "resume_timer",
+      currentTime: audio.currentTime,
+      duration: audio.duration || 0,
+      startAt: serverStartAt
+    });
+  }
+
+  var delayStart = Math.max(0, serverStartAt - Date.now());
+  setTimeout(function() {
+    audio.play().then(function() {
+      icon.classList.replace("fa-play", "fa-pause");
+      showTrackPopup(currentTrackName);
+      updateReversProgress();
+    }).catch(function(err) {
+      console.warn("Возобновление:", err);
+    });
+  }, delayStart);
+}
+
+function cycleNextOfflineTeam() {
+  if (teamsData.length === 0) return;
+  var currIdx = teamsData.findIndex(function(t) { return t.id === activeTeamId; });
+  var nextIdx = (currIdx + 1) % teamsData.length;
+  activateTeam(teamsData[nextIdx].id);
+}
+
+function manualActivateTeam(teamId) {
+  activateTeam(teamId);
+  saveState();
+}
+
+function activateTeam(teamId) {
+  activeTeamId = teamId;
+  document.querySelectorAll('.score-team-group').forEach(function(el) {
+    el.classList.remove('active');
+  });
+  var activeCard = document.getElementById('score-card-' + teamId);
+  if (activeCard) {
+    activeCard.classList.add('active');
+  }
+}
+
+function clearTeamHighlight() {
+  activeTeamId = null;
+  document.querySelectorAll('.score-team-group').forEach(function(el) {
+    el.classList.remove('active');
+  });
+}
+
+function changeScore(teamId, delta) {
+  var team = teamsData.find(function(t) { return t.id === teamId; });
+  if (!team) return;
+
+  team.score = Math.max(0, team.score + delta);
+  renderScoreboardGrid();
+  saveState();
+
+  if (delta > 0) {
+    if (soundUrls.ring) {
+      var a = document.getElementById("audio-ring");
+      a.src = soundUrls.ring;
+      a.currentTime = 0;
+      a.play().catch(function() {});
+    }
+    showNotification('+' + delta + ' (' + team.name + ')', true);
+  } else {
+    showNotification(delta + ' (' + team.name + ')', false);
+  }
+
+  if (isInteractiveMode && roomRef) {
+    roomRef.child("teams/" + teamId + "/score").set(team.score);
+  }
+}
+
+function showOriginal() {
+  var p = document.getElementById("original-player");
+  var b = document.getElementById("normal-toggle");
+  p.style.display = p.style.display === "none" ? "block" : "none";
+  b.textContent = p.style.display === "none" ? "Показать оригинал" : "Скрыть оригинал";
+  if (p.style.display === "none") document.getElementById("audio-normal").pause();
+}
+
+function hideOriginal() {
+  var p = document.getElementById("original-player");
+  p.style.display = "none";
+  document.getElementById("normal-toggle").textContent = "Показать оригинал";
+  document.getElementById("audio-normal").pause();
+  document.getElementById("normal-play-icon").classList.replace("fa-pause", "fa-play");
+}
+
+function toggleNormal() {
+  var a = document.getElementById("audio-normal");
+  var r = document.getElementById("audio-revers");
+  var i = document.getElementById("normal-play-icon");
+  if (a.paused) {
+    stopTimer();
+    r.pause();
+    document.getElementById("revers-play-icon").classList.replace("fa-pause", "fa-play");
+    
+    if (!a.src && files[currentTrackName] && files[currentTrackName].normal) {
+      a.src = files[currentTrackName].normal;
+      a.load();
+    }
+    
+    a.play().then(function() {
+      i.classList.replace("fa-play", "fa-pause");
+      updateNormalProgress();
+
+      if (isInteractiveMode && roomRef && streamAudioToPlayers) {
+        roomRef.child("audioSync").update({
+          playAction: "play_normal",
+          currentTime: 0,
+          startAt: Date.now() + 150
+        });
+      }
+    }).catch(function(err) {
+      console.warn("Воспроизведение оригинала заблокировано:", err);
+    });
+  } else {
+    a.pause();
+    i.classList.replace("fa-play", "fa-pause");
+
+    if (isInteractiveMode && roomRef && streamAudioToPlayers) {
+      roomRef.child("audioSync").update({ playAction: "pause" });
+    }
+  }
+}
+
+function updateReversProgress() {
+  var a = document.getElementById("audio-revers");
+  var fill = document.getElementById("revers-progress-fill");
+  var currentTimeEl = document.getElementById("revers-current-time");
+  var duration = isNaN(a.duration) ? 0 : a.duration;
+  var progress = a.currentTime / duration;
+  fill.style.width = (progress * 100 || 0) + "%";
+  currentTimeEl.textContent = formatTime(a.currentTime);
+  if (!a.paused) requestAnimationFrame(updateReversProgress);
+}
+
+function updateNormalProgress() {
+  var a = document.getElementById("audio-normal");
+  var fill = document.getElementById("normal-progress-fill");
+  var currentTimeEl = document.getElementById("normal-current-time");
+  var duration = isNaN(a.duration) ? 0 : a.duration;
+  var progress = a.currentTime / duration;
+  fill.style.width = (progress * 100 || 0) + "%";
+  currentTimeEl.textContent = formatTime(a.currentTime);
+  if (!a.paused) requestAnimationFrame(updateNormalProgress);
+}
+
+function seekRevers(e) {
+  var bar = document.getElementById("revers-progress-bar");
+  var audio = document.getElementById("audio-revers");
+  var percent = e.offsetX / bar.offsetWidth;
+  audio.currentTime = percent * audio.duration;
+}
+
+function seekNormal(e) {
+  var bar = document.getElementById("normal-progress-bar");
+  var audio = document.getElementById("audio-normal");
+  var percent = e.offsetX / bar.offsetWidth;
+  audio.currentTime = percent * audio.duration;
+}
+
+function markAsPlayed() {
+  if (currentTrackName && !playedTracks.has(currentTrackName)) {
+    playedTracks.add(currentTrackName);
+    updateTrackCounter();
+    saveState();
+    document.querySelectorAll('[data-song="' + currentTrackName + '"]').forEach(function(btn) {
+      btn.classList.add("played");
+      btn.disabled = true;
+    });
+    updateNextTrackButton();
+  }
+}
+document.getElementById("audio-revers").addEventListener("playing", markAsPlayed);
+
+function showNotification(text, isAddition) {
+  if (typeof isAddition === 'undefined') isAddition = true;
+  var notif = document.getElementById("score-notification");
+  if (notif) {
+    notif.innerHTML = text;
+    notif.style.color = isAddition ? 'var(--neon-lime)' : 'var(--neon-pink)';
+    notif.style.borderColor = isAddition ? 'var(--neon-lime)' : 'var(--neon-pink)';
+    notif.classList.add("show");
+    setTimeout(function() {
+      notif.classList.remove("show");
+    }, 1200);
+  }
+}
+
+function stopAllSounds() {
+  if (originalTimeout) {
+    clearTimeout(originalTimeout);
+    originalTimeout = null;
+  }
+  ["audio-revers", "audio-normal", "audio-winner", "audio-lost", "audio-ring", "audio-start", "audio-final", "audio-game-over"].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) {
+      el.pause();
+      el.currentTime = 0;
+    }
+  });
+  stopTimer();
+}
+
+function updateTrackCounter() {
+  var counter = document.getElementById("track-counter");
+  if (counter) {
+    counter.textContent = Object.keys(files).length - playedTracks.size;
+  }
+  updateNextTrackButton();
+}
+
+function endQuiz() {
+  localStorage.removeItem('reversQuiz');
+  stopAllSounds();
+
+  var aGameOver = document.getElementById("audio-game-over");
+  if (aGameOver && soundUrls.gameOver) {
+    aGameOver.currentTime = 0;
+    aGameOver.play().catch(function(e) { console.warn(e); });
+  }
+
+  purgeAudioBuffer(document.getElementById("audio-revers"));
+  purgeAudioBuffer(document.getElementById("audio-normal"));
+
+  var sortedTeams = teamsData.slice().sort(function(a, b) { return b.score - a.score; });
+  var winnerText = (sortedTeams[0] && sortedTeams[1] && sortedTeams[0].score === sortedTeams[1].score) 
+    ? "Боевая ничья!" 
+    : (sortedTeams[0] ? sortedTeams[0].name + " побеждает!" : "Игра завершена");
+
+  if (isInteractiveMode && roomRef) {
+    roomRef.update({
+      status: "game_over",
+      leaderboard: sortedTeams.map(function(t) { return { name: t.name, score: t.score }; })
+    });
+  }
+
+  localStorage.removeItem("host_room_pin");
+
+  var quizArea = document.getElementById("quiz-area");
+  quizArea.innerHTML = '';
+  
+  var resultDiv = document.createElement('div');
+  resultDiv.className = 'winner-screen';
+  
+  var scoreListHtml = sortedTeams.map(function(t, idx) {
+    return '<div>' + (idx + 1) + '. ' + t.name + ': <strong>' + formatScore(t.score) + '</strong></div>';
+  }).join('');
+
+  resultDiv.innerHTML = 
+    '<h2>🏆 Итоги битвы:<br><strong>' + winnerText + '</strong></h2>' +
+    '<div class="final-scores">' + scoreListHtml + '</div>';
+
+  quizArea.appendChild(resultDiv);
+
+  var restartBtn = document.createElement("button");
+  restartBtn.innerHTML = '<i class="fas fa-redo"></i> Новая игра';
+  restartBtn.style.cssText = 'width: 100%; padding: 16px; margin-top: 24px; background: var(--neon-cyan); color: #000; font-size: 15px; text-transform: uppercase; letter-spacing: 1px;';
+  restartBtn.onclick = function() { location.reload(); };
+  quizArea.appendChild(restartBtn);
+}
+
+function toggleInteractiveSettingsVisibility() {
+  var modeSel = document.getElementById("interactive-mode-toggle");
+  var subSettings = document.getElementById("interactive-sub-settings");
+  if (modeSel && subSettings) {
+    subSettings.style.display = (modeSel.value === "true") ? "flex" : "none";
+  }
+}
+
+function openSettings() {
+  var tIn = document.getElementById("timer-input");
+  var dIn = document.getElementById("original-delay-input");
+  var mIn = document.getElementById("mix-mode");
+  var modeSel = document.getElementById("interactive-mode-toggle");
+  var streamSel = document.getElementById("stream-audio-toggle");
+  var scoreSel = document.getElementById("show-score-toggle");
+  var opponentScoreSel = document.getElementById("show-opponent-score-toggle");
+  var sMod = document.getElementById("settings-modal");
+  var statusEl = document.getElementById("manual-update-status");
+  
+  if (tIn) tIn.value = timerDuration;
+  if (dIn) dIn.value = originalDelay;
+  if (mIn) mIn.value = mixMode ? "mixed" : "normal";
+  if (modeSel) modeSel.value = isInteractiveMode ? "true" : "false";
+  if (streamSel) streamSel.value = streamAudioToPlayers ? "true" : "false";
+  if (scoreSel) scoreSel.value = showScoreToPlayers ? "true" : "false";
+  if (opponentScoreSel) opponentScoreSel.value = showOpponentScore ? "true" : "false";
+  
+  toggleInteractiveSettingsVisibility();
+
+  if (statusEl) {
+    var currentVer = localStorage.getItem('app_version') || '11';
+    statusEl.textContent = "Текущая версия: v" + currentVer;
+  }
+  if (sMod) sMod.classList.add("active");
+}
+
+function closeSettings() {
+  var sMod = document.getElementById("settings-modal");
+  if (sMod) sMod.classList.remove("active");
+}
+
+function setSettings() {
+  var inputTimer = document.getElementById("timer-input");
+  var inputDelay = document.getElementById("original-delay-input");
+  var mode = document.getElementById("mix-mode").value;
+  var newInteractive = document.getElementById("interactive-mode-toggle").value === "true";
+  var newStreamAudio = document.getElementById("stream-audio-toggle").value === "true";
+  var newShowScore = document.getElementById("show-score-toggle").value === "true";
+  var newShowOpponent = document.getElementById("show-opponent-score-toggle").value === "true";
+  
+  var valTimer = parseInt(inputTimer.value);
+  var valDelay = parseFloat(inputDelay.value);
+
+  if (isNaN(valTimer) || valTimer < 1 || valTimer > 300) return alert("Таймер: от 1 до 300 сек.");
+  if (isNaN(valDelay) || valDelay < 0 || valDelay > 30) return alert("Задержка оригинала: от 0 до 30 сек.");
+
+  var needReload = (newInteractive !== isInteractiveMode);
+
+  timerDuration = valTimer;
+  originalDelay = valDelay;
+  mixMode = mode === "mixed";
+  isInteractiveMode = newInteractive;
+  streamAudioToPlayers = newStreamAudio;
+  showScoreToPlayers = newShowScore;
+  showOpponentScore = newShowOpponent;
+
+  if (isInteractiveMode && roomRef) {
+    roomRef.update({ 
+      showScore: showScoreToPlayers,
+      showOpponentScore: showOpponentScore,
+      streamAudio: streamAudioToPlayers
+    });
+  }
+
+  saveState();
+  closeSettings();
+
+  if (needReload) {
+    location.reload();
+  } else {
+    updateFolderSection();
+    showActionNotification('⚙️ Настройки сохранены');
+  }
+}
+
+function startTimer() {
+  if (isTimerActive) return;
+  stopTimerSounds();
+  isTimerActive = true;
+  timerValue = timerDuration;
+  
+  var circle = document.getElementById("timer-circle");
+  if (circle) circle.classList.add("active");
+  updateTimerDisplay();
+
+  var aStart = document.getElementById("audio-start");
+  var aFinal = document.getElementById("audio-final");
+
+  if (soundUrls.start && aStart) {
+    aStart.src = soundUrls.start;
+    aStart.currentTime = 0;
+    aStart.play().catch(function() {});
+  }
+
+  timerInterval = setInterval(function() {
+    timerValue--;
+    updateTimerDisplay();
+
+    if (timerValue === 1) {
+      if (aStart) {
+        aStart.pause();
+        aStart.currentTime = 0;
+      }
+      if (soundUrls.final && aFinal) {
+        aFinal.src = soundUrls.final;
+        aFinal.currentTime = 0;
+        aFinal.onended = function() {
+          isTimerActive = false;
+          if (circle) circle.classList.remove("active");
+        };
+        aFinal.play().catch(function() {});
+      }
+    }
+
+    if (timerValue <= 0) {
+      clearInterval(timerInterval);
+      timerInterval = null;
+      if (!soundUrls.final && circle) {
+        isTimerActive = false;
+        circle.classList.remove("active");
+      }
     }
   }, 1000);
 }
 
-function pressBuzzer() {
-  if (!currentRoom || !myTeamId) return;
-
-  if (navigator.vibrate) navigator.vibrate([40]);
-
-  var buzzerRef = db.ref("rooms/" + currentRoom + "/buzzer");
-  
-  buzzerRef.transaction(function(buzzer) {
-    if (!buzzer) buzzer = {};
-    if (buzzer.locked) return;
-    
-    var passed = buzzer.passedBy || [];
-    if (passed.indexOf(myTeamId) !== -1) return;
-
-    return {
-      locked: true,
-      pressedBy: myTeamId,
-      pressedByName: myTeamName,
-      passedBy: passed,
-      time: Date.now()
-    };
-  }, function(error, committed) {
-    if (committed) {
-      // Отправляем системное уведомление в чат для всех
-      db.ref("rooms/" + currentRoom + "/chat").push({
-        author: "Система",
-        text: "⚡ " + myTeamName + " жмёт кнопку и отвечает!",
-        isSystem: true,
-        time: Date.now()
-      });
-    }
-  });
+function stopTimerSounds() {
+  var aStart = document.getElementById("audio-start");
+  var aFinal = document.getElementById("audio-final");
+  if (aStart) {
+    aStart.pause();
+    aStart.currentTime = 0;
+  }
+  if (aFinal) {
+    aFinal.onended = null;
+    aFinal.pause();
+    aFinal.currentTime = 0;
+  }
 }
 
-function passTurn() {
-  if (!currentRoom || !myTeamId) return;
+function stopTimer() {
+  if (timerInterval) {
+    clearInterval(timerInterval);
+    timerInterval = null;
+  }
+  isTimerActive = false;
+  stopTimerSounds();
+  var circle = document.getElementById("timer-circle");
+  if (circle) {
+    circle.classList.remove("active");
+  }
+}
 
-  if (navigator.vibrate) navigator.vibrate([20, 30, 20]);
-
-  var buzzerRef = db.ref("rooms/" + currentRoom + "/buzzer");
-  
-  buzzerRef.transaction(function(buzzer) {
-    if (!buzzer || buzzer.pressedBy !== myTeamId) return;
-    
-    var passed = buzzer.passedBy || [];
-    if (passed.indexOf(myTeamId) === -1) {
-      passed.push(myTeamId);
-    }
-
-    return {
-      locked: false,
-      pressedBy: null,
-      pressedByName: null,
-      passedBy: passed,
-      time: Date.now()
-    };
-  }, function(error, committed) {
-    if (committed) {
-      db.ref("rooms/" + currentRoom + "/chat").push({
-        author: "Система",
-        text: "⏩ " + myTeamName + " пасует ход!",
-        isSystem: true,
-        time: Date.now()
-      });
-    }
-  });
+function updateTimerDisplay() {
+  var el = document.getElementById("timer-circle");
+  if (!el) return;
+  el.textContent = timerValue;
+  var isUrgent = timerValue <= 5;
+  el.style.borderColor = isUrgent ? "var(--neon-pink)" : "var(--neon-cyan)";
+  el.style.color = isUrgent ? "var(--neon-pink)" : "var(--neon-cyan)";
+  el.style.boxShadow = isUrgent ? "0 0 20px rgba(255, 0, 85, 0.5)" : "0 0 20px rgba(0, 229, 255, 0.4)";
 }
 </script>
 </body>
