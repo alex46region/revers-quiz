@@ -56,6 +56,53 @@ body {
   position: relative;
 }
 
+/* Анимация начисления/списания баллов (поверх всего) */
+.score-delta-overlay {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.6);
+  z-index: 10000;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  opacity: 0;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.score-delta-overlay.show {
+  display: flex;
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.score-delta-badge {
+  font-family: 'Ubuntu Mono', monospace;
+  font-size: clamp(3.2em, 12vw, 5em);
+  font-weight: 800;
+  padding: 10px 30px;
+  border-radius: 28px;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 15px 50px rgba(0, 0, 0, 0.9);
+}
+
+.score-delta-badge.plus {
+  color: var(--neon-lime);
+  border: 2px solid var(--neon-lime);
+  background: rgba(0, 255, 102, 0.12);
+  box-shadow: 0 0 50px rgba(0, 255, 102, 0.6);
+}
+
+.score-delta-badge.minus {
+  color: var(--neon-pink);
+  border: 2px solid var(--neon-pink);
+  background: rgba(255, 0, 85, 0.12);
+  box-shadow: 0 0 50px rgba(255, 0, 85, 0.6);
+}
+
 .login-wrap {
   margin: auto;
   width: 100%;
@@ -196,7 +243,14 @@ body {
   cursor: pointer;
   box-shadow: 0 0 15px rgba(0, 229, 255, 0.15);
   flex-shrink: 0;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: all 0.2s ease;
+}
+
+.player-chat-trigger-btn.disabled {
+  opacity: 0.35;
+  filter: grayscale(1);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: var(--text-dim);
 }
 
 .player-chat-trigger-btn.has-pulse {
@@ -540,7 +594,6 @@ body {
   font-size: 1.2em;
 }
 
-/* Модальное окно чата участника с непрозрачной панелью эмодзи */
 #player-chat-modal {
   position: fixed;
   inset: 0;
@@ -638,7 +691,6 @@ body {
   font-weight: 700;
 }
 
-/* Непрозрачный поповер эмодзи участника */
 .player-emoji-popover {
   position: absolute;
   bottom: 70px;
@@ -670,7 +722,6 @@ body {
   background: rgba(255, 255, 255, 0.15);
 }
 
-/* Адаптированный футер чата участника */
 .player-chat-input-bar {
   padding: 10px 12px;
   background: var(--bg-deep);
@@ -722,6 +773,11 @@ body {
 
 <audio id="player-audio-revers" preload="auto" playsinline crossorigin="anonymous" style="display:none;"></audio>
 <audio id="player-audio-normal" preload="auto" playsinline crossorigin="anonymous" style="display:none;"></audio>
+
+<!-- Всплывающая анимация изменения счёта -->
+<div class="score-delta-overlay" id="player-score-delta-popup">
+  <div class="score-delta-badge plus" id="player-score-delta-badge">+1</div>
+</div>
 
 <div class="login-wrap" id="login-view">
   <div class="brand-icon"><i class="fas fa-bolt"></i></div>
@@ -830,6 +886,7 @@ var currentRoom = null;
 var myTeamId = null;
 var myTeamName = "";
 var gameOverTimer = null;
+var scoreDeltaTimer = null;
 var currentLoadedReversUrl = "";
 var currentTrackDuration = 0;
 var progressAnimFrame = null;
@@ -840,9 +897,13 @@ var timerRunning = false;
 var timerStartTime = 0;
 var timerTotalDuration = 0;
 var isStreamAudioAllowed = false;
+var roomChatMode = "restricted";
+var currentRoomStatus = "idle";
+var canBuzzerAnswerNow = false;
 
 var isChatOpen = false;
 var unreadChatCount = 0;
+var lastSeenScoreTimestamp = 0;
 
 function playMessageNotificationSound() {
   try {
@@ -964,6 +1025,29 @@ function joinGame() {
   }).catch(function(e) {
     showError("Ошибка подключения: " + e.message);
   });
+}
+
+// Показ анимации изменения очков поверх всего экрана
+function showScoreDeltaAnimation(delta) {
+  var popup = document.getElementById("player-score-delta-popup");
+  var badge = document.getElementById("player-score-delta-badge");
+  if (!popup || !badge) return;
+
+  var isPlus = delta > 0;
+  badge.textContent = (isPlus ? "+" : "") + delta;
+  badge.className = "score-delta-badge " + (isPlus ? "plus" : "minus");
+
+  popup.style.display = "flex";
+  popup.offsetHeight;
+  popup.classList.add("show");
+
+  if (scoreDeltaTimer) clearTimeout(scoreDeltaTimer);
+  scoreDeltaTimer = setTimeout(function() {
+    popup.classList.remove("show");
+    setTimeout(function() {
+      if (!popup.classList.contains("show")) popup.style.display = "none";
+    }, 300);
+  }, 1800);
 }
 
 function updateProgressDisplay(currentTime, totalDuration) {
@@ -1119,7 +1203,14 @@ function listenToGameState() {
       return;
     }
 
+    currentRoomStatus = data.status || "idle";
+    roomChatMode = data.chatMode || "restricted";
     isStreamAudioAllowed = (data.streamAudio === true);
+
+    // Закрываем чат у всех участников при показе оригинала или старте нового реверса
+    if (data.status === "reveal" || data.status === "playing") {
+      closePlayerChat();
+    }
 
     if (!isStreamAudioAllowed) {
       var aR = document.getElementById("player-audio-revers");
@@ -1154,6 +1245,15 @@ function listenToGameState() {
           '<div class="score-team-title">' + (teams[myTeamId].name || myTeamName) + ' (Вы)</div>' +
           '<div class="score-team-pts">' + (teams[myTeamId].score || 0) + '</div>';
         scoreboardWrap.appendChild(myCard);
+
+        // Отслеживаем изменение очков своей команды для всплывающей анимации
+        var myTeamData = teams[myTeamId];
+        if (myTeamData.lastScoreChangeAt && myTeamData.lastScoreChangeAt > lastSeenScoreTimestamp) {
+          lastSeenScoreTimestamp = myTeamData.lastScoreChangeAt;
+          if (myTeamData.lastScoreDelta) {
+            showScoreDeltaAnimation(myTeamData.lastScoreDelta);
+          }
+        }
       }
 
       if (showOppScore) {
@@ -1183,6 +1283,12 @@ function listenToGameState() {
     var passedBy = buzzer.passedBy || [];
     var haveIPassed = passedBy.indexOf(myTeamId) !== -1;
 
+    // Проверяем, имеет ли текущая команда право ответа прямо сейчас
+    canBuzzerAnswerNow = (buzzer.pressedBy === myTeamId);
+
+    // Блокировка/разблокировка кнопки чата в зависимости от режима
+    updateChatTriggerButtonState();
+
     if (data.status === "playing") {
       trackBox.style.display = "none";
       roundStatusPill.className = "status-pill playing";
@@ -1210,8 +1316,9 @@ function listenToGameState() {
           passBtn.style.display = "inline-flex";
           hudFooter.innerHTML = "🏆 <strong style='color:var(--neon-lime)'>Вы успели первым! Напишите ответ в чат:</strong>";
           
+          // Автооткрытие чата для ответившей команды
           if (!isChatOpen) {
-            togglePlayerChat();
+            openPlayerChat();
           }
         } else {
           passBtn.style.display = "none";
@@ -1248,23 +1355,54 @@ function listenToGameState() {
   });
 }
 
-function togglePlayerChat() {
+function updateChatTriggerButtonState() {
+  var triggerBtn = document.getElementById("player-chat-toggle-btn");
+  if (!triggerBtn) return;
+
+  var isRestrictedNow = (roomChatMode === "restricted" && currentRoomStatus === "playing" && !canBuzzerAnswerNow);
+
+  if (isRestrictedNow) {
+    triggerBtn.classList.add("disabled");
+  } else {
+    triggerBtn.classList.remove("disabled");
+  }
+}
+
+function openPlayerChat() {
   var modal = document.getElementById("player-chat-modal");
   var triggerBtn = document.getElementById("player-chat-toggle-btn");
-  isChatOpen = !isChatOpen;
-  modal.style.display = isChatOpen ? "flex" : "none";
+  isChatOpen = true;
+  modal.style.display = "flex";
+
+  unreadChatCount = 0;
+  updatePlayerChatBadge();
+  triggerBtn.classList.remove("has-pulse");
+
+  var box = document.getElementById("player-chat-messages");
+  box.scrollTop = box.scrollHeight;
+  setTimeout(function() {
+    document.getElementById("player-chat-input").focus();
+  }, 150);
+}
+
+function closePlayerChat() {
+  var modal = document.getElementById("player-chat-modal");
+  isChatOpen = false;
+  modal.style.display = "none";
+  document.getElementById("player-emoji-popover").style.display = "none";
+}
+
+function togglePlayerChat() {
+  // Проверка ограничений чата во время реверса
+  if (roomChatMode === "restricted" && currentRoomStatus === "playing" && !canBuzzerAnswerNow) {
+    showActionNotification("🔒 Чат закрыт во время реверса! Нажмите кнопку ответа.");
+    return;
+  }
 
   if (isChatOpen) {
-    unreadChatCount = 0;
-    updatePlayerChatBadge();
-    triggerBtn.classList.remove("has-pulse");
-    var box = document.getElementById("player-chat-messages");
-    box.scrollTop = box.scrollHeight;
-    setTimeout(function() {
-      document.getElementById("player-chat-input").focus();
-    }, 150);
+    closePlayerChat();
   } else {
-    document.getElementById("player-emoji-popover").style.display = "none";
+    openPlayerChat();
   }
 }
 
@@ -1343,6 +1481,7 @@ function showGameOverScreen(leaderboard) {
   if (aRevers) aRevers.pause();
   if (aNormal) aNormal.pause();
   stopSyntheticTimer();
+  closePlayerChat();
 
   document.getElementById("game-view").style.display = "none";
   var overView = document.getElementById("game-over-view");
