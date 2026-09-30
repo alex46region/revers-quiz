@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover" />
-<meta name="theme-color" content="#060814" />
+<meta name="theme-color" content="#0a051b" />
 <meta name="referrer" content="no-referrer" />
 
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
@@ -44,7 +44,7 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;900&family=Syne:wght@700;800;900&family=Ubuntu+Mono:wght@700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@600;700&family=Ubuntu+Mono:wght@700&display=swap" rel="stylesheet">
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
 
 <!-- Firebase App & Database -->
@@ -53,37 +53,34 @@
 
 <style>
 :root {
-  --bg-core: #060814;
-  --panel-glass: rgba(18, 22, 40, 0.65);
-  --panel-glass-border: rgba(255, 255, 255, 0.08);
-  --glow-cyan: #00f0ff;
-  --glow-pink: #ff0055;
-  --glow-purple: #7928ca;
-  --glow-lime: #00ff88;
-  --glow-amber: #ffb703;
-  --text-main: #f8fafc;
-  --text-mute: #8e9bb4;
+  --neon-cyan: #00f3ff;
+  --neon-magenta: #ff007f;
+  --neon-purple: #9d00ff;
+  --neon-yellow: #ffe600;
+  --neon-green: #00ff66;
+  --card-bg: rgba(16, 10, 38, 0.75);
+  --border-neon: rgba(0, 243, 255, 0.35);
 }
 
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
-  font-family: 'Outfit', sans-serif;
+  font-family: 'Rajdhani', sans-serif;
   -webkit-tap-highlight-color: transparent;
   user-select: none;
 }
 
 body {
-  background-color: var(--bg-core);
+  background-color: #080318;
   background-image: 
-    radial-gradient(at 0% 0%, rgba(121, 40, 202, 0.22) 0px, transparent 50%),
-    radial-gradient(at 100% 0%, rgba(0, 240, 255, 0.18) 0px, transparent 50%),
-    radial-gradient(at 50% 100%, rgba(255, 0, 85, 0.16) 0px, transparent 60%),
-    linear-gradient(rgba(255, 255, 255, 0.015) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
-  background-size: 100% 100%, 100% 100%, 100% 100%, 32px 32px, 32px 32px;
-  color: var(--text-main);
+    radial-gradient(ellipse at 50% 0%, rgba(157, 0, 255, 0.35) 0%, transparent 60%),
+    radial-gradient(circle at 10% 90%, rgba(255, 0, 127, 0.25) 0%, transparent 50%),
+    radial-gradient(circle at 90% 90%, rgba(0, 243, 255, 0.2) 0%, transparent 50%),
+    linear-gradient(to bottom, transparent 65%, rgba(0, 243, 255, 0.08) 100%),
+    repeating-linear-gradient(0deg, transparent, transparent 38px, rgba(255, 0, 127, 0.08) 39px, rgba(255, 0, 127, 0.08) 40px),
+    repeating-linear-gradient(90deg, transparent, transparent 38px, rgba(0, 243, 255, 0.08) 39px, rgba(0, 243, 255, 0.08) 40px);
+  color: #fff;
   min-height: 100vh;
   min-height: 100dvh;
   display: flex;
@@ -93,7 +90,17 @@ body {
   position: relative;
 }
 
-/* Всплывающее покачивающееся изменение счёта */
+/* Эффект ретро-сканлайнов */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(rgba(0,0,0,0) 0px, rgba(0,0,0,0) 2px, rgba(0,0,0,0.18) 3px);
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* Всплывающий индикатор изменения счёта */
 .score-delta-overlay {
   position: fixed;
   top: 50%;
@@ -116,167 +123,169 @@ body {
 }
 
 .score-delta-badge {
-  font-family: 'Ubuntu Mono', monospace;
-  font-size: clamp(3.8em, 14vw, 5.8em);
-  font-weight: 800;
-  padding: 14px 40px;
-  border-radius: 32px;
-  backdrop-filter: blur(28px);
-  -webkit-backdrop-filter: blur(28px);
+  font-family: 'Orbitron', monospace;
+  font-size: clamp(3.4em, 13vw, 5.2em);
+  font-weight: 900;
+  padding: 16px 42px;
+  border-radius: 26px;
+  backdrop-filter: blur(20px);
   display: inline-flex;
   align-items: center;
   justify-content: center;
 }
 
 .score-delta-overlay.show .score-delta-badge {
-  animation: scoreBadgeShake 1.6s infinite ease-in-out;
+  animation: retroShake 1.6s infinite ease-in-out;
 }
 
-@keyframes scoreBadgeShake {
+@keyframes retroShake {
   0% { transform: rotate(0deg) scale(1); }
-  20% { transform: rotate(-8deg) scale(1.08); }
-  40% { transform: rotate(6deg) scale(1.14); }
-  60% { transform: rotate(-4deg) scale(1.08); }
-  80% { transform: rotate(3deg) scale(1.04); }
+  25% { transform: rotate(-7deg) scale(1.09); }
+  50% { transform: rotate(6deg) scale(1.15); }
+  75% { transform: rotate(-4deg) scale(1.08); }
   100% { transform: rotate(0deg) scale(1); }
 }
 
 .score-delta-badge.plus {
-  color: var(--glow-lime);
-  border: 2px solid var(--glow-lime);
-  background: rgba(0, 255, 136, 0.15);
-  box-shadow: 0 0 50px rgba(0, 255, 136, 0.6), inset 0 0 25px rgba(0, 255, 136, 0.3);
-  text-shadow: 0 0 25px rgba(0, 255, 136, 0.8);
+  color: var(--neon-green);
+  border: 3px solid var(--neon-green);
+  background: rgba(0, 255, 102, 0.18);
+  box-shadow: 0 0 50px rgba(0, 255, 102, 0.6), inset 0 0 25px rgba(0, 255, 102, 0.3);
+  text-shadow: 0 0 20px var(--neon-green);
 }
 
 .score-delta-badge.minus {
-  color: var(--glow-pink);
-  border: 2px solid var(--glow-pink);
-  background: rgba(255, 0, 85, 0.15);
-  box-shadow: 0 0 50px rgba(255, 0, 85, 0.6), inset 0 0 25px rgba(255, 0, 85, 0.3);
-  text-shadow: 0 0 25px rgba(255, 0, 85, 0.8);
+  color: var(--neon-magenta);
+  border: 3px solid var(--neon-magenta);
+  background: rgba(255, 0, 127, 0.18);
+  box-shadow: 0 0 50px rgba(255, 0, 127, 0.6), inset 0 0 25px rgba(255, 0, 127, 0.3);
+  text-shadow: 0 0 20px var(--neon-magenta);
 }
 
 .score-delta-subtext {
+  font-family: 'Orbitron', sans-serif;
   font-size: 0.85em;
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 3px;
   color: #fff;
-  margin-top: 12px;
-  text-shadow: 0 2px 10px rgba(0,0,0,0.9);
+  margin-top: 10px;
+  text-shadow: 0 0 10px rgba(255,255,255,0.7);
 }
 
-/* Окно логина команды */
+/* Окно авторизации / входа в игру */
 .login-wrap {
   margin: auto;
   width: 100%;
   max-width: 370px;
-  background: var(--panel-glass);
-  backdrop-filter: blur(28px);
-  -webkit-backdrop-filter: blur(28px);
-  border: 1px solid var(--panel-glass-border);
-  border-radius: 32px;
+  background: var(--card-bg);
+  backdrop-filter: blur(25px);
+  border: 2px solid var(--neon-cyan);
+  border-radius: 28px;
   padding: 34px 24px;
   text-align: center;
-  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.9), 0 0 40px rgba(121, 40, 202, 0.15);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.9), 0 0 35px rgba(0, 243, 255, 0.25);
   animation: modalEnter 0.4s ease;
   position: relative;
 }
 
 @keyframes modalEnter {
-  from { opacity: 0; transform: translateY(18px) scale(0.96); }
+  from { opacity: 0; transform: translateY(20px) scale(0.95); }
   to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 .brand-icon {
-  width: 64px;
-  height: 64px;
-  background: linear-gradient(135deg, var(--glow-cyan), var(--glow-purple));
+  width: 66px;
+  height: 66px;
+  background: linear-gradient(135deg, var(--neon-magenta), var(--neon-purple));
   border-radius: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
   margin: 0 auto 16px;
   font-size: 1.8em;
-  color: #05060f;
-  box-shadow: 0 10px 30px rgba(0, 240, 255, 0.45);
+  color: #fff;
+  box-shadow: 0 0 25px var(--neon-magenta);
+  border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
 .login-wrap h2 {
-  font-family: 'Syne', sans-serif;
+  font-family: 'Orbitron', sans-serif;
   font-size: 1.8em;
   font-weight: 900;
-  letter-spacing: 0.5px;
+  letter-spacing: 1.5px;
   margin-bottom: 6px;
+  text-shadow: 0 0 12px var(--neon-cyan);
 }
 
 .login-wrap p {
-  color: var(--text-mute);
-  font-size: 0.88em;
+  color: #b0a7d0;
+  font-size: 0.95em;
+  font-weight: 600;
   line-height: 1.4;
-  margin-bottom: 24px;
+  margin-bottom: 22px;
 }
 
 .input-box {
-  margin-bottom: 12px;
+  margin-bottom: 14px;
 }
 
 .input-box input {
   width: 100%;
   padding: 16px;
-  background: rgba(10, 13, 24, 0.85);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(12, 6, 30, 0.85);
+  border: 1.5px solid rgba(0, 243, 255, 0.3);
   border-radius: 16px;
   color: #fff;
-  font-size: 18px;
+  font-size: 19px;
   font-weight: 700;
   text-align: center;
   outline: none;
   transition: all 0.2s ease;
+  letter-spacing: 1px;
 }
 
 .input-box input:focus {
-  border-color: var(--glow-cyan);
-  box-shadow: 0 0 25px rgba(0, 240, 255, 0.3);
-  background: rgba(10, 13, 24, 0.95);
+  border-color: var(--neon-magenta);
+  box-shadow: 0 0 25px rgba(255, 0, 127, 0.4);
+  background: rgba(18, 10, 42, 0.95);
 }
 
 .btn-join {
   width: 100%;
-  padding: 17px;
+  padding: 18px;
   margin-top: 6px;
-  background: linear-gradient(135deg, var(--glow-cyan), #0088ff);
-  color: #040814;
+  background: linear-gradient(90deg, var(--neon-magenta), var(--neon-purple));
+  color: #fff;
   border: none;
   border-radius: 16px;
-  font-family: 'Syne', sans-serif;
+  font-family: 'Orbitron', sans-serif;
   font-size: 16px;
   font-weight: 900;
   text-transform: uppercase;
-  letter-spacing: 1.5px;
+  letter-spacing: 2px;
   cursor: pointer;
-  box-shadow: 0 10px 30px rgba(0, 240, 255, 0.4);
+  box-shadow: 0 0 30px rgba(255, 0, 127, 0.5);
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
 .btn-join:active {
-  transform: scale(0.98);
+  transform: scale(0.97);
 }
 
 .error-banner {
-  color: var(--glow-pink);
-  background: rgba(255, 0, 85, 0.1);
-  border: 1px solid rgba(255, 0, 85, 0.3);
+  color: var(--neon-magenta);
+  background: rgba(255, 0, 127, 0.12);
+  border: 1px solid rgba(255, 0, 127, 0.4);
   padding: 10px 14px;
   border-radius: 12px;
-  font-size: 0.85em;
+  font-size: 0.9em;
   font-weight: 700;
   margin-top: 14px;
   display: none;
 }
 
-/* Основной контейнер игрового экрана */
+/* Игровой интерфейс */
 #game-view {
   display: none;
   flex-direction: column;
@@ -288,7 +297,7 @@ body {
   gap: 10px;
 }
 
-/* Верхний HUD: Табло счёта и триггер чата */
+/* Табло очков */
 .top-action-bar {
   display: flex;
   gap: 8px;
@@ -303,10 +312,9 @@ body {
 }
 
 .score-card {
-  background: var(--panel-glass);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid var(--panel-glass-border);
+  background: var(--card-bg);
+  backdrop-filter: blur(15px);
+  border: 1.5px solid rgba(255, 255, 255, 0.1);
   border-radius: 16px;
   padding: 8px 6px;
   text-align: center;
@@ -316,21 +324,21 @@ body {
 }
 
 .score-card.my-card {
-  border-color: var(--glow-cyan);
-  background: linear-gradient(180deg, rgba(0, 240, 255, 0.14) 0%, rgba(18, 22, 40, 0.6) 100%);
-  box-shadow: 0 0 20px rgba(0, 240, 255, 0.25);
+  border-color: var(--neon-cyan);
+  background: linear-gradient(180deg, rgba(0, 243, 255, 0.18) 0%, rgba(16, 10, 38, 0.8) 100%);
+  box-shadow: 0 0 20px rgba(0, 243, 255, 0.35);
 }
 
 .score-card.opponent-card {
-  border-color: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 0, 127, 0.3);
 }
 
 .score-team-title {
-  font-size: 0.7em;
-  font-weight: 800;
+  font-size: 0.75em;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.8px;
-  color: var(--text-mute);
+  letter-spacing: 1px;
+  color: #9d93c4;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -338,31 +346,33 @@ body {
 }
 
 .my-card .score-team-title {
-  color: var(--glow-cyan);
+  color: var(--neon-cyan);
+  text-shadow: 0 0 8px var(--neon-cyan);
 }
 
 .score-team-pts {
-  font-family: 'Ubuntu Mono', monospace;
-  font-size: 1.6em;
-  font-weight: 700;
+  font-family: 'Orbitron', monospace;
+  font-size: 1.55em;
+  font-weight: 900;
   line-height: 1.1;
   margin-top: 2px;
 }
 
 .my-card .score-team-pts {
   color: #fff;
-  text-shadow: 0 0 14px rgba(0, 240, 255, 0.7);
+  text-shadow: 0 0 15px var(--neon-cyan);
 }
 
 .opponent-card .score-team-pts {
-  color: var(--glow-pink);
+  color: var(--neon-magenta);
+  text-shadow: 0 0 12px var(--neon-magenta);
 }
 
 .player-chat-trigger-btn {
-  background: var(--panel-glass);
-  backdrop-filter: blur(20px);
-  border: 1px solid var(--glow-cyan);
-  color: var(--glow-cyan);
+  background: var(--card-bg);
+  backdrop-filter: blur(15px);
+  border: 1.5px solid var(--neon-cyan);
+  color: var(--neon-cyan);
   border-radius: 16px;
   padding: 0 16px;
   display: none;
@@ -371,7 +381,7 @@ body {
   font-size: 1.25em;
   position: relative;
   cursor: pointer;
-  box-shadow: 0 0 20px rgba(0, 240, 255, 0.2);
+  box-shadow: 0 0 20px rgba(0, 243, 255, 0.2);
   flex-shrink: 0;
   transition: all 0.2s ease;
 }
@@ -379,34 +389,34 @@ body {
 .player-chat-trigger-btn.disabled {
   opacity: 0.35;
   filter: grayscale(1);
-  border-color: rgba(255, 255, 255, 0.15);
-  color: var(--text-mute);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #888;
 }
 
 .player-chat-trigger-btn.has-pulse {
-  animation: chatGlowPulse 1.3s infinite alternate;
+  animation: chatGlowPulse 1.2s infinite alternate;
 }
 
 @keyframes chatGlowPulse {
-  0% { transform: scale(1); box-shadow: 0 0 15px rgba(0, 240, 255, 0.5); }
-  100% { transform: scale(1.08); box-shadow: 0 0 35px var(--glow-pink), 0 0 60px rgba(255, 0, 85, 0.6); }
+  0% { transform: scale(1); box-shadow: 0 0 15px var(--neon-cyan); }
+  100% { transform: scale(1.08); box-shadow: 0 0 35px var(--neon-magenta), 0 0 60px rgba(255, 0, 127, 0.7); }
 }
 
 .player-chat-unread-badge {
   position: absolute;
   top: -4px;
   right: -4px;
-  background: var(--glow-pink);
+  background: var(--neon-magenta);
   color: #fff;
   font-size: 10px;
   font-weight: 900;
   padding: 2px 6px;
   border-radius: 10px;
-  box-shadow: 0 0 10px rgba(255, 0, 85, 0.8);
+  box-shadow: 0 0 10px var(--neon-magenta);
   display: none;
 }
 
-/* Статус раунда и прогресс трека */
+/* Статус раунда и шкала времени */
 .player-status-wrapper {
   display: flex;
   flex-direction: column;
@@ -414,36 +424,35 @@ body {
 }
 
 .status-pill {
-  background: var(--panel-glass);
+  background: var(--card-bg);
   backdrop-filter: blur(20px);
-  border: 1px solid var(--panel-glass-border);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 16px;
   padding: 9px 16px;
   text-align: center;
-  font-family: 'Syne', sans-serif;
+  font-family: 'Orbitron', sans-serif;
   font-size: 0.85em;
   font-weight: 800;
-  color: var(--text-mute);
+  color: #b7aedb;
   text-transform: uppercase;
-  letter-spacing: 1px;
+  letter-spacing: 2px;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  transition: all 0.25s;
 }
 
 .status-pill.playing {
-  border-color: var(--glow-amber);
-  color: var(--glow-amber);
-  background: rgba(255, 183, 3, 0.08);
-  box-shadow: 0 0 25px rgba(255, 183, 3, 0.2);
+  border-color: var(--neon-yellow);
+  color: var(--neon-yellow);
+  background: rgba(255, 230, 0, 0.12);
+  box-shadow: 0 0 30px rgba(255, 230, 0, 0.25);
 }
 
 .track-timer-bar {
-  background: var(--panel-glass);
+  background: var(--card-bg);
   backdrop-filter: blur(20px);
-  border: 1px solid var(--panel-glass-border);
+  border: 1px solid rgba(0, 243, 255, 0.25);
   border-radius: 16px;
   padding: 9px 16px;
   display: flex;
@@ -453,42 +462,40 @@ body {
 
 .progress-track {
   flex: 1;
-  height: 6px;
+  height: 7px;
   background: rgba(255, 255, 255, 0.08);
   border-radius: 4px;
   overflow: hidden;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.6);
 }
 
 .progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, var(--glow-cyan), #0088ff);
-  box-shadow: 0 0 12px var(--glow-cyan);
+  background: linear-gradient(90deg, var(--neon-cyan), var(--neon-magenta));
+  box-shadow: 0 0 15px var(--neon-cyan);
   width: 0%;
   transition: width 0.1s linear;
 }
 
 .track-time-text {
   font-family: 'Ubuntu Mono', monospace;
-  font-size: 0.9em;
-  color: var(--glow-cyan);
-  min-width: 82px;
+  font-size: 0.95em;
+  color: var(--neon-cyan);
+  min-width: 85px;
   text-align: right;
   font-weight: 700;
 }
 
-/* Витрина раскрытия оригинала */
+/* Плашка показа оригинала: ретро-кассета */
 .revealed-track-box {
-  background: linear-gradient(135deg, rgba(0, 255, 136, 0.16) 0%, rgba(0, 240, 255, 0.08) 100%);
-  border: 1px solid var(--glow-lime);
+  background: linear-gradient(135deg, rgba(255, 0, 127, 0.18) 0%, rgba(0, 243, 255, 0.12) 100%);
+  border: 2px solid var(--neon-cyan);
   border-radius: 18px;
   padding: 12px 16px;
   display: none;
   align-items: flex-start;
   gap: 14px;
-  box-shadow: 
-    0 10px 40px rgba(0, 0, 0, 0.8),
-    0 0 35px rgba(0, 255, 136, 0.3),
-    inset 0 0 20px rgba(0, 255, 136, 0.15);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8), 0 0 30px rgba(0, 243, 255, 0.35);
   position: relative;
   overflow: hidden;
 }
@@ -508,32 +515,32 @@ body {
   position: absolute;
   top: 0;
   left: -100%;
-  width: 60%;
+  width: 50%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-  animation: shineSweep 2.4s infinite;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.25), transparent);
+  animation: cassetteShine 2.5s infinite;
   pointer-events: none;
 }
 
-@keyframes shineSweep {
+@keyframes cassetteShine {
   0% { left: -100%; }
-  60%, 100% { left: 160%; }
+  50%, 100% { left: 160%; }
 }
 
 .track-equalizer-bars {
   display: flex;
   align-items: flex-end;
-  gap: 3px;
+  gap: 3.5px;
   height: 22px;
   flex-shrink: 0;
   margin-top: 4px;
 }
 
 .eq-bar {
-  width: 3.5px;
-  background: var(--glow-lime);
+  width: 4px;
+  background: var(--neon-cyan);
   border-radius: 3px;
-  box-shadow: 0 0 8px var(--glow-lime);
+  box-shadow: 0 0 8px var(--neon-cyan);
 }
 
 .eq-bar:nth-child(1) { height: 40%; animation: eqBounce1 0.7s infinite alternate ease-in-out; }
@@ -553,11 +560,12 @@ body {
 }
 
 .reveal-label-sub {
+  font-family: 'Orbitron', sans-serif;
   font-size: 0.7em;
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 2px;
-  color: var(--glow-lime);
+  color: var(--neon-magenta);
   display: flex;
   align-items: center;
   gap: 6px;
@@ -565,17 +573,18 @@ body {
 }
 
 .reveal-song-title {
-  font-size: clamp(0.9em, 3vw, 1.15em);
-  font-weight: 800;
+  font-family: 'Orbitron', sans-serif;
+  font-size: clamp(0.9em, 3.2vw, 1.15em);
+  font-weight: 900;
   color: #fff;
   white-space: normal;
   word-break: break-word;
   overflow-wrap: anywhere;
   line-height: 1.3;
-  text-shadow: 0 0 12px rgba(0, 255, 136, 0.4);
+  text-shadow: 0 0 15px rgba(0, 243, 255, 0.6);
 }
 
-/* 3. АРКАДНЫЙ РЕАКТОР: Баззер нового поколения */
+/* Кнопка-баззер */
 .buzzer-stage {
   flex: 1;
   display: flex;
@@ -591,7 +600,7 @@ body {
   position: relative;
   border-radius: 50%;
   padding: 16px;
-  background: radial-gradient(circle, rgba(255, 0, 85, 0.16) 0%, rgba(121, 40, 202, 0.08) 50%, transparent 72%);
+  background: radial-gradient(circle, rgba(255, 0, 127, 0.22) 0%, rgba(0, 243, 255, 0.1) 50%, transparent 72%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -601,52 +610,54 @@ body {
   width: 230px;
   height: 230px;
   border-radius: 50%;
-  border: 4px solid rgba(255, 255, 255, 0.18);
-  background: radial-gradient(circle at 35% 30%, #ff2e6e 0%, #d80045 50%, #700024 100%);
-  color: #ffffff;
-  font-family: 'Syne', sans-serif;
-  font-size: 1.8em;
+  border: 5px solid rgba(255, 255, 255, 0.2);
+  background: radial-gradient(circle at 35% 30%, #ff1a8c 0%, #b8005b 55%, #590029 100%);
+  color: #fff;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 1.9em;
   font-weight: 900;
   text-transform: uppercase;
-  letter-spacing: 2px;
+  letter-spacing: 3px;
   cursor: pointer;
   box-shadow: 
-    0 20px 50px rgba(255, 0, 85, 0.45),
-    0 0 60px rgba(255, 0, 85, 0.25),
-    inset 0 4px 10px rgba(255, 255, 255, 0.5),
-    inset 0 -10px 20px rgba(0, 0, 0, 0.7);
+    0 22px 50px rgba(255, 0, 127, 0.5),
+    0 0 60px rgba(255, 0, 127, 0.3),
+    inset 0 5px 12px rgba(255, 255, 255, 0.5),
+    inset 0 -12px 24px rgba(0, 0, 0, 0.8);
   transition: all 0.12s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  position: relative;
+  text-shadow: 0 0 15px rgba(255, 255, 255, 0.7);
 }
 
 .buzzer-3d-btn:active:not(:disabled) {
-  transform: scale(0.92) translateY(8px);
+  transform: scale(0.91) translateY(10px);
   box-shadow: 
-    0 6px 20px rgba(255, 0, 85, 0.6),
+    0 8px 20px rgba(255, 0, 127, 0.6),
     inset 0 2px 6px rgba(255, 255, 255, 0.3),
-    inset 0 -4px 10px rgba(0, 0, 0, 0.8);
+    inset 0 -6px 14px rgba(0, 0, 0, 0.9);
 }
 
 .buzzer-3d-btn:disabled {
-  background: radial-gradient(circle at 40% 30%, #202638 0%, #101420 100%);
-  border-color: rgba(255, 255, 255, 0.04);
-  color: #434c62;
+  background: radial-gradient(circle at 40% 30%, #201736 0%, #0d081b 100%);
+  border-color: rgba(255, 255, 255, 0.05);
+  color: #4f4368;
   cursor: not-allowed;
   transform: none !important;
-  box-shadow: inset 0 2px 6px rgba(255, 255, 255, 0.05), inset 0 -6px 12px rgba(0, 0, 0, 0.6);
+  box-shadow: inset 0 2px 6px rgba(255, 255, 255, 0.05), inset 0 -6px 12px rgba(0, 0, 0, 0.7);
+  text-shadow: none;
 }
 
 .buzzer-3d-btn.winner-turn {
-  background: radial-gradient(circle at 35% 30%, #38ef7d 0%, #11998e 60%, #064e47 100%);
+  background: radial-gradient(circle at 35% 30%, #00ff88 0%, #00b359 60%, #004d26 100%);
   box-shadow: 
-    0 0 80px rgba(0, 255, 136, 0.8),
-    inset 0 4px 12px rgba(255, 255, 255, 0.7);
-  color: #03140e;
+    0 0 90px rgba(0, 255, 102, 0.85),
+    inset 0 5px 14px rgba(255, 255, 255, 0.7);
+  color: #03140a;
+  text-shadow: none;
   animation: pulseTurn 0.8s infinite alternate;
 }
 
@@ -656,54 +667,55 @@ body {
 }
 
 .pass-turn-btn {
-  background: rgba(255, 183, 3, 0.1);
-  border: 1px solid var(--glow-amber);
-  color: var(--glow-amber);
-  padding: 12px 26px;
+  background: rgba(255, 230, 0, 0.12);
+  border: 1.5px solid var(--neon-yellow);
+  color: var(--neon-yellow);
+  padding: 12px 28px;
   border-radius: 16px;
-  font-family: 'Syne', sans-serif;
+  font-family: 'Orbitron', sans-serif;
   font-weight: 800;
-  font-size: 0.88em;
+  font-size: 0.85em;
   text-transform: uppercase;
-  letter-spacing: 1px;
+  letter-spacing: 1.5px;
   cursor: pointer;
   display: none;
   animation: modalEnter 0.3s;
-  box-shadow: 0 0 25px rgba(255, 183, 3, 0.25);
+  box-shadow: 0 0 25px rgba(255, 230, 0, 0.3);
 }
 
 .pass-turn-btn:active {
-  background: var(--glow-amber);
+  background: var(--neon-yellow);
   color: #000;
 }
 
 .hud-footer {
-  background: var(--panel-glass);
+  background: var(--card-bg);
   backdrop-filter: blur(20px);
-  border: 1px solid var(--panel-glass-border);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 18px;
-  padding: 13px;
+  padding: 12px;
   text-align: center;
-  font-size: 0.9em;
-  color: var(--text-mute);
+  font-size: 0.95em;
+  font-weight: 600;
+  color: #9d93c4;
 }
 
 .hud-footer strong {
   color: #fff;
 }
 
-/* Экран итогов игры */
+/* Экран завершения игры */
 #game-over-view {
   display: none;
   flex-direction: column;
   margin: auto;
   width: 100%;
   max-width: 400px;
-  background: var(--panel-glass);
+  background: var(--card-bg);
   backdrop-filter: blur(28px);
-  border: 1px solid var(--glow-amber);
-  box-shadow: 0 0 60px rgba(255, 183, 3, 0.25);
-  border-radius: 32px;
+  border: 2px solid var(--neon-yellow);
+  box-shadow: 0 0 60px rgba(255, 230, 0, 0.3);
+  border-radius: 30px;
   padding: 30px 22px;
   text-align: center;
   animation: modalEnter 0.4s ease;
@@ -711,24 +723,26 @@ body {
 
 .trophy-icon {
   font-size: 3.2em;
-  color: var(--glow-amber);
-  filter: drop-shadow(0 0 20px var(--glow-amber));
+  color: var(--neon-yellow);
+  filter: drop-shadow(0 0 20px var(--neon-yellow));
   margin-bottom: 12px;
 }
 
 .game-over-title {
-  font-family: 'Syne', sans-serif;
-  font-size: 1.85em;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 1.9em;
   font-weight: 900;
+  letter-spacing: 1px;
   margin-bottom: 4px;
 }
 
 .winner-name-badge {
+  font-family: 'Orbitron', sans-serif;
   font-size: 1.35em;
   font-weight: 800;
-  color: var(--glow-lime);
+  color: var(--neon-green);
   margin-bottom: 18px;
-  text-shadow: 0 0 18px rgba(0, 255, 136, 0.6);
+  text-shadow: 0 0 20px var(--neon-green);
 }
 
 .final-leaderboard {
@@ -743,44 +757,45 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: rgba(10, 13, 24, 0.85);
-  border: 1px solid var(--panel-glass-border);
+  background: rgba(14, 8, 32, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 14px;
   padding: 12px 16px;
-  font-size: 0.95em;
+  font-size: 1.05em;
   font-weight: 700;
 }
 
 .leaderboard-row.gold {
-  border-color: var(--glow-amber);
-  background: rgba(255, 183, 3, 0.1);
+  border-color: var(--neon-yellow);
+  background: rgba(255, 230, 0, 0.12);
 }
 
 .leaderboard-row .pts {
-  font-family: 'Ubuntu Mono', monospace;
+  font-family: 'Orbitron', monospace;
   font-size: 1.25em;
-  color: var(--glow-cyan);
+  color: var(--neon-cyan);
 }
 
 .countdown-box {
-  font-size: 0.85em;
-  color: var(--text-mute);
+  font-size: 0.9em;
+  font-weight: 600;
+  color: #9d93c4;
 }
 
 .countdown-box span {
-  font-family: 'Ubuntu Mono', monospace;
-  font-weight: 700;
-  color: var(--glow-pink);
+  font-family: 'Orbitron', monospace;
+  font-weight: 900;
+  color: var(--neon-magenta);
   font-size: 1.2em;
 }
 
-/* Модальное окно чата участника */
+/* Модальное окно чата */
 #player-chat-modal {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.85);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: rgba(4, 2, 12, 0.88);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
   z-index: 3000;
   display: none;
   align-items: center;
@@ -789,29 +804,30 @@ body {
 }
 
 .player-chat-card {
-  background: #0d1120;
-  border: 1px solid rgba(0, 240, 255, 0.3);
-  border-radius: 28px;
+  background: #0f0724;
+  border: 2px solid var(--neon-cyan);
+  border-radius: 26px;
   width: 100%;
   max-width: 440px;
   height: 80vh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  box-shadow: 0 25px 70px rgba(0, 0, 0, 0.95);
+  box-shadow: 0 25px 70px rgba(0, 0, 0, 0.95), 0 0 35px rgba(0, 243, 255, 0.25);
   position: relative;
 }
 
 .player-chat-head {
   padding: 16px 20px;
-  background: rgba(18, 24, 44, 0.95);
+  background: rgba(20, 12, 44, 0.95);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid var(--panel-glass-border);
-  font-family: 'Syne', sans-serif;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  font-family: 'Orbitron', sans-serif;
   font-size: 1.15em;
   font-weight: 900;
+  letter-spacing: 1px;
 }
 
 .player-chat-messages {
@@ -826,28 +842,29 @@ body {
 .chat-msg {
   display: flex;
   flex-direction: column;
-  font-size: 0.9em;
+  font-size: 0.95em;
   line-height: 1.35;
 }
 
 .chat-msg .name {
-  font-size: 0.78em;
+  font-size: 0.8em;
   font-weight: 800;
-  color: var(--glow-cyan);
+  color: var(--neon-cyan);
   margin-bottom: 3px;
+  letter-spacing: 0.5px;
 }
 
 .chat-msg.mine .name {
-  color: var(--glow-lime);
+  color: var(--neon-green);
 }
 
 .chat-msg.host .name {
-  color: var(--glow-amber);
+  color: var(--neon-yellow);
 }
 
 .chat-msg .text {
-  background: rgba(20, 26, 46, 0.9);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(24, 15, 52, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   padding: 9px 15px;
   border-radius: 14px;
   color: #fff;
@@ -855,21 +872,21 @@ body {
 }
 
 .chat-msg.mine .text {
-  border-color: rgba(0, 255, 136, 0.3);
-  background: rgba(0, 255, 136, 0.08);
+  border-color: rgba(0, 255, 102, 0.35);
+  background: rgba(0, 255, 102, 0.08);
 }
 
 .chat-msg.host .text {
-  border-color: rgba(255, 183, 3, 0.3);
-  background: rgba(255, 183, 3, 0.08);
+  border-color: rgba(255, 230, 0, 0.35);
+  background: rgba(255, 230, 0, 0.08);
 }
 
 .chat-msg.system {
-  background: rgba(255, 0, 85, 0.1);
-  border-left: 3px solid var(--glow-pink);
+  background: rgba(255, 0, 127, 0.15);
+  border-left: 3px solid var(--neon-magenta);
   padding: 7px 12px;
   border-radius: 10px;
-  color: var(--glow-pink);
+  color: var(--neon-magenta);
   font-weight: 700;
 }
 
@@ -878,8 +895,8 @@ body {
   bottom: 72px;
   left: 14px;
   right: 14px;
-  background: #111628;
-  border: 1px solid var(--glow-cyan);
+  background: #140b2e;
+  border: 1.5px solid var(--neon-cyan);
   border-radius: 18px;
   padding: 12px;
   display: none;
@@ -906,8 +923,8 @@ body {
 
 .player-chat-input-bar {
   padding: 12px 14px;
-  background: #090c16;
-  border-top: 1px solid var(--panel-glass-border);
+  background: #080318;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
   display: flex;
   gap: 8px;
   align-items: center;
@@ -915,8 +932,8 @@ body {
 
 .btn-player-emoji {
   background: transparent;
-  border: 1px solid var(--panel-glass-border);
-  color: var(--glow-amber);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: var(--neon-yellow);
   font-size: 1.25em;
   width: 44px;
   height: 44px;
@@ -933,20 +950,20 @@ body {
   min-width: 0;
   padding: 12px 16px;
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid var(--panel-glass-border);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(0, 243, 255, 0.25);
   color: #fff;
-  font-size: 15px;
+  font-size: 16px;
   outline: none;
 }
 
 .player-chat-input-bar input:focus {
-  border-color: var(--glow-cyan);
+  border-color: var(--neon-cyan);
 }
 
 .player-chat-input-bar button.btn-send-player {
-  background: var(--glow-cyan);
-  color: #040814;
+  background: linear-gradient(135deg, var(--neon-cyan), #0077ff);
+  color: #050212;
   border: none;
   width: 44px;
   height: 44px;
@@ -957,7 +974,7 @@ body {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  box-shadow: 0 4px 15px rgba(0, 240, 255, 0.4);
+  box-shadow: 0 0 15px rgba(0, 243, 255, 0.4);
 }
 </style>
 </head>
@@ -966,7 +983,7 @@ body {
 <audio id="player-audio-revers" preload="auto" playsinline crossorigin="anonymous" style="display:none;"></audio>
 <audio id="player-audio-normal" preload="auto" playsinline crossorigin="anonymous" style="display:none;"></audio>
 
-<!-- Всплывающее покачивающееся изменение счёта -->
+<!-- Всплывающий бейдж счёта -->
 <div class="score-delta-overlay" id="player-score-delta-popup">
   <div class="score-delta-badge plus" id="player-score-delta-badge">+1</div>
   <div class="score-delta-subtext">Баллы обновлены!</div>
@@ -975,7 +992,7 @@ body {
 <!-- 1. Экран логина команды -->
 <div class="login-wrap" id="login-view">
   <div class="brand-icon"><i class="fas fa-bolt"></i></div>
-  <h2>Revers Quiz</h2>
+  <h2>REVERS QUIZ</h2>
   <p>Введите PIN-код с экрана ведущего и назовите команду</p>
   
   <div class="input-box">
@@ -985,7 +1002,7 @@ body {
     <input type="text" id="team-name" placeholder="Название команды" maxlength="20" />
   </div>
 
-  <button class="btn-join" onclick="joinGame()">Войти в битву</button>
+  <button class="btn-join" onclick="joinGame()">Войти в игру</button>
   <div class="error-banner" id="login-error"></div>
 </div>
 
@@ -1005,7 +1022,7 @@ body {
     </div>
 
     <div class="track-timer-bar" id="player-timer-bar">
-      <i class="fas fa-music" style="color:var(--glow-cyan); font-size:0.9em;"></i>
+      <i class="fas fa-music" style="color:var(--neon-cyan); font-size:0.9em;"></i>
       <div class="progress-track">
         <div class="progress-fill" id="player-progress-fill"></div>
       </div>
@@ -1030,7 +1047,7 @@ body {
     </div>
   </div>
 
-  <!-- Баззер-реактор -->
+  <!-- Баззер-купол -->
   <div class="buzzer-stage">
     <div class="buzzer-reactor-frame">
       <button class="buzzer-3d-btn" id="buzzer-btn" disabled onclick="pressBuzzer()">
@@ -1065,8 +1082,8 @@ body {
 <div id="player-chat-modal">
   <div class="player-chat-card">
     <div class="player-chat-head">
-      <span><i class="fas fa-comment-dots" style="color:var(--glow-cyan); margin-right:8px;"></i> Чат игры</span>
-      <i class="fas fa-times" onclick="togglePlayerChat()" style="cursor:pointer; color:var(--text-mute);"></i>
+      <span><i class="fas fa-comment-dots" style="color:var(--neon-cyan); margin-right:8px;"></i> Чат игры</span>
+      <i class="fas fa-times" onclick="togglePlayerChat()" style="cursor:pointer; color:#888;"></i>
     </div>
     <div class="player-chat-messages" id="player-chat-messages"></div>
     
@@ -1578,12 +1595,12 @@ function listenToGameState() {
           passBtn.style.display = "inline-flex";
 
           if (roomChatMode !== "disabled") {
-            hudFooter.innerHTML = "🏆 <strong style='color:var(--glow-lime)'>Вы успели первым! Напишите ответ в чат:</strong>";
+            hudFooter.innerHTML = "🏆 <strong style='color:var(--neon-green)'>Вы успели первым! Напишите ответ в чат:</strong>";
             if (!isChatOpen) {
               openPlayerChat();
             }
           } else {
-            hudFooter.innerHTML = "🏆 <strong style='color:var(--glow-lime)'>Вы успели первым! Называйте трек ведущему!</strong>";
+            hudFooter.innerHTML = "🏆 <strong style='color:var(--neon-green)'>Вы успели первым! Называйте трек ведущему!</strong>";
           }
         } else {
           passBtn.style.display = "none";
