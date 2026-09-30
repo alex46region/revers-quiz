@@ -1618,7 +1618,7 @@ function playMessageNotificationSound() {
   } catch(e) {}
 }
 
-var POPULAR_EMOJIS = ["👍","👏","🔥","🎉","😂","😎","🤩","🤔","😮","🎵","🎶","🎤","🎧","🏆","⭐","💯","❤️","👋","🤐","🚀","💃"];
+var POPULAR_EMOJIS = ["👍","👏","🔥","🎉","😂","😎","🤩","🤔","😮","🎵","🎶","🎤","🎧","🏆","⭐","💯","❤️️","👋","🤐","🚀","💃"];
 
 function initEmojiPicker(containerId, inputId) {
   var container = document.getElementById(containerId);
@@ -2494,6 +2494,7 @@ function purgeAudioBuffer(audioEl) {
   }
 }
 
+// 1. Исправленная загрузка трека: передает точную duration до запуска
 function playTrack(name) {
   hideBuzzerAlert();
   if (originalTimeout) {
@@ -2519,6 +2520,7 @@ function playTrack(name) {
   if (track && track.revers) {
     audioRevers.src = track.revers;
     audioRevers.load();
+    
     audioRevers.onended = function() {
       if (timerDuration > 0) startTimer();
       hideTrackPopup();
@@ -2526,6 +2528,7 @@ function playTrack(name) {
 
     var newTrackSessionId = "track_" + Date.now();
 
+    // Гарантированная передача точной длительности трека при чтении метаданных
     audioRevers.onloadedmetadata = function() {
       var dur = audioRevers.duration || 0;
       document.getElementById("revers-duration").textContent = formatTime(dur);
@@ -2533,6 +2536,13 @@ function playTrack(name) {
       if (isInteractiveMode && roomRef) {
         teamsData.forEach(function(t) {
           roomRef.child("teams/" + t.id + "/readyToPlay").set(false);
+        });
+
+        // Сразу сбрасываем баззер на новый раунд и отправляем точный таймер
+        roomRef.update({
+          status: "idle",
+          revealedTrack: "",
+          buzzer: { locked: false, pressedBy: null, pressedByName: null, passedBy: [] }
         });
 
         roomRef.child("audioSync").set({
@@ -2545,6 +2555,9 @@ function playTrack(name) {
           startAt: 0
         });
       }
+
+      // Запускаем воспроизведение только когда длительность и трек подготовлены
+      toggleRevers();
     };
 
     if (track.normal) {
@@ -2555,8 +2568,6 @@ function playTrack(name) {
         document.getElementById("normal-duration").textContent = formatTime(audioNormal.duration);
       };
     }
-
-    toggleRevers();
   }
   updateShuffleButtonState();
   updateNextTrackButton();
@@ -2626,7 +2637,6 @@ function toggleRevers() {
     hideTrackPopup();
 
     if (isInteractiveMode && roomRef) {
-      roomRef.update({ status: "idle" });
       roomRef.child("audioSync").update({ 
         playAction: "pause",
         currentTime: audio.currentTime
@@ -2682,8 +2692,7 @@ function startSynchronizedPlayback() {
     clearTeamHighlight();
     roomRef.update({
       status: "playing",
-      revealedTrack: "",
-      buzzer: { locked: false, pressedBy: null, pressedByName: null, passedBy: [] }
+      revealedTrack: ""
     });
 
     roomRef.child("audioSync").update({
@@ -2713,15 +2722,16 @@ function startSynchronizedPlayback() {
   }, delayStart);
 }
 
+// 2. Исправленное возобновление: НЕ сбрасывает баззер захватившей команды
 function resumeSynchronizedPlayback() {
   var audio = document.getElementById("audio-revers");
   var icon = document.getElementById("revers-play-icon");
   var serverStartAt = Date.now() + 150;
 
   if (isInteractiveMode && roomRef) {
+    // Сохраняем статус playing, но НЕ трогаем ветку buzzer!
     roomRef.update({
-      status: "playing",
-      buzzer: { locked: false, pressedBy: null, pressedByName: null, passedBy: [] }
+      status: "playing"
     });
 
     roomRef.child("audioSync").update({
@@ -2819,7 +2829,6 @@ function hideOriginal() {
   document.getElementById("normal-play-icon").classList.replace("fa-pause", "fa-play");
 }
 
-// Запуск оригинала из плеера: транслирует статус reveal и название трека участникам
 function toggleNormal() {
   var a = document.getElementById("audio-normal");
   var r = document.getElementById("audio-revers");
@@ -2844,7 +2853,6 @@ function toggleNormal() {
       a.load();
     }
     
-    // Включение оригинала из плеера переводит комнату в статус reveal и передает название трека
     if (isInteractiveMode && roomRef) {
       roomRef.update({
         status: "reveal",
