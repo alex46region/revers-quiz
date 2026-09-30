@@ -56,7 +56,7 @@ body {
   position: relative;
 }
 
-/* 1. Улучшенная покачивающаяся и пульсирующая анимация изменения очков */
+/* Анимация изменения счёта */
 .score-delta-overlay {
   position: fixed;
   top: 50%;
@@ -434,15 +434,15 @@ body {
   font-weight: 700;
 }
 
-/* 2. Переработанный стильный блок показа названия оригинального трека */
+/* Полностью адаптивная карточка показа оригинала без обрезания длинных строк */
 .revealed-track-box {
   background: linear-gradient(135deg, rgba(0, 255, 102, 0.12) 0%, rgba(0, 229, 255, 0.08) 100%);
   border: 1px solid var(--neon-lime);
   border-radius: 16px;
-  padding: 12px 16px;
+  padding: 12px 14px;
   margin-top: 4px;
   display: none;
-  align-items: center;
+  align-items: flex-start;
   gap: 12px;
   box-shadow: 
     0 8px 30px rgba(0, 0, 0, 0.7),
@@ -450,6 +450,7 @@ body {
     inset 0 0 15px rgba(0, 255, 102, 0.1);
   position: relative;
   overflow: hidden;
+  max-width: 100%;
 }
 
 .revealed-track-box.active-reveal {
@@ -471,6 +472,7 @@ body {
   height: 100%;
   background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
   animation: shineSweep 2.2s infinite;
+  pointer-events: none;
 }
 
 @keyframes shineSweep {
@@ -478,13 +480,14 @@ body {
   60%, 100% { left: 160%; }
 }
 
-/* Анимированный неоновый эквалайзер */
 .track-equalizer-bars {
   display: flex;
   align-items: flex-end;
   gap: 3px;
-  height: 22px;
+  height: 20px;
   flex-shrink: 0;
+  align-self: flex-start;
+  margin-top: 3px;
 }
 
 .eq-bar {
@@ -511,7 +514,7 @@ body {
 }
 
 .reveal-label-sub {
-  font-size: 0.7em;
+  font-size: 0.68em;
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 1.5px;
@@ -519,16 +522,18 @@ body {
   display: flex;
   align-items: center;
   gap: 6px;
-  margin-bottom: 2px;
+  margin-bottom: 4px;
 }
 
+/* Полный перенос строк и масштабирование шрифта для длинных треков */
 .reveal-song-title {
-  font-size: 1.05em;
+  font-size: clamp(0.85em, 2.8vw, 1.1em);
   font-weight: 800;
   color: #fff;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  line-height: 1.25;
   text-shadow: 0 0 10px rgba(0, 255, 102, 0.4);
 }
 
@@ -893,7 +898,6 @@ body {
 <audio id="player-audio-revers" preload="auto" playsinline crossorigin="anonymous" style="display:none;"></audio>
 <audio id="player-audio-normal" preload="auto" playsinline crossorigin="anonymous" style="display:none;"></audio>
 
-<!-- 1. Покачивающийся всплывающий бейдж начисления очков -->
 <div class="score-delta-overlay" id="player-score-delta-popup">
   <div class="score-delta-badge plus" id="player-score-delta-badge">+1</div>
   <div class="score-delta-subtext">Баллы обновлены!</div>
@@ -937,7 +941,7 @@ body {
       <div class="track-time-text" id="player-time-display">00:00 / 00:00</div>
     </div>
 
-    <!-- 2. Неоновая карточка оригинала трека с эквалайзером -->
+    <!-- Адаптивный блок оригинала трека с переносом строк -->
     <div class="revealed-track-box" id="revealed-track-box">
       <div class="track-equalizer-bars">
         <div class="eq-bar"></div>
@@ -1163,7 +1167,6 @@ function joinGame() {
   });
 }
 
-// Запуск покачивающейся анимации баллов поверх экрана
 function showScoreDeltaAnimation(delta) {
   var popup = document.getElementById("player-score-delta-popup");
   var badge = document.getElementById("player-score-delta-badge");
@@ -1174,7 +1177,7 @@ function showScoreDeltaAnimation(delta) {
   badge.className = "score-delta-badge " + (isPlus ? "plus" : "minus");
 
   popup.style.display = "flex";
-  popup.offsetHeight; // Принудительный reflow для перезапуска CSS анимации
+  popup.offsetHeight;
   popup.classList.add("show");
 
   if (scoreDeltaTimer) clearTimeout(scoreDeltaTimer);
@@ -1469,7 +1472,6 @@ function listenToGameState() {
       roundStatusPill.innerHTML = '<i class="fas fa-check-circle"></i> <span>Раунд завершён</span>';
       hudFooter.innerHTML = "Звучит оригинальная версия трека.";
       
-      // Стильный показ названия трека с анимацией
       if (data.revealedTrack) {
         trackTitleText.textContent = data.revealedTrack;
         trackBox.classList.add("active-reveal");
