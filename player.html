@@ -156,7 +156,7 @@ body {
   box-shadow: 
     0 0 40px rgba(255, 0, 85, 0.6),
     0 0 80px rgba(255, 0, 85, 0.3),
-    inset 0 0 25px rgba(0, 255, 0, 0.25);
+    inset 0 0 25px rgba(255, 0, 85, 0.25);
   text-shadow: 0 0 20px rgba(255, 0, 85, 0.8);
 }
 
@@ -1075,7 +1075,6 @@ var isChatOpen = false;
 var unreadChatCount = 0;
 var lastSeenScoreTimestamp = 0;
 
-/* Удержание экрана активным (Wake Lock API) */
 var wakeLockObj = null;
 
 async function enableScreenWakeLock() {
@@ -1091,17 +1090,22 @@ async function enableScreenWakeLock() {
   }
 }
 
-// Автоматическое восстановление блокировки экрана при возврате на вкладку
 document.addEventListener('visibilitychange', async function() {
   if (document.visibilityState === 'visible' && currentRoom) {
     await enableScreenWakeLock();
   }
 });
 
-// Активация Wake Lock по первому клику/касанию
 document.addEventListener('touchstart', function() {
   if (!wakeLockObj && currentRoom) enableScreenWakeLock();
 }, { passive: true });
+
+function formatScoreDisplay(val) {
+  var num = parseFloat(val);
+  if (isNaN(num)) num = 0;
+  var formatted = Number.isInteger(num) ? num.toString() : num.toFixed(1);
+  return formatted.replace('.', ',');
+}
 
 function playMessageNotificationSound() {
   try {
@@ -1120,7 +1124,7 @@ function playMessageNotificationSound() {
   } catch(e) {}
 }
 
-var POPULAR_EMOJIS = ["👍","👏","🔥","🎉","😂","😎","🤩","🤔","😮","🎵","🎶","🎤","🎧","🏆","⭐","💯","❤️","👋","🤐","🚀","💃"];
+var POPULAR_EMOJIS = ["👍","👏","🔥","🎉","😂","😎","🤩","🤔","😮","🎵","🎶","🎤","🎧","🏆","⭐","💯","❤","👋","🤐","🚀","💃"];
 
 function initEmojiPicker(containerId, inputId) {
   var container = document.getElementById(containerId);
@@ -1170,7 +1174,7 @@ function showError(msg) {
 
 function joinGame() {
   primeAudioElements();
-  enableScreenWakeLock(); // Включаем запрет затухания экрана
+  enableScreenWakeLock();
 
   var pin = document.getElementById("room-pin").value.trim();
   var name = document.getElementById("team-name").value.trim();
@@ -1231,8 +1235,9 @@ function showScoreDeltaAnimation(delta) {
   var badge = document.getElementById("player-score-delta-badge");
   if (!popup || !badge) return;
 
-  var isPlus = delta > 0;
-  badge.textContent = (isPlus ? "+" : "") + delta;
+  var numDelta = parseFloat(delta) || 0;
+  var isPlus = numDelta > 0;
+  badge.textContent = (isPlus ? "+" : "") + formatScoreDisplay(numDelta);
   badge.className = "score-delta-badge " + (isPlus ? "plus" : "minus");
 
   popup.style.display = "flex";
@@ -1461,13 +1466,13 @@ function listenToGameState() {
         myCard.className = "score-card my-card";
         myCard.innerHTML = 
           '<div class="score-team-title">' + (teams[myTeamId].name || myTeamName) + ' (Вы)</div>' +
-          '<div class="score-team-pts">' + (teams[myTeamId].score || 0) + '</div>';
+          '<div class="score-team-pts">' + formatScoreDisplay(teams[myTeamId].score) + '</div>';
         scoreboardWrap.appendChild(myCard);
 
         var myTeamData = teams[myTeamId];
         if (myTeamData.lastScoreChangeAt && myTeamData.lastScoreChangeAt > lastSeenScoreTimestamp) {
           lastSeenScoreTimestamp = myTeamData.lastScoreChangeAt;
-          if (myTeamData.lastScoreDelta) {
+          if (typeof myTeamData.lastScoreDelta !== 'undefined') {
             showScoreDeltaAnimation(myTeamData.lastScoreDelta);
           }
         }
@@ -1479,7 +1484,7 @@ function listenToGameState() {
           oppCard.className = "score-card opponent-card";
           oppCard.innerHTML = 
             '<div class="score-team-title">' + (teams[k].name || "Соперник") + '</div>' +
-            '<div class="score-team-pts">' + (teams[k].score || 0) + '</div>';
+            '<div class="score-team-pts">' + formatScoreDisplay(teams[k].score) + '</div>';
           scoreboardWrap.appendChild(oppCard);
         });
       }
@@ -1733,7 +1738,7 @@ function showGameOverScreen(leaderboard) {
       row.className = "leaderboard-row" + (idx === 0 ? " gold" : "");
       row.innerHTML = 
         '<span>' + (idx === 0 ? '🥇 ' : (idx + 1) + '. ') + t.name + '</span>' +
-        '<span class="pts">' + t.score + '</span>';
+        '<span class="pts">' + formatScoreDisplay(t.score) + '</span>';
       list.appendChild(row);
     });
   }
