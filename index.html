@@ -991,7 +991,6 @@ button:active {
   min-height: 1.2em;
 }
 
-/* Виджет чата ведущего */
 #host-chat-toggle-btn {
   position: fixed;
   bottom: 20px;
@@ -1161,7 +1160,6 @@ button:active {
   color: var(--neon-pink);
 }
 
-/* Непрозрачная панель эмодзи ведущего */
 .emoji-popover {
   position: absolute;
   bottom: 60px;
@@ -1193,7 +1191,6 @@ button:active {
   background: rgba(255, 255, 255, 0.15);
 }
 
-/* Адаптированный футер чата ведущего */
 .host-chat-footer {
   padding: 8px 10px;
   background: var(--bg-deep);
@@ -1478,6 +1475,15 @@ button:active {
         </select>
       </div>
 
+      <!-- Новая настройка режима чата участников -->
+      <div class="settings-field row">
+        <label for="chat-mode-toggle">Режим чата участников</label>
+        <select id="chat-mode-toggle">
+          <option value="restricted">🔒 Ограниченный (по кнопке)</option>
+          <option value="free">💬 Свободный (всегда доступен)</option>
+        </select>
+      </div>
+
       <div class="settings-field row">
         <label for="show-score-toggle">Показ своих очков игрокам</label>
         <select id="show-score-toggle">
@@ -1571,6 +1577,7 @@ var isInteractiveMode = false;
 var showScoreToPlayers = true;
 var showOpponentScore = true;
 var streamAudioToPlayers = false;
+var chatMode = "restricted"; // По умолчанию ограниченный
 
 var teamsData = [
   { id: 'team_1', name: 'Команда 1', score: 0 },
@@ -1713,6 +1720,7 @@ function initHostRoom() {
     showScore: showScoreToPlayers,
     showOpponentScore: showOpponentScore,
     streamAudio: streamAudioToPlayers,
+    chatMode: chatMode,
     buzzer: { locked: true, pressedBy: null, passedBy: [] },
     revealedTrack: "",
     audioSync: {
@@ -2125,6 +2133,7 @@ function restoreSession() {
       showScoreToPlayers = data.showScoreToPlayers !== false;
       showOpponentScore = data.showOpponentScore !== false;
       streamAudioToPlayers = data.streamAudioToPlayers === true;
+      chatMode = data.chatMode || "restricted";
       
       if (Array.isArray(data.teamsData) && data.teamsData.length >= 2) {
         teamsData = data.teamsData;
@@ -2166,6 +2175,7 @@ function saveState() {
       showScoreToPlayers: showScoreToPlayers,
       showOpponentScore: showOpponentScore,
       streamAudioToPlayers: streamAudioToPlayers,
+      chatMode: chatMode,
       teamsData: teamsData,
       playedTracks: Array.from(playedTracks),
       selectedFolder: selectedFolder,
@@ -2233,6 +2243,7 @@ function playSound(type) {
     showActionNotification(type === 'winner' ? '🎉 Правильно!' : '😢 Мимо!');
   }
 
+  // При объявлении победителя/ошибки меняем статус на reveal
   if (isInteractiveMode && roomRef) {
     roomRef.update({
       status: "reveal",
@@ -2785,8 +2796,13 @@ function changeScore(teamId, delta) {
     showNotification(delta + ' (' + team.name + ')', false);
   }
 
+  // Транслируем изменение счёта вместе с delta для яркой анимации у участника
   if (isInteractiveMode && roomRef) {
-    roomRef.child("teams/" + teamId + "/score").set(team.score);
+    roomRef.child("teams/" + teamId).update({
+      score: team.score,
+      lastScoreDelta: delta,
+      lastScoreChangeAt: Date.now()
+    });
   }
 }
 
@@ -2995,6 +3011,7 @@ function openSettings() {
   var mIn = document.getElementById("mix-mode");
   var modeSel = document.getElementById("interactive-mode-toggle");
   var streamSel = document.getElementById("stream-audio-toggle");
+  var chatModeSel = document.getElementById("chat-mode-toggle");
   var scoreSel = document.getElementById("show-score-toggle");
   var opponentScoreSel = document.getElementById("show-opponent-score-toggle");
   var sMod = document.getElementById("settings-modal");
@@ -3005,6 +3022,7 @@ function openSettings() {
   if (mIn) mIn.value = mixMode ? "mixed" : "normal";
   if (modeSel) modeSel.value = isInteractiveMode ? "true" : "false";
   if (streamSel) streamSel.value = streamAudioToPlayers ? "true" : "false";
+  if (chatModeSel) chatModeSel.value = chatMode;
   if (scoreSel) scoreSel.value = showScoreToPlayers ? "true" : "false";
   if (opponentScoreSel) opponentScoreSel.value = showOpponentScore ? "true" : "false";
   
@@ -3028,6 +3046,7 @@ function setSettings() {
   var mode = document.getElementById("mix-mode").value;
   var newInteractive = document.getElementById("interactive-mode-toggle").value === "true";
   var newStreamAudio = document.getElementById("stream-audio-toggle").value === "true";
+  var newChatMode = document.getElementById("chat-mode-toggle").value;
   var newShowScore = document.getElementById("show-score-toggle").value === "true";
   var newShowOpponent = document.getElementById("show-opponent-score-toggle").value === "true";
   
@@ -3044,6 +3063,7 @@ function setSettings() {
   mixMode = mode === "mixed";
   isInteractiveMode = newInteractive;
   streamAudioToPlayers = newStreamAudio;
+  chatMode = newChatMode;
   showScoreToPlayers = newShowScore;
   showOpponentScore = newShowOpponent;
 
@@ -3051,7 +3071,8 @@ function setSettings() {
     roomRef.update({ 
       showScore: showScoreToPlayers,
       showOpponentScore: showOpponentScore,
-      streamAudio: streamAudioToPlayers
+      streamAudio: streamAudioToPlayers,
+      chatMode: chatMode
     });
   }
 
