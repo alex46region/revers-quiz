@@ -5,7 +5,49 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover" />
 <meta name="theme-color" content="#030407" />
 <meta name="referrer" content="no-referrer" />
+
+<!-- Запрет кэширования браузером старых файлов -->
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+<meta http-equiv="Pragma" content="no-cache" />
+<meta http-equiv="Expires" content="0" />
+
 <title>⚡ Revers Quiz — Экран команды</title>
+
+<!-- Скрипт автоматического сброса кэша при обновлении версии -->
+<script>
+(async function checkClientVersionAndClearCache() {
+  try {
+    var res = await fetch("version.json?t=" + Date.now(), { cache: "no-store" });
+    if (!res.ok) return;
+    var data = await res.json();
+    var remoteVer = parseInt(data.nativeVersion) || 0;
+    var localVer = parseInt(localStorage.getItem("player_app_version")) || 0;
+
+    if (remoteVer > localVer) {
+      localStorage.setItem("player_app_version", remoteVer);
+      
+      // Очистка Cache Storage
+      if ("caches" in window) {
+        var keys = await caches.keys();
+        await Promise.all(keys.map(function(k) { return caches.delete(k); }));
+      }
+      
+      // Обновление Service Worker
+      if ("serviceWorker" in navigator) {
+        var regs = await navigator.serviceWorker.getRegistrations();
+        for (var reg of regs) {
+          await reg.update();
+        }
+      }
+      
+      // Мгновенная перезагрузка без кэша
+      window.location.reload(true);
+    }
+  } catch(e) {
+    console.warn("Проверка версии пропущена:", e);
+  }
+})();
+</script>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -123,7 +165,7 @@ body {
   box-shadow: 
     0 0 40px rgba(255, 0, 85, 0.6),
     0 0 80px rgba(255, 0, 85, 0.3),
-    inset 0 0 25px rgba(0, 255, 0, 0.25);
+    inset 0 0 25px rgba(255, 0, 85, 0.25);
   text-shadow: 0 0 20px rgba(255, 0, 85, 0.8);
 }
 
@@ -269,7 +311,7 @@ body {
   color: var(--neon-cyan);
   border-radius: 14px;
   padding: 0 14px;
-  display: none; /* Управляется скриптом по chatMode */
+  display: none;
   align-items: center;
   justify-content: center;
   font-size: 1.2em;
@@ -1034,7 +1076,7 @@ var timerRunning = false;
 var timerStartTime = 0;
 var timerTotalDuration = 0;
 var isStreamAudioAllowed = false;
-var roomChatMode = "disabled"; // По умолчанию выключен
+var roomChatMode = "disabled";
 var currentRoomStatus = "idle";
 var canBuzzerAnswerNow = false;
 
@@ -1339,8 +1381,23 @@ function listenToGameState() {
       return;
     }
 
+    // Если ведущий обновил версию викторины — обновляем страницу участника
+    if (data.appVersion && data.appVersion > (parseInt(localStorage.getItem("player_app_version")) || 0)) {
+      localStorage.setItem("player_app_version", data.appVersion);
+      if ("caches" in window) {
+        caches.keys().then(function(keys) {
+          Promise.all(keys.map(function(k) { return caches.delete(k); })).then(function() {
+            location.reload(true);
+          });
+        });
+      } else {
+        location.reload(true);
+      }
+      return;
+    }
+
     currentRoomStatus = data.status || "idle";
-    roomChatMode = data.chatMode || "disabled"; // По умолчанию выключен
+    roomChatMode = data.chatMode || "disabled";
     isStreamAudioAllowed = (data.streamAudio === true);
 
     if (data.status === "reveal" || data.status === "playing") {
@@ -1494,7 +1551,6 @@ function updateChatTriggerButtonState() {
   var triggerBtn = document.getElementById("player-chat-toggle-btn");
   if (!triggerBtn) return;
 
-  // Если чат выключен ведущим (режим по умолчанию) — полностью прячем кнопку
   if (roomChatMode === "disabled") {
     triggerBtn.style.display = "none";
     closePlayerChat();
