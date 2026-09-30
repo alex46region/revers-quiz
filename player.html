@@ -540,7 +540,7 @@ body {
   font-size: 1.2em;
 }
 
-/* Модальное окно чата участника с эмодзи */
+/* Модальное окно чата участника с непрозрачной панелью эмодзи */
 #player-chat-modal {
   position: fixed;
   inset: 0;
@@ -638,13 +638,14 @@ body {
   font-weight: 700;
 }
 
+/* Непрозрачный поповер эмодзи участника */
 .player-emoji-popover {
   position: absolute;
   bottom: 70px;
   left: 14px;
   right: 14px;
-  background: var(--bg-surface);
-  border: 1px solid var(--border-glow);
+  background: #111520;
+  border: 1px solid var(--neon-cyan);
   border-radius: 14px;
   padding: 10px;
   display: none;
@@ -652,8 +653,8 @@ body {
   gap: 6px;
   font-size: 1.4em;
   text-align: center;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
-  max-height: 170px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.95);
+  max-height: 180px;
   overflow-y: auto;
   z-index: 3100;
 }
@@ -662,18 +663,20 @@ body {
   cursor: pointer;
   padding: 4px;
   border-radius: 8px;
+  transition: background 0.1s;
 }
 
 .player-emoji-popover span:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.15);
 }
 
+/* Адаптированный футер чата участника */
 .player-chat-input-bar {
-  padding: 10px 14px;
+  padding: 10px 12px;
   background: var(--bg-deep);
   border-top: 1px solid var(--border-subtle);
   display: flex;
-  gap: 8px;
+  gap: 6px;
   align-items: center;
 }
 
@@ -682,13 +685,19 @@ body {
   border: 1px solid var(--border-subtle);
   color: var(--neon-yellow);
   font-size: 1.2em;
-  padding: 10px 12px;
+  width: 44px;
+  height: 44px;
   border-radius: 12px;
   cursor: pointer;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .player-chat-input-bar input {
   flex: 1;
+  min-width: 0;
   padding: 12px 14px;
   border-radius: 12px;
   margin: 0;
@@ -698,10 +707,14 @@ body {
 .player-chat-input-bar button.btn-send-player {
   background: var(--neon-cyan);
   color: #000;
-  padding: 12px 18px;
+  width: 44px;
+  height: 44px;
   border-radius: 12px;
   font-size: 15px;
   flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 </style>
 </head>
@@ -780,7 +793,6 @@ body {
   </div>
 </div>
 
-<!-- Модальное окно чата участника с эмодзи -->
 <div id="player-chat-modal">
   <div class="player-chat-card">
     <div class="player-chat-head">
