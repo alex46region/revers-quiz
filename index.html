@@ -513,22 +513,10 @@ button:active {
   border: 1px solid rgba(0, 255, 102, 0.25);
 }
 
-.btn.add:hover {
-  background: var(--neon-lime);
-  color: #000;
-  box-shadow: 0 0 12px rgba(0, 255, 102, 0.4);
-}
-
 .btn.remove {
   background: rgba(255, 0, 85, 0.1);
   color: var(--neon-pink);
   border: 1px solid rgba(255, 0, 85, 0.25);
-}
-
-.btn.remove:hover {
-  background: var(--neon-pink);
-  color: #fff;
-  box-shadow: 0 0 12px rgba(255, 0, 85, 0.4);
 }
 
 .result-sounds {
@@ -888,7 +876,7 @@ button:active {
 }
 
 .settings-field.row select {
-  max-width: 170px;
+  max-width: 190px;
 }
 
 .settings-save-btn {
@@ -1475,10 +1463,11 @@ button:active {
         </select>
       </div>
 
-      <!-- Новая настройка режима чата участников -->
+      <!-- Выбор режима чата (по умолчанию выключен) -->
       <div class="settings-field row">
         <label for="chat-mode-toggle">Режим чата участников</label>
         <select id="chat-mode-toggle">
+          <option value="disabled" selected>🚫 Выключен (команды рядом)</option>
           <option value="restricted">🔒 Ограниченный (по кнопке)</option>
           <option value="free">💬 Свободный (всегда доступен)</option>
         </select>
@@ -1577,7 +1566,7 @@ var isInteractiveMode = false;
 var showScoreToPlayers = true;
 var showOpponentScore = true;
 var streamAudioToPlayers = false;
-var chatMode = "restricted"; // По умолчанию ограниченный
+var chatMode = "disabled"; // По умолчанию ВЫКЛЮЧЕН (команды рядом)
 
 var teamsData = [
   { id: 'team_1', name: 'Команда 1', score: 0 },
@@ -1699,6 +1688,16 @@ function generateNewRoomPin() {
   return newPin;
 }
 
+function updateHostChatButtonVisibility() {
+  var btn = document.getElementById("host-chat-toggle-btn");
+  if (!btn) return;
+  btn.style.display = (isInteractiveMode && chatMode !== "disabled") ? "flex" : "none";
+  if (chatMode === "disabled") {
+    document.getElementById("host-chat-box").style.display = "none";
+    hostChatOpen = false;
+  }
+}
+
 function initHostRoom() {
   if (!isInteractiveMode) return;
   
@@ -1738,7 +1737,7 @@ function initHostRoom() {
   renderHostTeamsList();
   renderScoreboardGrid();
 
-  document.getElementById("host-chat-toggle-btn").style.display = "flex";
+  updateHostChatButtonVisibility();
   initEmojiPicker("host-emoji-popover", "host-chat-input");
   listenToChatMessages();
 
@@ -1944,6 +1943,7 @@ function handleBuzzerTriggered(teamId, teamName) {
 }
 
 function toggleHostChat() {
+  if (chatMode === "disabled") return;
   var chatBox = document.getElementById("host-chat-box");
   var toggleBtn = document.getElementById("host-chat-toggle-btn");
   hostChatOpen = !hostChatOpen;
@@ -1998,7 +1998,7 @@ function listenToChatMessages() {
     msgContainer.appendChild(row);
     msgContainer.scrollTop = msgContainer.scrollHeight;
 
-    if (!hostChatOpen && !msg.isHost) {
+    if (!hostChatOpen && !msg.isHost && chatMode !== "disabled") {
       hostUnreadCount++;
       updateHostUnreadBadge();
       toggleBtn.classList.add("has-pulse");
@@ -2133,7 +2133,7 @@ function restoreSession() {
       showScoreToPlayers = data.showScoreToPlayers !== false;
       showOpponentScore = data.showOpponentScore !== false;
       streamAudioToPlayers = data.streamAudioToPlayers === true;
-      chatMode = data.chatMode || "restricted";
+      chatMode = data.chatMode || "disabled"; // По умолчанию выключен
       
       if (Array.isArray(data.teamsData) && data.teamsData.length >= 2) {
         teamsData = data.teamsData;
@@ -2243,7 +2243,6 @@ function playSound(type) {
     showActionNotification(type === 'winner' ? '🎉 Правильно!' : '😢 Мимо!');
   }
 
-  // При объявлении победителя/ошибки меняем статус на reveal
   if (isInteractiveMode && roomRef) {
     roomRef.update({
       status: "reveal",
@@ -2796,7 +2795,6 @@ function changeScore(teamId, delta) {
     showNotification(delta + ' (' + team.name + ')', false);
   }
 
-  // Транслируем изменение счёта вместе с delta для яркой анимации у участника
   if (isInteractiveMode && roomRef) {
     roomRef.child("teams/" + teamId).update({
       score: team.score,
@@ -3078,6 +3076,7 @@ function setSettings() {
 
   saveState();
   closeSettings();
+  updateHostChatButtonVisibility();
 
   if (needReload) {
     location.reload();
