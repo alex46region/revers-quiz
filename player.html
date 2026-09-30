@@ -1075,6 +1075,34 @@ var isChatOpen = false;
 var unreadChatCount = 0;
 var lastSeenScoreTimestamp = 0;
 
+/* Удержание экрана активным (Wake Lock API) */
+var wakeLockObj = null;
+
+async function enableScreenWakeLock() {
+  try {
+    if ('wakeLock' in navigator) {
+      wakeLockObj = await navigator.wakeLock.request('screen');
+      wakeLockObj.addEventListener('release', function() {
+        wakeLockObj = null;
+      });
+    }
+  } catch(err) {
+    console.warn("Wake Lock не поддерживается или отклонён:", err);
+  }
+}
+
+// Автоматическое восстановление блокировки экрана при возврате на вкладку
+document.addEventListener('visibilitychange', async function() {
+  if (document.visibilityState === 'visible' && currentRoom) {
+    await enableScreenWakeLock();
+  }
+});
+
+// Активация Wake Lock по первому клику/касанию
+document.addEventListener('touchstart', function() {
+  if (!wakeLockObj && currentRoom) enableScreenWakeLock();
+}, { passive: true });
+
 function playMessageNotificationSound() {
   try {
     var ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -1142,6 +1170,7 @@ function showError(msg) {
 
 function joinGame() {
   primeAudioElements();
+  enableScreenWakeLock(); // Включаем запрет затухания экрана
 
   var pin = document.getElementById("room-pin").value.trim();
   var name = document.getElementById("team-name").value.trim();
@@ -1257,7 +1286,6 @@ function stopSyntheticTimer() {
   if (progressAnimFrame) cancelAnimationFrame(progressAnimFrame);
 }
 
-// 1. Немедленное обновление шкалы длительности трека при подготовке нового раунда
 function listenToAudioStream() {
   var audioSyncRef = db.ref("rooms/" + currentRoom + "/audioSync");
   var aRevers = document.getElementById("player-audio-revers");
@@ -1275,7 +1303,6 @@ function listenToAudioStream() {
       }
     }
 
-    // Если пришла новая длительность — сразу обновляем отображение таймера
     if (sync.duration && sync.duration > 0) {
       currentTrackDuration = sync.duration;
       if (!timerRunning && sync.playAction !== "pause") {
@@ -1368,7 +1395,6 @@ function listenToAudioStream() {
   });
 }
 
-// 2. Строгий контроль закрепления баззера и обработка нажатия ПАС
 function listenToGameState() {
   var roomRef = db.ref("rooms/" + currentRoom);
 
@@ -1482,25 +1508,21 @@ function listenToGameState() {
       roundStatusPill.className = "status-pill playing";
       roundStatusPill.innerHTML = '<i class="fas fa-volume-up"></i> <span>Трек играет!</span>';
       
-      // Если баззер никто не держит
       if (!buzzer.locked) {
         passBtn.style.display = "none";
         
-        // Если эта команда уже спасовала в этом раунде — кнопка остаётся неактивной
         if (haveIPassed) {
           buzzerBtn.disabled = true;
           buzzerBtn.className = "buzzer-3d-btn";
           buzzerBtn.innerHTML = '<i class="fas fa-forward"></i><span>ПАС</span>';
           hudFooter.innerHTML = "Вы спасовали. Ожидаем ответы соперников...";
         } else {
-          // Для остальных команд кнопка открыта для нажатия
           buzzerBtn.disabled = false;
           buzzerBtn.className = "buzzer-3d-btn";
           buzzerBtn.innerHTML = '<i class="fas fa-bolt"></i><span>ЖМИ!</span>';
           hudFooter.innerHTML = "Слушай внимательно и нажимай быстрее!";
         }
       } else {
-        // Баззер нажат: раунд зафиксирован за нажавшей командой
         if (buzzer.pressedBy === myTeamId) {
           buzzerBtn.disabled = true;
           buzzerBtn.className = "buzzer-3d-btn winner-turn";
@@ -1516,7 +1538,6 @@ function listenToGameState() {
             hudFooter.innerHTML = "🏆 <strong style='color:var(--neon-lime)'>Вы успели первым! Называйте трек ведущему!</strong>";
           }
         } else {
-          // Для соперников баззер заблокирован
           passBtn.style.display = "none";
           buzzerBtn.disabled = true;
           buzzerBtn.className = "buzzer-3d-btn";
@@ -1766,7 +1787,6 @@ function pressBuzzer() {
   });
 }
 
-// При нажатии ПАС: баззер освобождается для остальных, но спасовавшая команда заносится в passedBy
 function passTurn() {
   if (!currentRoom || !myTeamId) return;
 
