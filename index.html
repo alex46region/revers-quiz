@@ -513,10 +513,22 @@ button:active {
   border: 1px solid rgba(0, 255, 102, 0.25);
 }
 
+.btn.add:hover {
+  background: var(--neon-lime);
+  color: #000;
+  box-shadow: 0 0 12px rgba(0, 255, 102, 0.4);
+}
+
 .btn.remove {
   background: rgba(255, 0, 85, 0.1);
   color: var(--neon-pink);
   border: 1px solid rgba(255, 0, 85, 0.25);
+}
+
+.btn.remove:hover {
+  background: var(--neon-pink);
+  color: #fff;
+  box-shadow: 0 0 12px rgba(255, 0, 85, 0.4);
 }
 
 .result-sounds {
@@ -979,7 +991,7 @@ button:active {
   min-height: 1.2em;
 }
 
-/* Виджет чата ведущего с пульсацией ореола при входящих */
+/* Виджет чата ведущего */
 #host-chat-toggle-btn {
   position: fixed;
   bottom: 20px;
@@ -1111,7 +1123,6 @@ button:active {
   background: rgba(255, 234, 0, 0.05);
 }
 
-/* Быстрые ответы ведущего */
 .host-quick-replies {
   display: flex;
   gap: 6px;
@@ -1150,14 +1161,14 @@ button:active {
   color: var(--neon-pink);
 }
 
-/* Панель эмодзи */
+/* Непрозрачная панель эмодзи ведущего */
 .emoji-popover {
   position: absolute;
-  bottom: 85px;
+  bottom: 60px;
   left: 10px;
   right: 10px;
-  background: var(--bg-surface);
-  border: 1px solid var(--border-glow);
+  background: #111520;
+  border: 1px solid var(--neon-cyan);
   border-radius: 14px;
   padding: 10px;
   display: none;
@@ -1165,8 +1176,8 @@ button:active {
   gap: 6px;
   font-size: 1.4em;
   text-align: center;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
-  max-height: 170px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.95);
+  max-height: 180px;
   overflow-y: auto;
   z-index: 2600;
 }
@@ -1179,9 +1190,10 @@ button:active {
 }
 
 .emoji-popover span:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.15);
 }
 
+/* Адаптированный футер чата ведущего */
 .host-chat-footer {
   padding: 8px 10px;
   background: var(--bg-deep);
@@ -1197,13 +1209,19 @@ button:active {
   border: 1px solid var(--border-subtle);
   color: var(--neon-yellow);
   font-size: 1.1em;
-  padding: 8px 10px;
+  width: 40px;
+  height: 40px;
   border-radius: 10px;
   cursor: pointer;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .host-chat-footer input {
   flex: 1;
+  min-width: 0;
   padding: 8px 12px;
   font-size: 13px;
   margin: 0;
@@ -1213,9 +1231,14 @@ button:active {
 .host-chat-footer button.btn-send {
   background: var(--neon-cyan);
   color: #000;
-  padding: 8px 12px;
+  width: 40px;
+  height: 40px;
   border-radius: 10px;
   font-size: 13px;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 </style>
 </head>
@@ -1377,7 +1400,6 @@ button:active {
   </div>
 </div>
 
-<!-- Плавающий чат ведущего -->
 <button id="host-chat-toggle-btn" onclick="toggleHostChat()">
   <i class="fas fa-comments"></i>
   <span class="chat-unread-badge" id="host-unread-badge">0</span>
@@ -1391,7 +1413,6 @@ button:active {
   
   <div class="host-chat-msgs" id="host-chat-messages"></div>
 
-  <!-- Панель быстрых ответов -->
   <div class="host-quick-replies">
     <button class="quick-reply-btn correct" onclick="sendQuickReply('✅ Абсолютно верно!')">✅ Верно!</button>
     <button class="quick-reply-btn wrong" onclick="sendQuickReply('❌ Неверно!')">❌ Неверно!</button>
@@ -1399,7 +1420,6 @@ button:active {
     <button class="quick-reply-btn" onclick="sendQuickReply('🔥 В точку!')">🔥 В точку!</button>
   </div>
 
-  <!-- Меню эмодзи -->
   <div class="emoji-popover" id="host-emoji-popover"></div>
 
   <div class="host-chat-footer">
@@ -1586,7 +1606,6 @@ var soundUrls = {
   gameOver: null
 };
 
-// Звуковой синтезатор уведомления чата (Web Audio)
 function playMessageNotificationSound() {
   try {
     var ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -1595,8 +1614,8 @@ function playMessageNotificationSound() {
     osc.connect(gain);
     gain.connect(ctx.destination);
     osc.type = "sine";
-    osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
-    osc.frequency.setValueAtTime(880, ctx.currentTime + 0.08); // A5
+    osc.frequency.setValueAtTime(587.33, ctx.currentTime);
+    osc.frequency.setValueAtTime(880, ctx.currentTime + 0.08);
     gain.gain.setValueAtTime(0.15, ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
     osc.start(ctx.currentTime);
@@ -1916,7 +1935,6 @@ function handleBuzzerTriggered(teamId, teamName) {
   showWaveHandPopup(teamName);
 }
 
-/* Логика чата ведущего */
 function toggleHostChat() {
   var chatBox = document.getElementById("host-chat-box");
   var toggleBtn = document.getElementById("host-chat-toggle-btn");
@@ -1926,7 +1944,7 @@ function toggleHostChat() {
   if (hostChatOpen) {
     hostUnreadCount = 0;
     updateHostUnreadBadge();
-    toggleBtn.classList.remove("has-pulse"); // Снимаем пульсирующий ореол
+    toggleBtn.classList.remove("has-pulse");
     var msgs = document.getElementById("host-chat-messages");
     msgs.scrollTop = msgs.scrollHeight;
     document.getElementById("host-chat-input").focus();
@@ -1972,15 +1990,11 @@ function listenToChatMessages() {
     msgContainer.appendChild(row);
     msgContainer.scrollTop = msgContainer.scrollHeight;
 
-    // Оповещение при закрытом чате
     if (!hostChatOpen && !msg.isHost) {
       hostUnreadCount++;
       updateHostUnreadBadge();
-
-      // Добавляем пульсирующий ореол к кнопке чата
       toggleBtn.classList.add("has-pulse");
 
-      // Вибрация и стандартный звуковой динь
       if (navigator.vibrate) navigator.vibrate([30, 40, 30]);
       playMessageNotificationSound();
     }
