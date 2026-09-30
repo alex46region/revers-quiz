@@ -168,7 +168,6 @@ body {
   justify-content: space-between;
 }
 
-/* Верхняя панель со счётом и кнопкой чата */
 .top-action-bar {
   display: flex;
   gap: 8px;
@@ -197,6 +196,22 @@ body {
   cursor: pointer;
   box-shadow: 0 0 15px rgba(0, 229, 255, 0.15);
   flex-shrink: 0;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.player-chat-trigger-btn.has-pulse {
+  animation: chatButtonGlowPulse 1.4s infinite alternate;
+}
+
+@keyframes chatButtonGlowPulse {
+  0% {
+    box-shadow: 0 0 15px rgba(0, 229, 255, 0.6), 0 0 30px rgba(0, 229, 255, 0.3);
+    transform: scale(1);
+  }
+  100% {
+    box-shadow: 0 0 35px var(--neon-pink), 0 0 60px rgba(255, 0, 85, 0.6);
+    transform: scale(1.08);
+  }
 }
 
 .player-chat-unread-badge {
@@ -375,11 +390,7 @@ body {
   text-transform: uppercase;
   letter-spacing: 2px;
   cursor: pointer;
-  box-shadow: 
-    0 15px 35px rgba(255, 0, 85, 0.4),
-    0 0 50px rgba(255, 0, 85, 0.25),
-    inset 0 4px 8px rgba(255, 255, 255, 0.4),
-    inset 0 -8px 16px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 15px 35px rgba(255, 0, 85, 0.4), 0 0 50px rgba(255, 0, 85, 0.25);
   transition: all 0.12s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   display: flex;
   flex-direction: column;
@@ -529,13 +540,12 @@ body {
   font-size: 1.2em;
 }
 
-/* Модальное окно чата участника */
+/* Модальное окно чата участника с эмодзи */
 #player-chat-modal {
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.85);
   backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
   z-index: 3000;
   display: none;
   align-items: center;
@@ -554,6 +564,7 @@ body {
   flex-direction: column;
   overflow: hidden;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.9);
+  position: relative;
 }
 
 .player-chat-head {
@@ -627,12 +638,53 @@ body {
   font-weight: 700;
 }
 
+.player-emoji-popover {
+  position: absolute;
+  bottom: 70px;
+  left: 14px;
+  right: 14px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-glow);
+  border-radius: 14px;
+  padding: 10px;
+  display: none;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+  font-size: 1.4em;
+  text-align: center;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+  max-height: 170px;
+  overflow-y: auto;
+  z-index: 3100;
+}
+
+.player-emoji-popover span {
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 8px;
+}
+
+.player-emoji-popover span:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
 .player-chat-input-bar {
   padding: 10px 14px;
   background: var(--bg-deep);
   border-top: 1px solid var(--border-subtle);
   display: flex;
   gap: 8px;
+  align-items: center;
+}
+
+.btn-player-emoji {
+  background: transparent;
+  border: 1px solid var(--border-subtle);
+  color: var(--neon-yellow);
+  font-size: 1.2em;
+  padding: 10px 12px;
+  border-radius: 12px;
+  cursor: pointer;
 }
 
 .player-chat-input-bar input {
@@ -643,7 +695,7 @@ body {
   font-size: 15px;
 }
 
-.player-chat-input-bar button {
+.player-chat-input-bar button.btn-send-player {
   background: var(--neon-cyan);
   color: #000;
   padding: 12px 18px;
@@ -675,10 +727,9 @@ body {
 </div>
 
 <div id="game-view">
-  <!-- Верхняя строка: Табло + Кнопка ЧАТА -->
   <div class="top-action-bar">
     <div class="scoreboard-arena" id="scoreboard-wrap"></div>
-    <button class="player-chat-trigger-btn" onclick="togglePlayerChat()" title="Открыть чат">
+    <button class="player-chat-trigger-btn" id="player-chat-toggle-btn" onclick="togglePlayerChat()" title="Открыть чат">
       <i class="fas fa-comments"></i>
       <span class="player-chat-unread-badge" id="player-chat-unread">0</span>
     </button>
@@ -729,7 +780,7 @@ body {
   </div>
 </div>
 
-<!-- Модальное окно чата участника -->
+<!-- Модальное окно чата участника с эмодзи -->
 <div id="player-chat-modal">
   <div class="player-chat-card">
     <div class="player-chat-head">
@@ -737,9 +788,13 @@ body {
       <i class="fas fa-times" onclick="togglePlayerChat()" style="cursor:pointer; color:var(--text-dim);"></i>
     </div>
     <div class="player-chat-messages" id="player-chat-messages"></div>
+    
+    <div class="player-emoji-popover" id="player-emoji-popover"></div>
+
     <div class="player-chat-input-bar">
+      <button class="btn-player-emoji" onclick="togglePlayerEmojiPopover()">😊</button>
       <input type="text" id="player-chat-input" placeholder="Введите ваш ответ..." onkeydown="if(event.key==='Enter') sendPlayerChatMessage();" />
-      <button onclick="sendPlayerChatMessage()"><i class="fas fa-paper-plane"></i></button>
+      <button class="btn-send-player" onclick="sendPlayerChatMessage()"><i class="fas fa-paper-plane"></i></button>
     </div>
   </div>
 </div>
@@ -776,6 +831,47 @@ var isStreamAudioAllowed = false;
 
 var isChatOpen = false;
 var unreadChatCount = 0;
+
+function playMessageNotificationSound() {
+  try {
+    var ctx = new (window.AudioContext || window.webkitAudioContext)();
+    var osc = ctx.createOscillator();
+    var gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(587.33, ctx.currentTime);
+    osc.frequency.setValueAtTime(880, ctx.currentTime + 0.08);
+    gain.gain.setValueAtTime(0.15, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.35);
+  } catch(e) {}
+}
+
+var POPULAR_EMOJIS = ["👍","👏","🔥","🎉","😂","😎","🤩","🤔","😮","🎵","🎶","🎤","🎧","🏆","⭐","💯","❤️","👋","🤐","🚀","💃"];
+
+function initEmojiPicker(containerId, inputId) {
+  var container = document.getElementById(containerId);
+  if (!container) return;
+  container.innerHTML = "";
+  POPULAR_EMOJIS.forEach(function(em) {
+    var s = document.createElement("span");
+    s.textContent = em;
+    s.onclick = function(e) {
+      e.stopPropagation();
+      var input = document.getElementById(inputId);
+      input.value += em;
+      input.focus();
+    };
+    container.appendChild(s);
+  });
+}
+
+function togglePlayerEmojiPopover() {
+  var p = document.getElementById("player-emoji-popover");
+  p.style.display = p.style.display === "grid" ? "none" : "grid";
+}
 
 function formatTime(seconds) {
   seconds = Math.floor(seconds || 0);
@@ -849,6 +945,7 @@ function joinGame() {
     document.getElementById("login-view").style.display = "none";
     document.getElementById("game-view").style.display = "flex";
 
+    initEmojiPicker("player-emoji-popover", "player-chat-input");
     listenToGameState();
     listenToAudioStream();
     listenToPlayerChat();
@@ -1101,7 +1198,6 @@ function listenToGameState() {
           passBtn.style.display = "inline-flex";
           hudFooter.innerHTML = "🏆 <strong style='color:var(--neon-lime)'>Вы успели первым! Напишите ответ в чат:</strong>";
           
-          // Автооткрытие чата для отвечающей команды
           if (!isChatOpen) {
             togglePlayerChat();
           }
@@ -1140,20 +1236,23 @@ function listenToGameState() {
   });
 }
 
-/* Логика чата участника */
 function togglePlayerChat() {
   var modal = document.getElementById("player-chat-modal");
+  var triggerBtn = document.getElementById("player-chat-toggle-btn");
   isChatOpen = !isChatOpen;
   modal.style.display = isChatOpen ? "flex" : "none";
 
   if (isChatOpen) {
     unreadChatCount = 0;
     updatePlayerChatBadge();
+    triggerBtn.classList.remove("has-pulse");
     var box = document.getElementById("player-chat-messages");
     box.scrollTop = box.scrollHeight;
     setTimeout(function() {
       document.getElementById("player-chat-input").focus();
     }, 150);
+  } else {
+    document.getElementById("player-emoji-popover").style.display = "none";
   }
 }
 
@@ -1172,8 +1271,9 @@ function listenToPlayerChat() {
   if (!currentRoom) return;
   var chatRef = db.ref("rooms/" + currentRoom + "/chat");
   var msgBox = document.getElementById("player-chat-messages");
+  var triggerBtn = document.getElementById("player-chat-toggle-btn");
 
-  chatRef.limitToLast(40).on("child_added", function(snapshot) {
+  chatRef.limitToLast(50).on("child_added", function(snapshot) {
     var msg = snapshot.val();
     if (!msg) return;
 
@@ -1198,6 +1298,10 @@ function listenToPlayerChat() {
     if (!isChatOpen && !isMine) {
       unreadChatCount++;
       updatePlayerChatBadge();
+      triggerBtn.classList.add("has-pulse");
+
+      if (navigator.vibrate) navigator.vibrate([30, 40, 30]);
+      playMessageNotificationSound();
     }
   });
 }
@@ -1216,6 +1320,7 @@ function sendPlayerChatMessage() {
   });
 
   input.value = "";
+  document.getElementById("player-emoji-popover").style.display = "none";
 }
 
 function showGameOverScreen(leaderboard) {
@@ -1294,7 +1399,6 @@ function pressBuzzer() {
     };
   }, function(error, committed) {
     if (committed) {
-      // Отправляем системное уведомление в чат для всех
       db.ref("rooms/" + currentRoom + "/chat").push({
         author: "Система",
         text: "⚡ " + myTeamName + " жмёт кнопку и отвечает!",
