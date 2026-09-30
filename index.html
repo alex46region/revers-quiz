@@ -1463,7 +1463,6 @@ button:active {
         </select>
       </div>
 
-      <!-- Выбор режима чата (по умолчанию выключен) -->
       <div class="settings-field row">
         <label for="chat-mode-toggle">Режим чата участников</label>
         <select id="chat-mode-toggle">
@@ -1566,7 +1565,7 @@ var isInteractiveMode = false;
 var showScoreToPlayers = true;
 var showOpponentScore = true;
 var streamAudioToPlayers = false;
-var chatMode = "disabled"; // По умолчанию ВЫКЛЮЧЕН (команды рядом)
+var chatMode = "disabled";
 
 var teamsData = [
   { id: 'team_1', name: 'Команда 1', score: 0 },
@@ -2133,7 +2132,7 @@ function restoreSession() {
       showScoreToPlayers = data.showScoreToPlayers !== false;
       showOpponentScore = data.showOpponentScore !== false;
       streamAudioToPlayers = data.streamAudioToPlayers === true;
-      chatMode = data.chatMode || "disabled"; // По умолчанию выключен
+      chatMode = data.chatMode || "disabled";
       
       if (Array.isArray(data.teamsData) && data.teamsData.length >= 2) {
         teamsData = data.teamsData;
@@ -2820,20 +2819,40 @@ function hideOriginal() {
   document.getElementById("normal-play-icon").classList.replace("fa-pause", "fa-play");
 }
 
+// Запуск оригинала из плеера: транслирует статус reveal и название трека участникам
 function toggleNormal() {
   var a = document.getElementById("audio-normal");
   var r = document.getElementById("audio-revers");
   var i = document.getElementById("normal-play-icon");
   if (a.paused) {
+    if (originalTimeout) {
+      clearTimeout(originalTimeout);
+      originalTimeout = null;
+    }
     stopTimer();
-    r.pause();
-    document.getElementById("revers-play-icon").classList.replace("fa-pause", "fa-play");
+    hideBuzzerAlert();
+    hideTrackPopup();
+
+    if (r && !r.paused) {
+      r.pause();
+      var rIcon = document.getElementById("revers-play-icon");
+      if (rIcon) rIcon.classList.replace("fa-pause", "fa-play");
+    }
     
     if (!a.src && files[currentTrackName] && files[currentTrackName].normal) {
       a.src = files[currentTrackName].normal;
       a.load();
     }
     
+    // Включение оригинала из плеера переводит комнату в статус reveal и передает название трека
+    if (isInteractiveMode && roomRef) {
+      roomRef.update({
+        status: "reveal",
+        revealedTrack: currentTrackName || "",
+        buzzer: { locked: true, pressedBy: null, passedBy: [] }
+      });
+    }
+
     a.play().then(function() {
       i.classList.replace("fa-play", "fa-pause");
       updateNormalProgress();
