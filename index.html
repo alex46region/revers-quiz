@@ -1618,7 +1618,7 @@ function playMessageNotificationSound() {
   } catch(e) {}
 }
 
-var POPULAR_EMOJIS = ["👍","👏","🔥","🎉","😂","😎","🤩","🤔","😮","🎵","🎶","🎤","🎧","🏆","⭐","💯","❤️️","👋","🤐","🚀","💃"];
+var POPULAR_EMOJIS = ["👍","👏","🔥","🎉","😂","😎","🤩","🤔","😮","🎵","🎶","🎤","🎧","🏆","⭐","💯","❤","👋","🤐","🚀","💃"];
 
 function initEmojiPicker(containerId, inputId) {
   var container = document.getElementById(containerId);
@@ -1749,7 +1749,7 @@ function initHostRoom() {
         return {
           id: key,
           name: rawTeams[key].name || "Команда",
-          score: rawTeams[key].score || 0,
+          score: typeof rawTeams[key].score !== 'undefined' ? rawTeams[key].score : 0,
           readyToPlay: rawTeams[key].readyToPlay || false
         };
       });
@@ -2079,9 +2079,12 @@ async function manualCheckAppUpdate() {
   }
 }
 
+// Форматирование счёта без отсечения отрицательных чисел
 function formatScore(val) {
-  var num = parseFloat(val) || 0;
-  return Number.isInteger(num) ? num.toString() : num.toFixed(1);
+  var num = parseFloat(val);
+  if (isNaN(num)) num = 0;
+  var formatted = Number.isInteger(num) ? num.toString() : num.toFixed(1);
+  return formatted.replace('.', ',');
 }
 
 function unlockMobileAudio() {
@@ -2494,7 +2497,6 @@ function purgeAudioBuffer(audioEl) {
   }
 }
 
-// 1. Исправленная загрузка трека: передает точную duration до запуска
 function playTrack(name) {
   hideBuzzerAlert();
   if (originalTimeout) {
@@ -2528,7 +2530,6 @@ function playTrack(name) {
 
     var newTrackSessionId = "track_" + Date.now();
 
-    // Гарантированная передача точной длительности трека при чтении метаданных
     audioRevers.onloadedmetadata = function() {
       var dur = audioRevers.duration || 0;
       document.getElementById("revers-duration").textContent = formatTime(dur);
@@ -2538,7 +2539,6 @@ function playTrack(name) {
           roomRef.child("teams/" + t.id + "/readyToPlay").set(false);
         });
 
-        // Сразу сбрасываем баззер на новый раунд и отправляем точный таймер
         roomRef.update({
           status: "idle",
           revealedTrack: "",
@@ -2556,7 +2556,6 @@ function playTrack(name) {
         });
       }
 
-      // Запускаем воспроизведение только когда длительность и трек подготовлены
       toggleRevers();
     };
 
@@ -2722,14 +2721,12 @@ function startSynchronizedPlayback() {
   }, delayStart);
 }
 
-// 2. Исправленное возобновление: НЕ сбрасывает баззер захватившей команды
 function resumeSynchronizedPlayback() {
   var audio = document.getElementById("audio-revers");
   var icon = document.getElementById("revers-play-icon");
   var serverStartAt = Date.now() + 150;
 
   if (isInteractiveMode && roomRef) {
-    // Сохраняем статус playing, но НЕ трогаем ветку buzzer!
     roomRef.update({
       status: "playing"
     });
@@ -2784,11 +2781,15 @@ function clearTeamHighlight() {
   });
 }
 
+// ИЗМЕНЕНИЕ СЧЁТА: убран Math.max(0, ...), теперь разрешены минусовые значения
 function changeScore(teamId, delta) {
   var team = teamsData.find(function(t) { return t.id === teamId; });
   if (!team) return;
 
-  team.score = Math.max(0, team.score + delta);
+  var currentScore = parseFloat(team.score) || 0;
+  var newScore = Math.round((currentScore + delta) * 10) / 10;
+  team.score = newScore;
+  
   renderScoreboardGrid();
   saveState();
 
@@ -2799,9 +2800,9 @@ function changeScore(teamId, delta) {
       a.currentTime = 0;
       a.play().catch(function() {});
     }
-    showNotification('+' + delta + ' (' + team.name + ')', true);
+    showNotification('+' + formatScore(delta) + ' (' + team.name + ')', true);
   } else {
-    showNotification(delta + ' (' + team.name + ')', false);
+    showNotification(formatScore(delta) + ' (' + team.name + ')', false);
   }
 
   if (isInteractiveMode && roomRef) {
