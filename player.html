@@ -56,12 +56,12 @@ body {
   position: relative;
 }
 
-/* Анимация начисления/списания баллов (поверх всего) */
+/* 1. Улучшенная покачивающаяся и пульсирующая анимация изменения очков */
 .score-delta-overlay {
   position: fixed;
   top: 50%;
   left: 50%;
-  transform: translate(-50%, -50%) scale(0.6);
+  transform: translate(-50%, -50%) scale(0.5);
   z-index: 10000;
   display: none;
   flex-direction: column;
@@ -69,7 +69,7 @@ body {
   justify-content: center;
   pointer-events: none;
   opacity: 0;
-  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  transition: opacity 0.3s ease, transform 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 .score-delta-overlay.show {
@@ -80,27 +80,61 @@ body {
 
 .score-delta-badge {
   font-family: 'Ubuntu Mono', monospace;
-  font-size: clamp(3.2em, 12vw, 5em);
+  font-size: clamp(3.6em, 13vw, 5.5em);
   font-weight: 800;
-  padding: 10px 30px;
-  border-radius: 28px;
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  box-shadow: 0 15px 50px rgba(0, 0, 0, 0.9);
+  padding: 12px 36px;
+  border-radius: 30px;
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.score-delta-overlay.show .score-delta-badge {
+  animation: scoreBadgeShake 1.6s infinite ease-in-out;
+}
+
+@keyframes scoreBadgeShake {
+  0% { transform: rotate(0deg) scale(1); }
+  20% { transform: rotate(-7deg) scale(1.08); }
+  40% { transform: rotate(6deg) scale(1.14); }
+  60% { transform: rotate(-4deg) scale(1.08); }
+  80% { transform: rotate(3deg) scale(1.04); }
+  100% { transform: rotate(0deg) scale(1); }
 }
 
 .score-delta-badge.plus {
   color: var(--neon-lime);
   border: 2px solid var(--neon-lime);
-  background: rgba(0, 255, 102, 0.12);
-  box-shadow: 0 0 50px rgba(0, 255, 102, 0.6);
+  background: rgba(0, 255, 102, 0.16);
+  box-shadow: 
+    0 0 40px rgba(0, 255, 102, 0.6),
+    0 0 80px rgba(0, 255, 102, 0.3),
+    inset 0 0 25px rgba(0, 255, 102, 0.25);
+  text-shadow: 0 0 20px rgba(0, 255, 102, 0.8);
 }
 
 .score-delta-badge.minus {
   color: var(--neon-pink);
   border: 2px solid var(--neon-pink);
-  background: rgba(255, 0, 85, 0.12);
-  box-shadow: 0 0 50px rgba(255, 0, 85, 0.6);
+  background: rgba(255, 0, 85, 0.16);
+  box-shadow: 
+    0 0 40px rgba(255, 0, 85, 0.6),
+    0 0 80px rgba(255, 0, 85, 0.3),
+    inset 0 0 25px rgba(255, 0, 85, 0.25);
+  text-shadow: 0 0 20px rgba(255, 0, 85, 0.8);
+}
+
+.score-delta-subtext {
+  font-size: 0.9em;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: #fff;
+  margin-top: 10px;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.8);
 }
 
 .login-wrap {
@@ -400,17 +434,102 @@ body {
   font-weight: 700;
 }
 
+/* 2. Переработанный стильный блок показа названия оригинального трека */
 .revealed-track-box {
-  background: rgba(0, 255, 102, 0.1);
+  background: linear-gradient(135deg, rgba(0, 255, 102, 0.12) 0%, rgba(0, 229, 255, 0.08) 100%);
   border: 1px solid var(--neon-lime);
-  color: var(--neon-lime);
-  border-radius: 12px;
-  padding: 10px 14px;
-  text-align: center;
-  font-size: 0.95em;
-  font-weight: 700;
+  border-radius: 16px;
+  padding: 12px 16px;
   margin-top: 4px;
   display: none;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 
+    0 8px 30px rgba(0, 0, 0, 0.7),
+    0 0 25px rgba(0, 255, 102, 0.25),
+    inset 0 0 15px rgba(0, 255, 102, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+.revealed-track-box.active-reveal {
+  display: flex;
+  animation: revealPop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes revealPop {
+  0% { transform: translateY(12px) scale(0.96); opacity: 0; }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+.revealed-track-box::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
+  animation: shineSweep 2.2s infinite;
+}
+
+@keyframes shineSweep {
+  0% { left: -100%; }
+  60%, 100% { left: 160%; }
+}
+
+/* Анимированный неоновый эквалайзер */
+.track-equalizer-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 22px;
+  flex-shrink: 0;
+}
+
+.eq-bar {
+  width: 3px;
+  background: var(--neon-lime);
+  border-radius: 2px;
+  box-shadow: 0 0 6px var(--neon-lime);
+}
+
+.eq-bar:nth-child(1) { height: 40%; animation: eqBounce1 0.7s infinite alternate ease-in-out; }
+.eq-bar:nth-child(2) { height: 80%; animation: eqBounce2 0.5s infinite alternate ease-in-out; }
+.eq-bar:nth-child(3) { height: 60%; animation: eqBounce3 0.8s infinite alternate ease-in-out; }
+.eq-bar:nth-child(4) { height: 90%; animation: eqBounce1 0.6s infinite alternate ease-in-out; }
+
+@keyframes eqBounce1 { 0% { height: 25%; } 100% { height: 95%; } }
+@keyframes eqBounce2 { 0% { height: 85%; } 100% { height: 30%; } }
+@keyframes eqBounce3 { 0% { height: 40%; } 100% { height: 100%; } }
+
+.reveal-content-meta {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.reveal-label-sub {
+  font-size: 0.7em;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--neon-lime);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 2px;
+}
+
+.reveal-song-title {
+  font-size: 1.05em;
+  font-weight: 800;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-shadow: 0 0 10px rgba(0, 255, 102, 0.4);
 }
 
 .buzzer-stage {
@@ -774,9 +893,10 @@ body {
 <audio id="player-audio-revers" preload="auto" playsinline crossorigin="anonymous" style="display:none;"></audio>
 <audio id="player-audio-normal" preload="auto" playsinline crossorigin="anonymous" style="display:none;"></audio>
 
-<!-- Всплывающая анимация изменения счёта -->
+<!-- 1. Покачивающийся всплывающий бейдж начисления очков -->
 <div class="score-delta-overlay" id="player-score-delta-popup">
   <div class="score-delta-badge plus" id="player-score-delta-badge">+1</div>
+  <div class="score-delta-subtext">Баллы обновлены!</div>
 </div>
 
 <div class="login-wrap" id="login-view">
@@ -817,7 +937,23 @@ body {
       <div class="track-time-text" id="player-time-display">00:00 / 00:00</div>
     </div>
 
-    <div class="revealed-track-box" id="revealed-track-box"></div>
+    <!-- 2. Неоновая карточка оригинала трека с эквалайзером -->
+    <div class="revealed-track-box" id="revealed-track-box">
+      <div class="track-equalizer-bars">
+        <div class="eq-bar"></div>
+        <div class="eq-bar"></div>
+        <div class="eq-bar"></div>
+        <div class="eq-bar"></div>
+      </div>
+      <div class="reveal-content-meta">
+        <div class="reveal-label-sub">
+          <i class="fas fa-compact-disc fa-spin"></i> Оригинальный трек
+        </div>
+        <div class="reveal-song-title" id="reveal-song-title-text">
+          Название трека
+        </div>
+      </div>
+    </div>
   </div>
 
   <div class="buzzer-stage">
@@ -1027,7 +1163,7 @@ function joinGame() {
   });
 }
 
-// Показ анимации изменения очков поверх всего экрана
+// Запуск покачивающейся анимации баллов поверх экрана
 function showScoreDeltaAnimation(delta) {
   var popup = document.getElementById("player-score-delta-popup");
   var badge = document.getElementById("player-score-delta-badge");
@@ -1038,7 +1174,7 @@ function showScoreDeltaAnimation(delta) {
   badge.className = "score-delta-badge " + (isPlus ? "plus" : "minus");
 
   popup.style.display = "flex";
-  popup.offsetHeight;
+  popup.offsetHeight; // Принудительный reflow для перезапуска CSS анимации
   popup.classList.add("show");
 
   if (scoreDeltaTimer) clearTimeout(scoreDeltaTimer);
@@ -1046,8 +1182,8 @@ function showScoreDeltaAnimation(delta) {
     popup.classList.remove("show");
     setTimeout(function() {
       if (!popup.classList.contains("show")) popup.style.display = "none";
-    }, 300);
-  }, 1800);
+    }, 350);
+  }, 2200);
 }
 
 function updateProgressDisplay(currentTime, totalDuration) {
@@ -1207,7 +1343,6 @@ function listenToGameState() {
     roomChatMode = data.chatMode || "restricted";
     isStreamAudioAllowed = (data.streamAudio === true);
 
-    // Закрываем чат у всех участников при показе оригинала или старте нового реверса
     if (data.status === "reveal" || data.status === "playing") {
       closePlayerChat();
     }
@@ -1224,6 +1359,7 @@ function listenToGameState() {
     var hudFooter = document.getElementById("hud-footer");
     var roundStatusPill = document.getElementById("round-status-pill");
     var trackBox = document.getElementById("revealed-track-box");
+    var trackTitleText = document.getElementById("reveal-song-title-text");
     var scoreboardWrap = document.getElementById("scoreboard-wrap");
 
     var showMyScore = data.showScore !== false;
@@ -1246,7 +1382,6 @@ function listenToGameState() {
           '<div class="score-team-pts">' + (teams[myTeamId].score || 0) + '</div>';
         scoreboardWrap.appendChild(myCard);
 
-        // Отслеживаем изменение очков своей команды для всплывающей анимации
         var myTeamData = teams[myTeamId];
         if (myTeamData.lastScoreChangeAt && myTeamData.lastScoreChangeAt > lastSeenScoreTimestamp) {
           lastSeenScoreTimestamp = myTeamData.lastScoreChangeAt;
@@ -1274,7 +1409,7 @@ function listenToGameState() {
       buzzerBtn.innerHTML = '<i class="fas fa-hourglass-start"></i><span>ЖДИ</span>';
       roundStatusPill.className = "status-pill";
       roundStatusPill.innerHTML = '<i class="fas fa-hourglass-start"></i> <span>Ожидание раунда</span>';
-      trackBox.style.display = "none";
+      trackBox.classList.remove("active-reveal");
       hudFooter.innerHTML = "Вы подключились посреди игры. Вход со следующего трека...";
       return;
     }
@@ -1283,14 +1418,11 @@ function listenToGameState() {
     var passedBy = buzzer.passedBy || [];
     var haveIPassed = passedBy.indexOf(myTeamId) !== -1;
 
-    // Проверяем, имеет ли текущая команда право ответа прямо сейчас
     canBuzzerAnswerNow = (buzzer.pressedBy === myTeamId);
-
-    // Блокировка/разблокировка кнопки чата в зависимости от режима
     updateChatTriggerButtonState();
 
     if (data.status === "playing") {
-      trackBox.style.display = "none";
+      trackBox.classList.remove("active-reveal");
       roundStatusPill.className = "status-pill playing";
       roundStatusPill.innerHTML = '<i class="fas fa-volume-up"></i> <span>Трек играет!</span>';
       
@@ -1316,7 +1448,6 @@ function listenToGameState() {
           passBtn.style.display = "inline-flex";
           hudFooter.innerHTML = "🏆 <strong style='color:var(--neon-lime)'>Вы успели первым! Напишите ответ в чат:</strong>";
           
-          // Автооткрытие чата для ответившей команды
           if (!isChatOpen) {
             openPlayerChat();
           }
@@ -1338,9 +1469,10 @@ function listenToGameState() {
       roundStatusPill.innerHTML = '<i class="fas fa-check-circle"></i> <span>Раунд завершён</span>';
       hudFooter.innerHTML = "Звучит оригинальная версия трека.";
       
+      // Стильный показ названия трека с анимацией
       if (data.revealedTrack) {
-        trackBox.style.display = "block";
-        trackBox.innerHTML = '<i class="fas fa-play-circle"></i> ' + data.revealedTrack;
+        trackTitleText.textContent = data.revealedTrack;
+        trackBox.classList.add("active-reveal");
       }
     } else {
       passBtn.style.display = "none";
@@ -1349,7 +1481,7 @@ function listenToGameState() {
       buzzerBtn.innerHTML = '<i class="fas fa-hourglass-start"></i><span>ЖДИ</span>';
       roundStatusPill.className = "status-pill";
       roundStatusPill.innerHTML = '<i class="fas fa-hourglass-start"></i> <span>Подготовка</span>';
-      trackBox.style.display = "none";
+      trackBox.classList.remove("active-reveal");
       hudFooter.innerHTML = "Ведущий выбирает следующий трек...";
     }
   });
@@ -1393,9 +1525,7 @@ function closePlayerChat() {
 }
 
 function togglePlayerChat() {
-  // Проверка ограничений чата во время реверса
   if (roomChatMode === "restricted" && currentRoomStatus === "playing" && !canBuzzerAnswerNow) {
-    showActionNotification("🔒 Чат закрыт во время реверса! Нажмите кнопку ответа.");
     return;
   }
 
