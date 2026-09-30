@@ -58,7 +58,7 @@ body {
   background-attachment: fixed;
   color: var(--text-pure);
   min-height: 100vh;
-  padding: 16px 8px 60px;
+  padding: 16px 8px 80px;
 }
 
 .container {
@@ -254,7 +254,6 @@ h1 i {
   color: var(--neon-lime);
 }
 
-/* Центрированный анимированный поп-ап махающей руки */
 .buzzer-wave-overlay {
   position: fixed;
   top: 50%;
@@ -1014,6 +1013,147 @@ button:active {
   margin-top: 6px;
   min-height: 1.2em;
 }
+
+/* Виджет чата ведущего */
+#host-chat-toggle-btn {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--neon-cyan), #0077ff);
+  color: #000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3em;
+  cursor: pointer;
+  z-index: 2500;
+  box-shadow: 0 8px 25px rgba(0, 229, 255, 0.4);
+  border: none;
+}
+
+.chat-unread-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: var(--neon-pink);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(255, 0, 85, 0.6);
+  display: none;
+}
+
+#host-chat-box {
+  position: fixed;
+  bottom: 82px;
+  right: 20px;
+  width: min(340px, calc(100vw - 40px));
+  height: 380px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-glow);
+  border-radius: 20px;
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.9);
+  display: none;
+  flex-direction: column;
+  z-index: 2500;
+  overflow: hidden;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.host-chat-head {
+  background: var(--bg-elevated);
+  padding: 12px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border-subtle);
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 0.95em;
+}
+
+.host-chat-msgs {
+  flex: 1;
+  padding: 12px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.chat-msg-row {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.85em;
+  line-height: 1.3;
+}
+
+.chat-msg-row .author {
+  font-weight: 700;
+  font-size: 0.8em;
+  color: var(--neon-cyan);
+  margin-bottom: 2px;
+}
+
+.chat-msg-row.host-author .author {
+  color: var(--neon-yellow);
+}
+
+.chat-msg-row.system-event {
+  background: rgba(255, 0, 85, 0.1);
+  border-left: 3px solid var(--neon-pink);
+  padding: 6px 10px;
+  border-radius: 8px;
+}
+
+.chat-msg-row.system-event .body {
+  color: var(--neon-pink);
+  font-weight: 700;
+}
+
+.chat-msg-row .bubble {
+  background: var(--bg-deep);
+  border: 1px solid var(--border-subtle);
+  padding: 8px 12px;
+  border-radius: 12px;
+  color: var(--text-pure);
+  word-break: break-word;
+}
+
+.chat-msg-row.host-author .bubble {
+  border-color: rgba(255, 234, 0, 0.3);
+  background: rgba(255, 234, 0, 0.05);
+}
+
+.host-chat-footer {
+  padding: 8px 10px;
+  background: var(--bg-deep);
+  border-top: 1px solid var(--border-subtle);
+  display: flex;
+  gap: 6px;
+}
+
+.host-chat-footer input {
+  flex: 1;
+  padding: 8px 12px;
+  font-size: 13px;
+  margin: 0;
+  border-radius: 10px;
+}
+
+.host-chat-footer button {
+  background: var(--neon-cyan);
+  color: #000;
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-size: 13px;
+}
 </style>
 </head>
 <body>
@@ -1022,7 +1162,6 @@ button:active {
 <div id="score-notification" class="score-notification"></div>
 <div id="action-notification" class="action-notification"></div>
 
-<!-- Анимированный поп-ап махающей руки по центру экрана -->
 <div class="buzzer-wave-overlay" id="buzzer-wave-popup">
   <div class="wave-hand-halo">
     <span class="wave-hand-emoji">👋</span>
@@ -1172,6 +1311,24 @@ button:active {
     <button id="end-quiz-btn" onclick="endQuiz()">
       <i class="fas fa-flag-checkered"></i> Завершить игру
     </button>
+  </div>
+</div>
+
+<!-- Плавающий чат ведущего -->
+<button id="host-chat-toggle-btn" onclick="toggleHostChat()">
+  <i class="fas fa-comments"></i>
+  <span class="chat-unread-badge" id="host-unread-badge">0</span>
+</button>
+
+<div id="host-chat-box">
+  <div class="host-chat-head">
+    <span><i class="fas fa-comment-dots" style="color:var(--neon-cyan);"></i> Чат игры</span>
+    <i class="fas fa-times" onclick="toggleHostChat()" style="cursor:pointer; color:var(--text-dim);"></i>
+  </div>
+  <div class="host-chat-msgs" id="host-chat-messages"></div>
+  <div class="host-chat-footer">
+    <input type="text" id="host-chat-input" placeholder="Ответ или подсказка..." onkeydown="if(event.key==='Enter') sendHostChatMessage();" />
+    <button onclick="sendHostChatMessage()"><i class="fas fa-paper-plane"></i></button>
   </div>
 </div>
 
@@ -1325,6 +1482,8 @@ var teamsData = [
 
 var activeTeamId = null;
 var buzzerWaveTimer = null;
+var hostChatOpen = false;
+var hostUnreadCount = 0;
 
 var PUBLIC_KEY = "https://yadi.sk/d/WuP3cXvzcoZxVg";
 var files = {};
@@ -1432,6 +1591,9 @@ function initHostRoom() {
   teamsData = [];
   renderHostTeamsList();
   renderScoreboardGrid();
+
+  document.getElementById("host-chat-toggle-btn").style.display = "flex";
+  listenToChatMessages();
 
   roomRef.child("teams").on("value", function(snapshot) {
     var rawTeams = snapshot.val() || {};
@@ -1584,7 +1746,6 @@ function showWaveHandPopup(teamName) {
   teamText.innerHTML = '<span>' + teamName + '</span> отвечает!';
 
   popup.style.display = "flex";
-  // Принудительный reflow для плавной анимации
   popup.offsetHeight;
   popup.classList.add("show");
 
@@ -1633,6 +1794,79 @@ function handleBuzzerTriggered(teamId, teamName) {
   }
 
   showWaveHandPopup(teamName);
+}
+
+/* Логика чата ведущего */
+function toggleHostChat() {
+  var chatBox = document.getElementById("host-chat-box");
+  hostChatOpen = !hostChatOpen;
+  chatBox.style.display = hostChatOpen ? "flex" : "none";
+
+  if (hostChatOpen) {
+    hostUnreadCount = 0;
+    updateHostUnreadBadge();
+    var msgs = document.getElementById("host-chat-messages");
+    msgs.scrollTop = msgs.scrollHeight;
+    document.getElementById("host-chat-input").focus();
+  }
+}
+
+function updateHostUnreadBadge() {
+  var badge = document.getElementById("host-unread-badge");
+  if (!badge) return;
+  if (hostUnreadCount > 0) {
+    badge.textContent = hostUnreadCount;
+    badge.style.display = "inline-block";
+  } else {
+    badge.style.display = "none";
+  }
+}
+
+function listenToChatMessages() {
+  if (!roomRef) return;
+  var chatRef = roomRef.child("chat");
+  var msgContainer = document.getElementById("host-chat-messages");
+
+  chatRef.limitToLast(40).on("child_added", function(snapshot) {
+    var msg = snapshot.val();
+    if (!msg) return;
+
+    var row = document.createElement("div");
+    row.className = "chat-msg-row" + 
+      (msg.isHost ? " host-author" : "") + 
+      (msg.isSystem ? " system-event" : "");
+
+    if (msg.isSystem) {
+      row.innerHTML = '<div class="body">🔔 ' + msg.text + '</div>';
+    } else {
+      row.innerHTML = 
+        '<div class="author">' + msg.author + '</div>' +
+        '<div class="bubble">' + msg.text + '</div>';
+    }
+
+    msgContainer.appendChild(row);
+    msgContainer.scrollTop = msgContainer.scrollHeight;
+
+    if (!hostChatOpen && !msg.isHost) {
+      hostUnreadCount++;
+      updateHostUnreadBadge();
+    }
+  });
+}
+
+function sendHostChatMessage() {
+  var input = document.getElementById("host-chat-input");
+  var text = input.value.trim();
+  if (!text || !roomRef) return;
+
+  roomRef.child("chat").push({
+    author: "🎙️ Ведущий",
+    text: text,
+    isHost: true,
+    time: Date.now()
+  });
+
+  input.value = "";
 }
 
 async function manualCheckAppUpdate() {
