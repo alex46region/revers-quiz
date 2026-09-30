@@ -123,7 +123,7 @@ body {
   box-shadow: 
     0 0 40px rgba(255, 0, 85, 0.6),
     0 0 80px rgba(255, 0, 85, 0.3),
-    inset 0 0 25px rgba(255, 0, 85, 0.25);
+    inset 0 0 25px rgba(0, 255, 0, 0.25);
   text-shadow: 0 0 20px rgba(255, 0, 85, 0.8);
 }
 
@@ -269,7 +269,7 @@ body {
   color: var(--neon-cyan);
   border-radius: 14px;
   padding: 0 14px;
-  display: flex;
+  display: none; /* Управляется скриптом по chatMode */
   align-items: center;
   justify-content: center;
   font-size: 1.2em;
@@ -434,7 +434,6 @@ body {
   font-weight: 700;
 }
 
-/* Полностью адаптивная карточка показа оригинала без обрезания длинных строк */
 .revealed-track-box {
   background: linear-gradient(135deg, rgba(0, 255, 102, 0.12) 0%, rgba(0, 229, 255, 0.08) 100%);
   border: 1px solid var(--neon-lime);
@@ -525,7 +524,6 @@ body {
   margin-bottom: 4px;
 }
 
-/* Полный перенос строк и масштабирование шрифта для длинных треков */
 .reveal-song-title {
   font-size: clamp(0.85em, 2.8vw, 1.1em);
   font-weight: 800;
@@ -941,7 +939,6 @@ body {
       <div class="track-time-text" id="player-time-display">00:00 / 00:00</div>
     </div>
 
-    <!-- Адаптивный блок оригинала трека с переносом строк -->
     <div class="revealed-track-box" id="revealed-track-box">
       <div class="track-equalizer-bars">
         <div class="eq-bar"></div>
@@ -1037,7 +1034,7 @@ var timerRunning = false;
 var timerStartTime = 0;
 var timerTotalDuration = 0;
 var isStreamAudioAllowed = false;
-var roomChatMode = "restricted";
+var roomChatMode = "disabled"; // По умолчанию выключен
 var currentRoomStatus = "idle";
 var canBuzzerAnswerNow = false;
 
@@ -1343,7 +1340,7 @@ function listenToGameState() {
     }
 
     currentRoomStatus = data.status || "idle";
-    roomChatMode = data.chatMode || "restricted";
+    roomChatMode = data.chatMode || "disabled"; // По умолчанию выключен
     isStreamAudioAllowed = (data.streamAudio === true);
 
     if (data.status === "reveal" || data.status === "playing") {
@@ -1449,10 +1446,14 @@ function listenToGameState() {
           buzzerBtn.className = "buzzer-3d-btn winner-turn";
           buzzerBtn.innerHTML = '<i class="fas fa-microphone"></i><span>ОТВЕТ!</span>';
           passBtn.style.display = "inline-flex";
-          hudFooter.innerHTML = "🏆 <strong style='color:var(--neon-lime)'>Вы успели первым! Напишите ответ в чат:</strong>";
-          
-          if (!isChatOpen) {
-            openPlayerChat();
+
+          if (roomChatMode !== "disabled") {
+            hudFooter.innerHTML = "🏆 <strong style='color:var(--neon-lime)'>Вы успели первым! Напишите ответ в чат:</strong>";
+            if (!isChatOpen) {
+              openPlayerChat();
+            }
+          } else {
+            hudFooter.innerHTML = "🏆 <strong style='color:var(--neon-lime)'>Вы успели первым! Называйте трек ведущему!</strong>";
           }
         } else {
           passBtn.style.display = "none";
@@ -1493,6 +1494,15 @@ function updateChatTriggerButtonState() {
   var triggerBtn = document.getElementById("player-chat-toggle-btn");
   if (!triggerBtn) return;
 
+  // Если чат выключен ведущим (режим по умолчанию) — полностью прячем кнопку
+  if (roomChatMode === "disabled") {
+    triggerBtn.style.display = "none";
+    closePlayerChat();
+    return;
+  }
+
+  triggerBtn.style.display = "flex";
+
   var isRestrictedNow = (roomChatMode === "restricted" && currentRoomStatus === "playing" && !canBuzzerAnswerNow);
 
   if (isRestrictedNow) {
@@ -1503,6 +1513,7 @@ function updateChatTriggerButtonState() {
 }
 
 function openPlayerChat() {
+  if (roomChatMode === "disabled") return;
   var modal = document.getElementById("player-chat-modal");
   var triggerBtn = document.getElementById("player-chat-toggle-btn");
   isChatOpen = true;
@@ -1527,6 +1538,8 @@ function closePlayerChat() {
 }
 
 function togglePlayerChat() {
+  if (roomChatMode === "disabled") return;
+
   if (roomChatMode === "restricted" && currentRoomStatus === "playing" && !canBuzzerAnswerNow) {
     return;
   }
@@ -1541,7 +1554,7 @@ function togglePlayerChat() {
 function updatePlayerChatBadge() {
   var badge = document.getElementById("player-chat-unread");
   if (!badge) return;
-  if (unreadChatCount > 0) {
+  if (unreadChatCount > 0 && roomChatMode !== "disabled") {
     badge.textContent = unreadChatCount;
     badge.style.display = "inline-block";
   } else {
@@ -1577,7 +1590,7 @@ function listenToPlayerChat() {
     msgBox.appendChild(row);
     msgBox.scrollTop = msgBox.scrollHeight;
 
-    if (!isChatOpen && !isMine) {
+    if (!isChatOpen && !isMine && roomChatMode !== "disabled") {
       unreadChatCount++;
       updatePlayerChatBadge();
       triggerBtn.classList.add("has-pulse");
@@ -1589,6 +1602,7 @@ function listenToPlayerChat() {
 }
 
 function sendPlayerChatMessage() {
+  if (roomChatMode === "disabled") return;
   var input = document.getElementById("player-chat-input");
   var text = input.value.trim();
   if (!text || !currentRoom) return;
@@ -1681,7 +1695,7 @@ function pressBuzzer() {
       time: Date.now()
     };
   }, function(error, committed) {
-    if (committed) {
+    if (committed && roomChatMode !== "disabled") {
       db.ref("rooms/" + currentRoom + "/chat").push({
         author: "Система",
         text: "⚡ " + myTeamName + " жмёт кнопку и отвечает!",
@@ -1715,7 +1729,7 @@ function passTurn() {
       time: Date.now()
     };
   }, function(error, committed) {
-    if (committed) {
+    if (committed && roomChatMode !== "disabled") {
       db.ref("rooms/" + currentRoom + "/chat").push({
         author: "Система",
         text: "⏩ " + myTeamName + " пасует ход!",
