@@ -80,6 +80,7 @@ body {
     linear-gradient(to bottom, transparent 65%, rgba(0, 243, 255, 0.08) 100%),
     repeating-linear-gradient(0deg, transparent, transparent 38px, rgba(255, 0, 127, 0.08) 39px, rgba(255, 0, 127, 0.08) 40px),
     repeating-linear-gradient(90deg, transparent, transparent 38px, rgba(0, 243, 255, 0.08) 39px, rgba(0, 243, 255, 0.08) 40px);
+  background-size: 100% 100%, 100% 100%, 100% 100%, 32px 32px, 32px 32px;
   color: #fff;
   min-height: 100vh;
   min-height: 100dvh;
@@ -90,7 +91,6 @@ body {
   position: relative;
 }
 
-/* Эффект ретро-сканлайнов */
 body::after {
   content: "";
   position: fixed;
@@ -100,7 +100,7 @@ body::after {
   z-index: 9999;
 }
 
-/* Всплывающий индикатор изменения счёта */
+/* Всплывающий индикатор изменения счёта (Яркий изумрудный с плотной тёмной подложкой) */
 .score-delta-overlay {
   position: fixed;
   top: 50%;
@@ -126,9 +126,10 @@ body::after {
   font-family: 'Orbitron', monospace;
   font-size: clamp(3.4em, 13vw, 5.2em);
   font-weight: 900;
-  padding: 16px 42px;
-  border-radius: 26px;
-  backdrop-filter: blur(20px);
+  padding: 18px 46px;
+  border-radius: 28px;
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -149,17 +150,23 @@ body::after {
 .score-delta-badge.plus {
   color: var(--neon-green);
   border: 3px solid var(--neon-green);
-  background: rgba(0, 255, 102, 0.18);
-  box-shadow: 0 0 50px rgba(0, 255, 102, 0.6), inset 0 0 25px rgba(0, 255, 102, 0.3);
-  text-shadow: 0 0 20px var(--neon-green);
+  background: rgba(8, 28, 18, 0.92);
+  box-shadow: 
+    0 0 55px rgba(0, 255, 102, 0.7),
+    0 0 110px rgba(0, 255, 102, 0.35),
+    inset 0 0 25px rgba(0, 255, 102, 0.4);
+  text-shadow: 0 0 24px var(--neon-green);
 }
 
 .score-delta-badge.minus {
   color: var(--neon-magenta);
   border: 3px solid var(--neon-magenta);
-  background: rgba(255, 0, 127, 0.18);
-  box-shadow: 0 0 50px rgba(255, 0, 127, 0.6), inset 0 0 25px rgba(255, 0, 127, 0.3);
-  text-shadow: 0 0 20px var(--neon-magenta);
+  background: rgba(28, 6, 20, 0.92);
+  box-shadow: 
+    0 0 55px rgba(255, 0, 127, 0.7),
+    0 0 110px rgba(255, 0, 127, 0.35),
+    inset 0 0 25px rgba(255, 0, 127, 0.4);
+  text-shadow: 0 0 24px var(--neon-magenta);
 }
 
 .score-delta-subtext {
@@ -169,7 +176,7 @@ body::after {
   text-transform: uppercase;
   letter-spacing: 3px;
   color: #fff;
-  margin-top: 10px;
+  margin-top: 12px;
   text-shadow: 0 0 10px rgba(255,255,255,0.7);
 }
 
@@ -651,12 +658,14 @@ body::after {
   text-shadow: none;
 }
 
+/* Изменено: кнопка ответа теперь горит глубоким неоново-синим цветом (Cyber-Cyan), не сливаясь с зеленой анимацией очков */
 .buzzer-3d-btn.winner-turn {
-  background: radial-gradient(circle at 35% 30%, #00ff88 0%, #00b359 60%, #004d26 100%);
+  background: radial-gradient(circle at 35% 30%, #00f3ff 0%, #0077ff 60%, #003380 100%);
+  border-color: rgba(255, 255, 255, 0.4);
   box-shadow: 
-    0 0 90px rgba(0, 255, 102, 0.85),
-    inset 0 5px 14px rgba(255, 255, 255, 0.7);
-  color: #03140a;
+    0 0 85px rgba(0, 243, 255, 0.85),
+    inset 0 5px 14px rgba(255, 255, 255, 0.75);
+  color: #030d22;
   text-shadow: none;
   animation: pulseTurn 0.8s infinite alternate;
 }
@@ -1595,12 +1604,12 @@ function listenToGameState() {
           passBtn.style.display = "inline-flex";
 
           if (roomChatMode !== "disabled") {
-            hudFooter.innerHTML = "🏆 <strong style='color:var(--neon-green)'>Вы успели первым! Напишите ответ в чат:</strong>";
+            hudFooter.innerHTML = "🏆 <strong style='color:var(--neon-cyan)'>Вы успели первым! Напишите ответ в чат:</strong>";
             if (!isChatOpen) {
               openPlayerChat();
             }
           } else {
-            hudFooter.innerHTML = "🏆 <strong style='color:var(--neon-green)'>Вы успели первым! Называйте трек ведущему!</strong>";
+            hudFooter.innerHTML = "🏆 <strong style='color:var(--neon-cyan)'>Вы успели первым! Называйте трек ведущему!</strong>";
           }
         } else {
           passBtn.style.display = "none";
