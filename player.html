@@ -100,7 +100,7 @@ body::after {
   z-index: 9999;
 }
 
-/* Всплывающий индикатор изменения счёта (Яркий изумрудный с плотной тёмной подложкой) */
+/* Всплывающий индикатор изменения счёта */
 .score-delta-overlay {
   position: fixed;
   top: 50%;
@@ -658,7 +658,6 @@ body::after {
   text-shadow: none;
 }
 
-/* Изменено: кнопка ответа теперь горит глубоким неоново-синим цветом (Cyber-Cyan), не сливаясь с зеленой анимацией очков */
 .buzzer-3d-btn.winner-turn {
   background: radial-gradient(circle at 35% 30%, #00f3ff 0%, #0077ff 60%, #003380 100%);
   border-color: rgba(255, 255, 255, 0.4);
@@ -737,6 +736,7 @@ body::after {
   margin-bottom: 12px;
 }
 
+/* Изменено на "Итоги игры" */
 .game-over-title {
   font-family: 'Orbitron', sans-serif;
   font-size: 1.9em;
@@ -1077,7 +1077,7 @@ body::after {
 <!-- 3. Экран завершения игры -->
 <div id="game-over-view">
   <div class="trophy-icon"><i class="fas fa-trophy"></i></div>
-  <div class="game-over-title">Итоги битвы</div>
+  <div class="game-over-title">Итоги игры</div>
   <div class="winner-name-badge" id="winner-badge-text">Победитель!</div>
   
   <div class="final-leaderboard" id="final-leaderboard-list"></div>
@@ -1241,18 +1241,19 @@ function showError(msg) {
   err.style.display = "block";
 }
 
+// 2. Вход и переподключение с сохранением прогресса и регистронезависимостью
 function joinGame() {
   primeAudioElements();
   enableScreenWakeLock();
 
   var pin = document.getElementById("room-pin").value.trim();
-  var name = document.getElementById("team-name").value.trim();
+  var inputName = document.getElementById("team-name").value.trim();
 
   if (!pin) {
     showError("Введите PIN-код комнаты!");
     return;
   }
-  if (!name) {
+  if (!inputName) {
     showError("Укажите название вашей команды!");
     return;
   }
@@ -1274,18 +1275,44 @@ function joinGame() {
       hasWaitedForNewTrack = true;
     }
 
-    currentRoom = pin;
-    myTeamName = name;
-    myTeamId = "team_" + Math.random().toString(36).substr(2, 6);
+    var existingTeams = currentData.teams || {};
+    var foundKey = null;
+    var normalizedInput = inputName.toLowerCase();
 
-    roomRef.child("teams/" + myTeamId).set({
-      name: myTeamName,
-      ready: true,
-      readyToPlay: false,
-      score: 0
+    // Регистронезависимый поиск существующей команды
+    Object.keys(existingTeams).forEach(function(k) {
+      var t = existingTeams[k];
+      if (t && t.name && t.name.trim().toLowerCase() === normalizedInput) {
+        foundKey = k;
+      }
     });
 
-    roomRef.child("teams/" + myTeamId).onDisconnect().remove();
+    currentRoom = pin;
+
+    if (foundKey) {
+      // Восстанавливаем команду с её набранным счётом
+      myTeamId = foundKey;
+      myTeamName = existingTeams[foundKey].name || inputName;
+      roomRef.child("teams/" + myTeamId).update({
+        ready: true,
+        readyToPlay: false
+      });
+    } else {
+      // Новая команда
+      myTeamId = "team_" + Math.random().toString(36).substr(2, 6);
+      myTeamName = inputName;
+      roomRef.child("teams/" + myTeamId).set({
+        name: myTeamName,
+        ready: true,
+        readyToPlay: false,
+        score: 0
+      });
+    }
+
+    // Сохраняем сессию в локальное хранилище для автовосстановления при сбое
+    localStorage.setItem("rq_saved_pin", pin);
+    localStorage.setItem("rq_saved_team_id", myTeamId);
+    localStorage.setItem("rq_saved_team_name", myTeamName);
 
     document.getElementById("login-view").style.display = "none";
     document.getElementById("game-view").style.display = "flex";
@@ -1298,6 +1325,16 @@ function joinGame() {
     showError("Ошибка подключения: " + e.message);
   });
 }
+
+// Автоматическое восстановление при открытии страницы, если сессия была прервана
+window.addEventListener("DOMContentLoaded", function() {
+  var savedPin = localStorage.getItem("rq_saved_pin");
+  var savedName = localStorage.getItem("rq_saved_team_name");
+  if (savedPin && savedName) {
+    document.getElementById("room-pin").value = savedPin;
+    document.getElementById("team-name").value = savedName;
+  }
+});
 
 function showScoreDeltaAnimation(delta) {
   var popup = document.getElementById("player-score-delta-popup");
@@ -1783,6 +1820,11 @@ function showGameOverScreen(leaderboard) {
   if (aNormal) aNormal.pause();
   stopSyntheticTimer();
   closePlayerChat();
+
+  // Очищаем сессионные данные при завершении игры
+  localStorage.removeItem("rq_saved_pin");
+  localStorage.removeItem("rq_saved_team_id");
+  localStorage.removeItem("rq_saved_team_name");
 
   document.getElementById("game-view").style.display = "none";
   var overView = document.getElementById("game-over-view");
