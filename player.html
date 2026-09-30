@@ -6,14 +6,12 @@
 <meta name="theme-color" content="#030407" />
 <meta name="referrer" content="no-referrer" />
 
-<!-- Запрет кэширования браузером старых файлов -->
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
 
 <title>⚡ Revers Quiz — Экран команды</title>
 
-<!-- Скрипт автоматического сброса кэша при обновлении версии -->
 <script>
 (async function checkClientVersionAndClearCache() {
   try {
@@ -25,22 +23,16 @@
 
     if (remoteVer > localVer) {
       localStorage.setItem("player_app_version", remoteVer);
-      
-      // Очистка Cache Storage
       if ("caches" in window) {
         var keys = await caches.keys();
         await Promise.all(keys.map(function(k) { return caches.delete(k); }));
       }
-      
-      // Обновление Service Worker
       if ("serviceWorker" in navigator) {
         var regs = await navigator.serviceWorker.getRegistrations();
         for (var reg of regs) {
           await reg.update();
         }
       }
-      
-      // Мгновенная перезагрузка без кэша
       window.location.reload(true);
     }
   } catch(e) {
@@ -98,7 +90,6 @@ body {
   position: relative;
 }
 
-/* Анимация изменения счёта */
 .score-delta-overlay {
   position: fixed;
   top: 50%;
@@ -165,7 +156,7 @@ body {
   box-shadow: 
     0 0 40px rgba(255, 0, 85, 0.6),
     0 0 80px rgba(255, 0, 85, 0.3),
-    inset 0 0 25px rgba(255, 0, 85, 0.25);
+    inset 0 0 25px rgba(0, 255, 0, 0.25);
   text-shadow: 0 0 20px rgba(255, 0, 85, 0.8);
 }
 
@@ -1266,6 +1257,7 @@ function stopSyntheticTimer() {
   if (progressAnimFrame) cancelAnimationFrame(progressAnimFrame);
 }
 
+// 1. Немедленное обновление шкалы длительности трека при подготовке нового раунда
 function listenToAudioStream() {
   var audioSyncRef = db.ref("rooms/" + currentRoom + "/audioSync");
   var aRevers = document.getElementById("player-audio-revers");
@@ -1283,10 +1275,11 @@ function listenToAudioStream() {
       }
     }
 
-    if (sync.duration) {
+    // Если пришла новая длительность — сразу обновляем отображение таймера
+    if (sync.duration && sync.duration > 0) {
       currentTrackDuration = sync.duration;
       if (!timerRunning && sync.playAction !== "pause") {
-        updateProgressDisplay(0, currentTrackDuration);
+        updateProgressDisplay(sync.currentTime || 0, currentTrackDuration);
       }
     }
 
@@ -1309,7 +1302,13 @@ function listenToAudioStream() {
       };
     }
 
-    if (sync.playAction === "play_revers" || sync.playAction === "play_timer") {
+    if (sync.playAction === "prepare") {
+      stopSyntheticTimer();
+      aRevers.pause();
+      aNormal.pause();
+      updateProgressDisplay(0, currentTrackDuration);
+
+    } else if (sync.playAction === "play_revers" || sync.playAction === "play_timer") {
       aNormal.pause();
       var targetDelay = Math.max(0, (sync.startAt || Date.now()) - Date.now());
       var duration = sync.duration || currentTrackDuration || 0;
@@ -1369,6 +1368,7 @@ function listenToAudioStream() {
   });
 }
 
+// 2. Строгий контроль закрепления баззера и обработка нажатия ПАС
 function listenToGameState() {
   var roomRef = db.ref("rooms/" + currentRoom);
 
@@ -1381,7 +1381,6 @@ function listenToGameState() {
       return;
     }
 
-    // Если ведущий обновил версию викторины — обновляем страницу участника
     if (data.appVersion && data.appVersion > (parseInt(localStorage.getItem("player_app_version")) || 0)) {
       localStorage.setItem("player_app_version", data.appVersion);
       if ("caches" in window) {
@@ -1483,21 +1482,25 @@ function listenToGameState() {
       roundStatusPill.className = "status-pill playing";
       roundStatusPill.innerHTML = '<i class="fas fa-volume-up"></i> <span>Трек играет!</span>';
       
+      // Если баззер никто не держит
       if (!buzzer.locked) {
         passBtn.style.display = "none";
         
+        // Если эта команда уже спасовала в этом раунде — кнопка остаётся неактивной
         if (haveIPassed) {
           buzzerBtn.disabled = true;
           buzzerBtn.className = "buzzer-3d-btn";
           buzzerBtn.innerHTML = '<i class="fas fa-forward"></i><span>ПАС</span>';
-          hudFooter.innerHTML = "Вы спасовали. Ожидаем соперников...";
+          hudFooter.innerHTML = "Вы спасовали. Ожидаем ответы соперников...";
         } else {
+          // Для остальных команд кнопка открыта для нажатия
           buzzerBtn.disabled = false;
           buzzerBtn.className = "buzzer-3d-btn";
           buzzerBtn.innerHTML = '<i class="fas fa-bolt"></i><span>ЖМИ!</span>';
           hudFooter.innerHTML = "Слушай внимательно и нажимай быстрее!";
         }
       } else {
+        // Баззер нажат: раунд зафиксирован за нажавшей командой
         if (buzzer.pressedBy === myTeamId) {
           buzzerBtn.disabled = true;
           buzzerBtn.className = "buzzer-3d-btn winner-turn";
@@ -1513,6 +1516,7 @@ function listenToGameState() {
             hudFooter.innerHTML = "🏆 <strong style='color:var(--neon-lime)'>Вы успели первым! Называйте трек ведущему!</strong>";
           }
         } else {
+          // Для соперников баззер заблокирован
           passBtn.style.display = "none";
           buzzerBtn.disabled = true;
           buzzerBtn.className = "buzzer-3d-btn";
@@ -1762,6 +1766,7 @@ function pressBuzzer() {
   });
 }
 
+// При нажатии ПАС: баззер освобождается для остальных, но спасовавшая команда заносится в passedBy
 function passTurn() {
   if (!currentRoom || !myTeamId) return;
 
