@@ -164,7 +164,7 @@ body::after {
   box-shadow: 
     0 0 55px rgba(255, 0, 127, 0.7),
     0 0 110px rgba(255, 0, 127, 0.35),
-    inset 0 0 25px rgba(255, 0, 127, 0.4);
+    inset 0 0 25px rgba(0, 255, 127, 0.4);
   text-shadow: 0 0 24px var(--neon-magenta);
 }
 
@@ -1238,7 +1238,6 @@ function showError(msg) {
   err.style.display = "block";
 }
 
-// 1. Предзагрузка системных звуков в память телефона участника
 function bufferSystemSound(audioId, url) {
   if (!url) return;
   var a = document.getElementById(audioId);
@@ -1258,7 +1257,6 @@ function playLocalSystemSound(audioId) {
   }
 }
 
-// 2. Вход в игру с фиксацией присутствия (Presence) и авто-восстановлением
 function joinGame() {
   primeAudioElements();
   enableScreenWakeLock();
@@ -1325,7 +1323,6 @@ function joinGame() {
       });
     }
 
-    // 2. Система присутствия: при дисконнекте помечаем online: false (НЕ УДАЛЯЕМ!)
     var myTeamRef = roomRef.child("teams/" + myTeamId);
     var connectedRef = db.ref(".info/connected");
     connectedRef.on("value", function(snap) {
@@ -1421,7 +1418,7 @@ function stopSyntheticTimer() {
   if (progressAnimFrame) cancelAnimationFrame(progressAnimFrame);
 }
 
-// 1. Прослушивание синхронизации звука (включая триггеры системных звуков)
+// Прослушивание синхронизации звука с мгновенным сбросом оригинала при смене трека
 function listenToAudioStream() {
   var audioSyncRef = db.ref("rooms/" + currentRoom + "/audioSync");
   var aRevers = document.getElementById("player-audio-revers");
@@ -1431,7 +1428,6 @@ function listenToAudioStream() {
     var sync = snapshot.val();
     if (!sync) return;
 
-    // Обработка трансляции системных звуков (winner, lost, ring, gameOver)
     if (sync.systemTrigger && sync.systemTrigger.time > lastHandledSystemSoundTime) {
       lastHandledSystemSoundTime = sync.systemTrigger.time;
       var trigType = sync.systemTrigger.type;
@@ -1461,6 +1457,10 @@ function listenToAudioStream() {
     if (sync.reversUrl && sync.reversUrl !== currentLoadedReversUrl) {
       currentLoadedReversUrl = sync.reversUrl;
 
+      // Мгновенно глушим и сбрасываем старый оригинал
+      aNormal.pause();
+      aNormal.currentTime = 0;
+
       aRevers.src = sync.reversUrl;
       aRevers.load();
 
@@ -1477,14 +1477,20 @@ function listenToAudioStream() {
       };
     }
 
+    // Мгновенная остановка любого звучания по команде ведущего
     if (sync.playAction === "prepare") {
       stopSyntheticTimer();
       aRevers.pause();
+      aRevers.currentTime = 0;
       aNormal.pause();
+      aNormal.currentTime = 0;
       updateProgressDisplay(0, currentTrackDuration);
 
     } else if (sync.playAction === "play_revers" || sync.playAction === "play_timer") {
+      // Гарантированно глушим оригинал перед реверсом
       aNormal.pause();
+      aNormal.currentTime = 0;
+
       var targetDelay = Math.max(0, (sync.startAt || Date.now()) - Date.now());
       var duration = sync.duration || currentTrackDuration || 0;
 
@@ -1500,6 +1506,8 @@ function listenToAudioStream() {
 
     } else if (sync.playAction === "resume_revers" || sync.playAction === "resume_timer") {
       aNormal.pause();
+      aNormal.currentTime = 0;
+
       var resumeTime = sync.currentTime || 0;
       var resumeDelay = Math.max(0, (sync.startAt || Date.now()) - Date.now());
       var rDur = sync.duration || currentTrackDuration || 0;
@@ -1523,19 +1531,21 @@ function listenToAudioStream() {
 
     } else if (sync.playAction === "play_normal") {
       aRevers.pause();
+      aRevers.currentTime = 0;
       stopSyntheticTimer();
+
       var normDelay = Math.max(0, (sync.startAt || Date.now()) - Date.now());
       setTimeout(function() {
         if (isStreamAudioAllowed) {
           aNormal.currentTime = 0;
-          aNormal.play().catch(function() {});
+          aNormal.play().catch(function(e) { console.warn("Оригинал на телефоне:", e); });
         }
       }, normDelay);
 
     } else if (sync.playAction === "stop") {
       aRevers.pause();
-      aNormal.pause();
       aRevers.currentTime = 0;
+      aNormal.pause();
       aNormal.currentTime = 0;
       stopSyntheticTimer();
       updateProgressDisplay(0, currentTrackDuration);
@@ -1573,7 +1583,6 @@ function listenToGameState() {
     roomChatMode = data.chatMode || "disabled";
     isStreamAudioAllowed = (data.streamAudio === true);
 
-    // 1. Предбуферизация системных звуков на клиенте участника
     if (data.systemSounds && isStreamAudioAllowed) {
       bufferSystemSound("player-sound-winner", data.systemSounds.winner);
       bufferSystemSound("player-sound-lost", data.systemSounds.lost);
