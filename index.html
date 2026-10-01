@@ -1415,7 +1415,7 @@ button:active {
 </div>
 
 <audio id="audio-revers" preload="auto" playsinline style="display:none;"></audio>
-<audio id="audio-normal" preload="auto" playsinline style="display:none;"></audio>
+<audio id="audio-normal" preload="none" playsinline style="display:none;"></audio>
 <audio id="audio-winner" preload="auto" playsinline style="display:none;"></audio>
 <audio id="audio-lost" preload="auto" playsinline style="display:none;"></audio>
 <audio id="audio-ring" preload="auto" playsinline style="display:none;"></audio>
@@ -2014,7 +2014,7 @@ function sendHostChatMessage() {
   if (!text || !roomRef) return;
 
   roomRef.child("chat").push({
-    author: "🎙️️ Ведущий",
+    author: "🎙 Ведущий",
     text: text,
     isHost: true,
     time: Date.now()
@@ -2264,12 +2264,56 @@ function playSound(type) {
   }, delayMs);
 }
 
-// Запуск оригинала с надёжным назначением URL
-function startOriginalPlayback() {
+// Запуск оригинала с динамическим получением свежей ссылки при сбое
+async function playNormalWithAutoRecovery(audioEl, normalUrl, trackName) {
+  var normalIcon = document.getElementById("normal-play-icon");
+
+  try {
+    if (audioEl.src !== normalUrl) {
+      audioEl.src = normalUrl;
+      audioEl.load();
+    }
+    audioEl.currentTime = 0;
+    await audioEl.play();
+    if (normalIcon) normalIcon.classList.replace("fa-play", "fa-pause");
+    updateNormalProgress();
+    return true;
+  } catch (err) {
+    console.warn("Первая попытка воспроизведения не удалась, обновляем ссылку с Яндекс.Диска...", err);
+
+    // Точечное получение свежей прямой ссылки на файл
+    try {
+      var folder = selectedFolder || (mixMode ? "/Русские" : "");
+      var targetPath = folder + "/" + trackName + "_NORMAL.mp3";
+      var url = "https://cloud-api.yandex.net/v1/disk/public/resources/download?public_key=" + encodeURIComponent(PUBLIC_KEY) + "&path=" + encodeURIComponent(targetPath);
+      var res = await fetch(url);
+      if (!res.ok && mixMode) {
+        targetPath = "/Зарубежные/" + trackName + "_NORMAL.mp3";
+        url = "https://cloud-api.yandex.net/v1/disk/public/resources/download?public_key=" + encodeURIComponent(PUBLIC_KEY) + "&path=" + encodeURIComponent(targetPath);
+        res = await fetch(url);
+      }
+      var data = await res.json();
+      if (data && data.href) {
+        audioEl.src = data.href;
+        audioEl.load();
+        audioEl.currentTime = 0;
+        await audioEl.play();
+        if (normalIcon) normalIcon.classList.replace("fa-play", "fa-pause");
+        updateNormalProgress();
+        if (files[trackName]) files[trackName].normal = data.href;
+        return true;
+      }
+    } catch (recoverErr) {
+      console.error("Восстановление ссылки не удалось:", recoverErr);
+    }
+    return false;
+  }
+}
+
+async function startOriginalPlayback() {
   var p = document.getElementById("original-player");
   var b = document.getElementById("normal-toggle");
   var a = document.getElementById("audio-normal");
-  var i = document.getElementById("normal-play-icon");
 
   var trackObj = files[currentTrackName];
   if (!currentTrackName || !trackObj || !trackObj.normal) {
@@ -2280,27 +2324,12 @@ function startOriginalPlayback() {
   if (p) p.style.display = "block";
   if (b) b.textContent = "Скрыть оригинал";
 
-  if (a.src !== trackObj.normal) {
-    a.src = trackObj.normal;
-    a.load();
-  }
-
-  a.currentTime = 0;
-  var playPromise = a.play();
-  if (playPromise !== undefined) {
-    playPromise.then(function() {
-      if (i) i.classList.replace("fa-play", "fa-pause");
-      updateNormalProgress();
-
-      if (isInteractiveMode && roomRef && streamAudioToPlayers) {
-        roomRef.child("audioSync").update({
-          playAction: "play_normal",
-          currentTime: 0,
-          startAt: Date.now() + 150
-        });
-      }
-    }).catch(function(err) {
-      console.warn("Автовоспроизведение оригинала заблокировано браузером:", err);
+  var success = await playNormalWithAutoRecovery(a, trackObj.normal, currentTrackName);
+  if (success && isInteractiveMode && roomRef && streamAudioToPlayers) {
+    roomRef.child("audioSync").update({
+      playAction: "play_normal",
+      currentTime: 0,
+      startAt: Date.now() + 150
     });
   }
 }
@@ -2319,7 +2348,6 @@ function updateFolderSection() {
   }
 }
 
-// Загрузка треков с умной нормализацией пар REVERS / NORMAL
 async function fetchFolderFiles(path) {
   var limit = 100;
   var offset = 0;
@@ -2341,7 +2369,6 @@ async function fetchFolderFiles(path) {
 
     var mp3Files = allItems.filter(function(f) { return f.name && f.name.toLowerCase().endsWith('.mp3'); });
 
-    // Нормализация и сопоставление
     mp3Files.forEach(function(file) {
       var rawName = file.name.trim();
       var isRevers = /_REVERS\.mp3$/i.test(rawName);
@@ -2363,7 +2390,6 @@ async function fetchFolderFiles(path) {
       }
     });
 
-    // Резервный поиск недостающих пар, если имена имели мелкие несовпадения
     var keys = Object.keys(filesMap);
     keys.forEach(function(k) {
       if (!filesMap[k].normal) {
@@ -2598,16 +2624,6 @@ function playTrack(name) {
 
       toggleRevers();
     };
-
-    // Предзагрузка нормального трека
-    if (track.normal) {
-      audioNormal.src = track.normal;
-      audioNormal.preload = "auto";
-      audioNormal.load();
-      audioNormal.onloadedmetadata = function() {
-        document.getElementById("normal-duration").textContent = formatTime(audioNormal.duration);
-      };
-    }
   }
   updateShuffleButtonState();
   updateNextTrackButton();
@@ -2870,8 +2886,8 @@ function hideOriginal() {
   document.getElementById("normal-play-icon").classList.replace("fa-pause", "fa-play");
 }
 
-// Запуск оригинала из плеера с гарантированной привязкой источника трека
-function toggleNormal() {
+// Запуск оригинала из плеера с авто-восстановлением
+async function toggleNormal() {
   var a = document.getElementById("audio-normal");
   var r = document.getElementById("audio-revers");
   var i = document.getElementById("normal-play-icon");
@@ -2897,12 +2913,6 @@ function toggleNormal() {
       return;
     }
 
-    // Всегда жестко привязываем URL перед запуском
-    if (a.src !== trackObj.normal) {
-      a.src = trackObj.normal;
-      a.load();
-    }
-
     if (isInteractiveMode && roomRef) {
       roomRef.update({
         status: "reveal",
@@ -2911,21 +2921,12 @@ function toggleNormal() {
       });
     }
 
-    var playPromise = a.play();
-    if (playPromise !== undefined) {
-      playPromise.then(function() {
-        if (i) i.classList.replace("fa-play", "fa-pause");
-        updateNormalProgress();
-
-        if (isInteractiveMode && roomRef && streamAudioToPlayers) {
-          roomRef.child("audioSync").update({
-            playAction: "play_normal",
-            currentTime: 0,
-            startAt: Date.now() + 150
-          });
-        }
-      }).catch(function(err) {
-        console.warn("Воспроизведение оригинала заблокировано:", err);
+    var success = await playNormalWithAutoRecovery(a, trackObj.normal, currentTrackName);
+    if (success && isInteractiveMode && roomRef && streamAudioToPlayers) {
+      roomRef.child("audioSync").update({
+        playAction: "play_normal",
+        currentTime: 0,
+        startAt: Date.now() + 150
       });
     }
   } else {
