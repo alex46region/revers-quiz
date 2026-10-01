@@ -1462,7 +1462,6 @@ function stopSyntheticTimer() {
   if (progressAnimFrame) cancelAnimationFrame(progressAnimFrame);
 }
 
-// 1. Потоковая загрузка аудио у участников: реверс стартует сразу, оригинал подгружается следом
 function listenToAudioStream() {
   var audioSyncRef = db.ref("rooms/" + currentRoom + "/audioSync");
   var aRevers = document.getElementById("player-audio-revers");
@@ -1499,7 +1498,6 @@ function listenToAudioStream() {
     if (sync.reversUrl && sync.reversUrl !== currentLoadedReversUrl) {
       currentLoadedReversUrl = sync.reversUrl;
 
-      // Мгновенный сброс старого оригинала
       aNormal.pause();
       aNormal.currentTime = 0;
       aNormal.src = "";
@@ -1509,7 +1507,6 @@ function listenToAudioStream() {
       aRevers.preload = "auto";
       aRevers.load();
 
-      // Оригинал буферизуется только когда реверс заиграл
       aRevers.onplaying = function() {
         aRevers.onplaying = null;
         if (sync.normalUrl) {
@@ -1948,13 +1945,27 @@ function sendPlayerChatMessage() {
   document.getElementById("player-emoji-popover").style.display = "none";
 }
 
+// 2. ИСПРАВЛЕНО: Полная очистка буферов плееров при показе экрана завершения игры
 function showGameOverScreen(leaderboard) {
   if (gameOverTimer) return;
 
   var aRevers = document.getElementById("player-audio-revers");
   var aNormal = document.getElementById("player-audio-normal");
-  if (aRevers) aRevers.pause();
-  if (aNormal) aNormal.pause();
+
+  // Жёстко глушим и сбрасываем треки оригинала и реверса, чтобы они не играли поверх победного звука
+  if (aRevers) {
+    aRevers.pause();
+    aRevers.currentTime = 0;
+    aRevers.removeAttribute("src");
+    aRevers.load();
+  }
+  if (aNormal) {
+    aNormal.pause();
+    aNormal.currentTime = 0;
+    aNormal.removeAttribute("src");
+    aNormal.load();
+  }
+
   stopSyntheticTimer();
   closePlayerChat();
 
