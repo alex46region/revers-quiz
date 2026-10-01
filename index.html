@@ -1756,6 +1756,7 @@ function initHostRoom() {
     buzzer: { locked: true, pressedBy: null, passedBy: [] },
     revealedTrack: "",
     systemSounds: soundUrls,
+    timerState: { active: false, value: 0 },
     audioSync: {
       trackSessionId: "",
       reversUrl: "",
@@ -2298,7 +2299,7 @@ function playSound(type) {
   if (url && audio) {
     audio.src = url;
     audio.currentTime = 0;
-    audio.play().catch(function(e) { console.warn(e); });
+    audio.play().catch(function() {});
   } else {
     showActionNotification(type === 'winner' ? '🎉 Правильно!' : '😢 Мимо!');
   }
@@ -2629,7 +2630,6 @@ function purgeAudioBuffer(audioEl) {
   }
 }
 
-// Запуск трека: немедленное глушение старого оригинала и на стороне ведущего, и у участников
 function playTrack(name) {
   hideBuzzerAlert();
   if (originalTimeout) {
@@ -2671,7 +2671,6 @@ function playTrack(name) {
 
     var newTrackSessionId = "track_" + Date.now();
 
-    // Заранее разогреваем оригинал в буфер ведущего
     if (track.normal) {
       audioNormal.src = track.normal;
       audioNormal.preload = "auto";
@@ -2693,10 +2692,10 @@ function playTrack(name) {
         roomRef.update({
           status: "idle",
           revealedTrack: "",
+          timerState: { active: false, value: 0 },
           buzzer: { locked: false, pressedBy: null, pressedByName: null, passedBy: [] }
         });
 
-        // Моментально командуем смартфонам заглушить старые звуки и готовить новый трек
         roomRef.child("audioSync").set({
           trackSessionId: newTrackSessionId,
           reversUrl: track.revers || "",
@@ -2794,11 +2793,12 @@ function startSynchronizedPlayback() {
     clearTeamHighlight();
     roomRef.update({
       status: "playing",
-      revealedTrack: ""
+      revealedTrack: "",
+      timerState: { active: false, value: 0 }
     });
 
     roomRef.child("audioSync").update({
-      playAction: streamAudioToPlayers ? "play_revers" : "play_timer",
+      playAction: streamAudioToPlayers ? "play_revers" : "play_silent",
       startAt: serverStartAt,
       duration: audio.duration || 0,
       currentTime: 0
@@ -2825,11 +2825,12 @@ function resumeSynchronizedPlayback() {
 
   if (isInteractiveMode && roomRef) {
     roomRef.update({
-      status: "playing"
+      status: "playing",
+      timerState: { active: false, value: 0 }
     });
 
     roomRef.child("audioSync").update({
-      playAction: streamAudioToPlayers ? "resume_revers" : "resume_timer",
+      playAction: streamAudioToPlayers ? "resume_revers" : "resume_silent",
       currentTime: audio.currentTime,
       duration: audio.duration || 0,
       startAt: serverStartAt
@@ -3079,7 +3080,7 @@ function endQuiz() {
   var aGameOver = document.getElementById("audio-game-over");
   if (aGameOver && soundUrls.gameOver) {
     aGameOver.currentTime = 0;
-    aGameOver.play().catch(function(e) { console.warn(e); });
+    aGameOver.play().catch(function() {});
   }
 
   purgeAudioBuffer(document.getElementById("audio-revers"));
@@ -3232,6 +3233,7 @@ function setSettings() {
   }
 }
 
+// Таймер ведущего: звук только у ведущего, участникам передаётся только состояние
 function startTimer() {
   if (isTimerActive) return;
   stopTimerSounds();
@@ -3245,21 +3247,30 @@ function startTimer() {
   var aStart = document.getElementById("audio-start");
   var aFinal = document.getElementById("audio-final");
 
+  // Звук играет строго у ведущего
   if (soundUrls.start && aStart) {
     aStart.src = soundUrls.start;
     aStart.currentTime = 0;
     aStart.play().catch(function() {});
   }
 
-  if (isInteractiveMode && roomRef && streamAudioToPlayers) {
-    roomRef.child("audioSync").update({
-      systemTrigger: { type: "start", time: Date.now() }
+  // Участникам транслируем только статус таймера и число секунд
+  if (isInteractiveMode && roomRef) {
+    roomRef.child("timerState").set({
+      active: true,
+      value: timerValue
     });
   }
 
   timerInterval = setInterval(function() {
     timerValue--;
     updateTimerDisplay();
+
+    if (isInteractiveMode && roomRef) {
+      roomRef.child("timerState").update({
+        value: timerValue
+      });
+    }
 
     if (timerValue === 1) {
       if (aStart) {
@@ -3275,16 +3286,14 @@ function startTimer() {
         };
         aFinal.play().catch(function() {});
       }
-      if (isInteractiveMode && roomRef && streamAudioToPlayers) {
-        roomRef.child("audioSync").update({
-          systemTrigger: { type: "final", time: Date.now() }
-        });
-      }
     }
 
     if (timerValue <= 0) {
       clearInterval(timerInterval);
       timerInterval = null;
+      if (isInteractiveMode && roomRef) {
+        roomRef.child("timerState").set({ active: false, value: 0 });
+      }
       if (!soundUrls.final && circle) {
         isTimerActive = false;
         circle.classList.remove("active");
@@ -3314,6 +3323,11 @@ function stopTimer() {
   }
   isTimerActive = false;
   stopTimerSounds();
+
+  if (isInteractiveMode && roomRef) {
+    roomRef.child("timerState").set({ active: false, value: 0 });
+  }
+
   var circle = document.getElementById("timer-circle");
   if (circle) {
     circle.classList.remove("active");
