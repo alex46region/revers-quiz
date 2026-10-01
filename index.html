@@ -786,7 +786,6 @@ button:active {
   opacity: 1;
 }
 
-/* Окно настроек */
 #settings-modal, #qr-modal {
   position: fixed;
   inset: 0;
@@ -1434,7 +1433,7 @@ button:active {
   </div>
 </div>
 
-<!-- Аудио-элементы -->
+<!-- Аудио-элементы ведущего -->
 <audio id="audio-revers" preload="auto" playsinline style="display:none;"></audio>
 <audio id="audio-normal" preload="auto" playsinline style="display:none;"></audio>
 <audio id="audio-winner" preload="auto" playsinline style="display:none;"></audio>
@@ -1776,7 +1775,6 @@ function initHostRoom() {
   initEmojiPicker("host-emoji-popover", "host-chat-input");
   listenToChatMessages();
 
-  // 2. Отслеживание подключения команд и их онлайн-статуса
   roomRef.child("teams").on("value", function(snapshot) {
     var rawTeams = snapshot.val() || {};
     var cloudKeys = Object.keys(rawTeams);
@@ -1788,7 +1786,7 @@ function initHostRoom() {
           name: rawTeams[key].name || "Команда",
           score: typeof rawTeams[key].score !== 'undefined' ? rawTeams[key].score : 0,
           readyToPlay: rawTeams[key].readyToPlay || false,
-          online: rawTeams[key].online !== false // true по умолчанию
+          online: rawTeams[key].online !== false
         };
       });
     } else {
@@ -1806,7 +1804,6 @@ function initHostRoom() {
   });
 }
 
-// 2. Визуализация онлайна/оффлайна команд в списке ведущего
 function renderHostTeamsList() {
   var container = document.getElementById("host-teams-container");
   if (!container) return;
@@ -2252,7 +2249,6 @@ function saveState() {
   }
 }
 
-// 1. Загрузка системных звуков и их трансляция участникам
 async function preloadAllSounds() {
   try {
     var rootUrl = "https://cloud-api.yandex.net/v1/disk/public/resources?public_key=" + encodeURIComponent(PUBLIC_KEY) + "&limit=100";
@@ -2276,7 +2272,6 @@ async function preloadAllSounds() {
       }
     });
 
-    // Трансляция системных звуков в комнату для буферизации на смартфонах
     if (isInteractiveMode && roomRef) {
       roomRef.child("systemSounds").set(soundUrls);
     }
@@ -2285,7 +2280,6 @@ async function preloadAllSounds() {
   }
 }
 
-// 1. Проигрывание звука с трансляцией триггера на телефоны участников
 function playSound(type) {
   var url = type === 'winner' ? soundUrls.winner : soundUrls.lost;
   var audio = document.getElementById(type === 'winner' ? 'audio-winner' : 'audio-lost');
@@ -2309,7 +2303,6 @@ function playSound(type) {
     showActionNotification(type === 'winner' ? '🎉 Правильно!' : '😢 Мимо!');
   }
 
-  // Трансляция события звука участникам
   if (isInteractiveMode && roomRef) {
     roomRef.update({
       status: "reveal",
@@ -2336,7 +2329,6 @@ function playSound(type) {
   }, delayMs);
 }
 
-// Запуск оригинала с авто-восстановлением ссылки
 async function playNormalWithAutoRecovery(audioEl, normalUrl, trackName) {
   var normalIcon = document.getElementById("normal-play-icon");
 
@@ -2637,6 +2629,7 @@ function purgeAudioBuffer(audioEl) {
   }
 }
 
+// Запуск трека: немедленное глушение старого оригинала и на стороне ведущего, и у участников
 function playTrack(name) {
   hideBuzzerAlert();
   if (originalTimeout) {
@@ -2678,6 +2671,7 @@ function playTrack(name) {
 
     var newTrackSessionId = "track_" + Date.now();
 
+    // Заранее разогреваем оригинал в буфер ведущего
     if (track.normal) {
       audioNormal.src = track.normal;
       audioNormal.preload = "auto";
@@ -2702,6 +2696,7 @@ function playTrack(name) {
           buzzer: { locked: false, pressedBy: null, pressedByName: null, passedBy: [] }
         });
 
+        // Моментально командуем смартфонам заглушить старые звуки и готовить новый трек
         roomRef.child("audioSync").set({
           trackSessionId: newTrackSessionId,
           reversUrl: track.revers || "",
@@ -2771,10 +2766,6 @@ function toggleRevers() {
 
     if (audio.currentTime > 0) {
       resumeSynchronizedPlayback();
-    } else if (isInteractiveMode && streamAudioToPlayers && teamsData.length > 0) {
-      waitForAllDevicesReady(audio, function() {
-        startSynchronizedPlayback();
-      });
     } else {
       startSynchronizedPlayback();
     }
@@ -2792,42 +2783,6 @@ function toggleRevers() {
   }
   updateShuffleButtonState();
   updateNextTrackButton();
-}
-
-function waitForAllDevicesReady(localAudio, callback) {
-  var isDone = false;
-  var fallbackTimer = setTimeout(function() {
-    if (!isDone) {
-      isDone = true;
-      callback();
-    }
-  }, 2500);
-
-  function checkEverythingReady() {
-    if (isDone) return;
-    
-    var hostBuffered = localAudio.readyState >= 3;
-    var teamsReady = true;
-    teamsData.forEach(function(t) {
-      if (t.online !== false && !t.readyToPlay) teamsReady = false;
-    });
-
-    if (hostBuffered && teamsReady) {
-      isDone = true;
-      clearTimeout(fallbackTimer);
-      callback();
-    }
-  }
-
-  roomRef.child("teams").on("value", function() {
-    checkEverythingReady();
-  });
-
-  localAudio.oncanplay = function() {
-    checkEverythingReady();
-  };
-
-  checkEverythingReady();
 }
 
 function startSynchronizedPlayback() {
@@ -2924,7 +2879,6 @@ function clearTeamHighlight() {
   });
 }
 
-// 1. Начисление очков с трансляцией триггера звука на телефоны
 function changeScore(teamId, delta) {
   var team = teamsData.find(function(t) { return t.id === teamId; });
   if (!team) return;
@@ -3118,7 +3072,6 @@ function updateTrackCounter() {
   updateNextTrackButton();
 }
 
-// 1. Завершение игры с трансляцией триггера Game Over на телефоны
 function endQuiz() {
   localStorage.removeItem('reversQuiz');
   stopAllSounds();
@@ -3298,7 +3251,6 @@ function startTimer() {
     aStart.play().catch(function() {});
   }
 
-  // Трансляция звука старта таймера на телефоны
   if (isInteractiveMode && roomRef && streamAudioToPlayers) {
     roomRef.child("audioSync").update({
       systemTrigger: { type: "start", time: Date.now() }
