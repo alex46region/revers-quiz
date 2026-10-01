@@ -1414,8 +1414,9 @@ button:active {
   </div>
 </div>
 
+<!-- Динамические аудио-элементы -->
 <audio id="audio-revers" preload="auto" playsinline style="display:none;"></audio>
-<audio id="audio-normal" preload="none" playsinline style="display:none;"></audio>
+<audio id="audio-normal" preload="auto" playsinline style="display:none;"></audio>
 <audio id="audio-winner" preload="auto" playsinline style="display:none;"></audio>
 <audio id="audio-lost" preload="auto" playsinline style="display:none;"></audio>
 <audio id="audio-ring" preload="auto" playsinline style="display:none;"></audio>
@@ -1600,6 +1601,19 @@ var soundUrls = {
   final: null,
   gameOver: null
 };
+
+// Функция создания/пересоздания чистого плеера без багов кэша
+function ensureAudioPlayer(id) {
+  var a = document.getElementById(id);
+  if (!a) {
+    a = document.createElement("audio");
+    a.id = id;
+    a.style.display = "none";
+    a.setAttribute("playsinline", "true");
+    document.body.appendChild(a);
+  }
+  return a;
+}
 
 function playMessageNotificationSound() {
   try {
@@ -2269,7 +2283,7 @@ async function playNormalWithAutoRecovery(audioEl, normalUrl, trackName) {
   var normalIcon = document.getElementById("normal-play-icon");
 
   try {
-    if (audioEl.src !== normalUrl) {
+    if (!audioEl.src || audioEl.src !== normalUrl) {
       audioEl.src = normalUrl;
       audioEl.load();
     }
@@ -2279,9 +2293,8 @@ async function playNormalWithAutoRecovery(audioEl, normalUrl, trackName) {
     updateNormalProgress();
     return true;
   } catch (err) {
-    console.warn("Первая попытка воспроизведения не удалась, обновляем ссылку с Яндекс.Диска...", err);
+    console.warn("Повторная попытка: запрос свежей ссылки оригинала с Яндекс.Диска...", err);
 
-    // Точечное получение свежей прямой ссылки на файл
     try {
       var folder = selectedFolder || (mixMode ? "/Русские" : "");
       var targetPath = folder + "/" + trackName + "_NORMAL.mp3";
@@ -2294,10 +2307,12 @@ async function playNormalWithAutoRecovery(audioEl, normalUrl, trackName) {
       }
       var data = await res.json();
       if (data && data.href) {
-        audioEl.src = data.href;
-        audioEl.load();
-        audioEl.currentTime = 0;
-        await audioEl.play();
+        // Пересоздаём аудио-элемент начисто во избежание бага кэша декодера
+        var freshAudio = ensureAudioPlayer("audio-normal");
+        freshAudio.src = data.href;
+        freshAudio.load();
+        freshAudio.currentTime = 0;
+        await freshAudio.play();
         if (normalIcon) normalIcon.classList.replace("fa-play", "fa-pause");
         updateNormalProgress();
         if (files[trackName]) files[trackName].normal = data.href;
@@ -2313,7 +2328,7 @@ async function playNormalWithAutoRecovery(audioEl, normalUrl, trackName) {
 async function startOriginalPlayback() {
   var p = document.getElementById("original-player");
   var b = document.getElementById("normal-toggle");
-  var a = document.getElementById("audio-normal");
+  var a = ensureAudioPlayer("audio-normal");
 
   var trackObj = files[currentTrackName];
   if (!currentTrackName || !trackObj || !trackObj.normal) {
@@ -2348,6 +2363,7 @@ function updateFolderSection() {
   }
 }
 
+// Загрузка треков с полной нормализацией пар REVERS / NORMAL
 async function fetchFolderFiles(path) {
   var limit = 100;
   var offset = 0;
@@ -2558,11 +2574,11 @@ function generateSongButtons() {
 function purgeAudioBuffer(audioEl) {
   if (audioEl) {
     audioEl.pause();
-    audioEl.removeAttribute("src");
-    audioEl.load();
+    audioEl.currentTime = 0;
   }
 }
 
+// Запуск трека: ГАРАНТИРОВАННАЯ ПРЕДБУФЕРИЗАЦИЯ ОРИГИНАЛА
 function playTrack(name) {
   hideBuzzerAlert();
   if (originalTimeout) {
@@ -2577,8 +2593,9 @@ function playTrack(name) {
     clearTeamHighlight();
   }
 
-  var audioRevers = document.getElementById("audio-revers");
-  var audioNormal = document.getElementById("audio-normal");
+  var audioRevers = ensureAudioPlayer("audio-revers");
+  var audioNormal = ensureAudioPlayer("audio-normal");
+  
   purgeAudioBuffer(audioRevers);
   purgeAudioBuffer(audioNormal);
 
@@ -2596,6 +2613,17 @@ function playTrack(name) {
 
     var newTrackSessionId = "track_" + Date.now();
 
+    // 1. Предварительная буферизация оригинала: загружаем метаданные и греем буфер
+    if (track.normal) {
+      audioNormal.src = track.normal;
+      audioNormal.preload = "auto";
+      audioNormal.load();
+      audioNormal.onloadedmetadata = function() {
+        document.getElementById("normal-duration").textContent = formatTime(audioNormal.duration);
+      };
+    }
+
+    // 2. Метаданные реверса
     audioRevers.onloadedmetadata = function() {
       var dur = audioRevers.duration || 0;
       document.getElementById("revers-duration").textContent = formatTime(dur);
@@ -2886,9 +2914,9 @@ function hideOriginal() {
   document.getElementById("normal-play-icon").classList.replace("fa-pause", "fa-play");
 }
 
-// Запуск оригинала из плеера с авто-восстановлением
+// Запуск оригинала из плеера с гарантированной привязкой источника трека
 async function toggleNormal() {
-  var a = document.getElementById("audio-normal");
+  var a = ensureAudioPlayer("audio-normal");
   var r = document.getElementById("audio-revers");
   var i = document.getElementById("normal-play-icon");
 
@@ -3112,11 +3140,6 @@ function openSettings() {
     statusEl.textContent = "Текущая версия: v" + currentVer;
   }
   if (sMod) sMod.classList.add("active");
-}
-
-function closeSettings() {
-  var sMod = document.getElementById("settings-modal");
-  if (sMod) sMod.classList.remove("active");
 }
 
 function setSettings() {
