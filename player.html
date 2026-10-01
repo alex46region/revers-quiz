@@ -100,7 +100,6 @@ body::after {
   z-index: 9999;
 }
 
-/* Компактный аккуратный визуальный таймер для участников */
 .player-countdown-badge {
   position: absolute;
   top: 14px;
@@ -140,7 +139,6 @@ body::after {
   100% { transform: translateX(-50%) scale(1.06); }
 }
 
-/* Всплывающий индикатор изменения счёта */
 .score-delta-overlay {
   position: fixed;
   top: 50%;
@@ -205,7 +203,7 @@ body::after {
   box-shadow: 
     0 0 55px rgba(255, 0, 127, 0.7),
     0 0 110px rgba(255, 0, 127, 0.35),
-    inset 0 0 25px rgba(255, 0, 127, 0.4);
+    inset 0 0 25px rgba(0, 255, 127, 0.4);
   text-shadow: 0 0 24px var(--neon-magenta);
 }
 
@@ -220,7 +218,6 @@ body::after {
   text-shadow: 0 0 10px rgba(255,255,255,0.7);
 }
 
-/* Окно авторизации / входа в игру */
 .login-wrap {
   margin: auto;
   width: 100%;
@@ -332,7 +329,6 @@ body::after {
   display: none;
 }
 
-/* Игровой интерфейс */
 #game-view {
   display: none;
   flex-direction: column;
@@ -345,7 +341,6 @@ body::after {
   position: relative;
 }
 
-/* Табло очков */
 .top-action-bar {
   display: flex;
   gap: 8px;
@@ -464,7 +459,6 @@ body::after {
   display: none;
 }
 
-/* Статус раунда и шкала времени */
 .player-status-wrapper {
   display: flex;
   flex-direction: column;
@@ -534,7 +528,6 @@ body::after {
   font-weight: 700;
 }
 
-/* Плашка показа оригинала: ретро-кассета */
 .revealed-track-box {
   background: linear-gradient(135deg, rgba(255, 0, 127, 0.18) 0%, rgba(0, 243, 255, 0.12) 100%);
   border: 2px solid var(--neon-cyan);
@@ -632,7 +625,6 @@ body::after {
   text-shadow: 0 0 15px rgba(0, 243, 255, 0.6);
 }
 
-/* Кнопка-баззер */
 .buzzer-stage {
   flex: 1;
   display: flex;
@@ -753,7 +745,6 @@ body::after {
   color: #fff;
 }
 
-/* Экран завершения игры */
 #game-over-view {
   display: none;
   flex-direction: column;
@@ -838,7 +829,6 @@ body::after {
   font-size: 1.2em;
 }
 
-/* Модальное окно чата */
 #player-chat-modal {
   position: fixed;
   inset: 0;
@@ -1029,9 +1019,9 @@ body::after {
 </head>
 <body>
 
-<!-- Аудиоэлементы участника (только музыка и игровые сигналы) -->
+<!-- Аудиоэлементы участника -->
 <audio id="player-audio-revers" preload="auto" playsinline crossorigin="anonymous" style="display:none;"></audio>
-<audio id="player-audio-normal" preload="auto" playsinline crossorigin="anonymous" style="display:none;"></audio>
+<audio id="player-audio-normal" preload="none" playsinline crossorigin="anonymous" style="display:none;"></audio>
 <audio id="player-sound-winner" preload="auto" playsinline style="display:none;"></audio>
 <audio id="player-sound-lost" preload="auto" playsinline style="display:none;"></audio>
 <audio id="player-sound-ring" preload="auto" playsinline style="display:none;"></audio>
@@ -1472,7 +1462,7 @@ function stopSyntheticTimer() {
   if (progressAnimFrame) cancelAnimationFrame(progressAnimFrame);
 }
 
-// Прослушивание звука: реверс играет строго при действиях play_revers / resume_revers
+// 1. Потоковая загрузка аудио у участников: реверс стартует сразу, оригинал подгружается следом
 function listenToAudioStream() {
   var audioSyncRef = db.ref("rooms/" + currentRoom + "/audioSync");
   var aRevers = document.getElementById("player-audio-revers");
@@ -1509,16 +1499,25 @@ function listenToAudioStream() {
     if (sync.reversUrl && sync.reversUrl !== currentLoadedReversUrl) {
       currentLoadedReversUrl = sync.reversUrl;
 
+      // Мгновенный сброс старого оригинала
       aNormal.pause();
       aNormal.currentTime = 0;
+      aNormal.src = "";
+      aNormal.preload = "none";
 
       aRevers.src = sync.reversUrl;
+      aRevers.preload = "auto";
       aRevers.load();
 
-      if (sync.normalUrl) {
-        aNormal.src = sync.normalUrl;
-        aNormal.load();
-      }
+      // Оригинал буферизуется только когда реверс заиграл
+      aRevers.onplaying = function() {
+        aRevers.onplaying = null;
+        if (sync.normalUrl) {
+          aNormal.src = sync.normalUrl;
+          aNormal.preload = "auto";
+          aNormal.load();
+        }
+      };
 
       aRevers.oncanplay = function() {
         if (currentRoom && myTeamId) {
@@ -1658,7 +1657,6 @@ function listenToGameState() {
       bufferSystemSound("player-sound-game-over", data.systemSounds.gameOver);
     }
 
-    // Визуальное отображение таймера на экране участников
     var timerBadge = document.getElementById("player-timer-badge");
     var timerNum = document.getElementById("player-timer-badge-num");
     var timerState = data.timerState || {};
