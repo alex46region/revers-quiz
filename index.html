@@ -778,6 +778,7 @@ button:active {
   opacity: 1;
 }
 
+/* Окно настроек */
 #settings-modal, #qr-modal {
   position: fixed;
   inset: 0;
@@ -789,7 +790,7 @@ button:active {
   z-index: 2000;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.2s;
+  transition: opacity 0.2s ease;
 }
 
 #settings-modal.active, #qr-modal.active {
@@ -900,8 +901,19 @@ button:active {
   background: transparent;
   border: none;
   color: var(--text-dim);
-  font-size: 1.3em;
+  font-size: 1.5em;
+  line-height: 1;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
+  z-index: 10;
+}
+
+.close-modal:hover {
+  color: #fff;
 }
 
 .qr-modal-content {
@@ -1262,7 +1274,7 @@ button:active {
       </div>
 
       <div class="online-link-area">
-        <span style="font-size:0.8em; color:var(--text-dim);">Быстрая ссылка:</span>
+        <span style="font-size:0.8em; color:var(--text-dim); text-transform:uppercase;">Быстрая ссылка:</span>
         <div class="link-actions">
           <div class="copy-link-btn" onclick="copyPlayerLink()" title="Нажмите, чтобы скопировать">
             <i class="fas fa-copy"></i> https://clck.ru/3WBWUq
@@ -1430,9 +1442,10 @@ button:active {
 
 <div id="timer-circle">0</div>
 
-<div id="settings-modal">
-  <div class="modal-content settings-redesign">
-    <button class="close-modal" onclick="closeSettings()">&times;</button>
+<!-- Модальное окно настроек -->
+<div id="settings-modal" onclick="if(event.target === this) closeSettings();">
+  <div class="modal-content settings-redesign" onclick="event.stopPropagation();">
+    <button type="button" class="close-modal" onclick="closeSettings()">&times;</button>
     
     <div class="settings-header">
       <i class="fas fa-sliders-h" style="color:var(--neon-cyan); font-size:1.2em;"></i>
@@ -1514,12 +1527,12 @@ button:active {
       </div>
     </div>
 
-    <button class="settings-save-btn" onclick="setSettings()">
+    <button type="button" class="settings-save-btn" onclick="setSettings()">
       <i class="fas fa-check"></i> Сохранить настройки
     </button>
 
     <div class="settings-update-box">
-      <button id="manual-check-update-btn" onclick="manualCheckAppUpdate()">
+      <button type="button" id="manual-check-update-btn" onclick="manualCheckAppUpdate()">
         <i class="fas fa-sync-alt"></i> Проверить обновление
       </button>
       <div id="manual-update-status" class="update-status-msg"></div>
@@ -1527,9 +1540,9 @@ button:active {
   </div>
 </div>
 
-<div id="qr-modal">
-  <div class="qr-modal-content">
-    <button class="close-modal" onclick="closeQrModal()">&times;</button>
+<div id="qr-modal" onclick="if(event.target === this) closeQrModal();">
+  <div class="qr-modal-content" onclick="event.stopPropagation();">
+    <button type="button" class="close-modal" onclick="closeQrModal()">&times;</button>
     <h3 style="font-family:'Syne',sans-serif; color:var(--neon-cyan); margin-bottom:4px;">
       <i class="fas fa-qrcode"></i> Вход для команд
     </h3>
@@ -1602,7 +1615,6 @@ var soundUrls = {
   gameOver: null
 };
 
-// Функция создания/пересоздания чистого плеера без багов кэша
 function ensureAudioPlayer(id) {
   var a = document.getElementById(id);
   if (!a) {
@@ -1706,7 +1718,8 @@ function updateHostChatButtonVisibility() {
   if (!btn) return;
   btn.style.display = (isInteractiveMode && chatMode !== "disabled") ? "flex" : "none";
   if (chatMode === "disabled") {
-    document.getElementById("host-chat-box").style.display = "none";
+    var box = document.getElementById("host-chat-box");
+    if (box) box.style.display = "none";
     hostChatOpen = false;
   }
 }
@@ -2278,7 +2291,7 @@ function playSound(type) {
   }, delayMs);
 }
 
-// Запуск оригинала с динамическим получением свежей ссылки при сбое
+// Запуск оригинала с авто-восстановлением ссылки
 async function playNormalWithAutoRecovery(audioEl, normalUrl, trackName) {
   var normalIcon = document.getElementById("normal-play-icon");
 
@@ -2307,7 +2320,6 @@ async function playNormalWithAutoRecovery(audioEl, normalUrl, trackName) {
       }
       var data = await res.json();
       if (data && data.href) {
-        // Пересоздаём аудио-элемент начисто во избежание бага кэша декодера
         var freshAudio = ensureAudioPlayer("audio-normal");
         freshAudio.src = data.href;
         freshAudio.load();
@@ -2363,7 +2375,6 @@ function updateFolderSection() {
   }
 }
 
-// Загрузка треков с полной нормализацией пар REVERS / NORMAL
 async function fetchFolderFiles(path) {
   var limit = 100;
   var offset = 0;
@@ -2578,7 +2589,6 @@ function purgeAudioBuffer(audioEl) {
   }
 }
 
-// Запуск трека: ГАРАНТИРОВАННАЯ ПРЕДБУФЕРИЗАЦИЯ ОРИГИНАЛА
 function playTrack(name) {
   hideBuzzerAlert();
   if (originalTimeout) {
@@ -2613,7 +2623,6 @@ function playTrack(name) {
 
     var newTrackSessionId = "track_" + Date.now();
 
-    // 1. Предварительная буферизация оригинала: загружаем метаданные и греем буфер
     if (track.normal) {
       audioNormal.src = track.normal;
       audioNormal.preload = "auto";
@@ -2623,7 +2632,6 @@ function playTrack(name) {
       };
     }
 
-    // 2. Метаданные реверса
     audioRevers.onloadedmetadata = function() {
       var dur = audioRevers.duration || 0;
       document.getElementById("revers-duration").textContent = formatTime(dur);
@@ -2914,7 +2922,6 @@ function hideOriginal() {
   document.getElementById("normal-play-icon").classList.replace("fa-pause", "fa-play");
 }
 
-// Запуск оригинала из плеера с гарантированной привязкой источника трека
 async function toggleNormal() {
   var a = ensureAudioPlayer("audio-normal");
   var r = document.getElementById("audio-revers");
@@ -3139,54 +3146,73 @@ function openSettings() {
     var currentVer = localStorage.getItem('app_version') || '11';
     statusEl.textContent = "Текущая версия: v" + currentVer;
   }
-  if (sMod) sMod.classList.add("active");
+  if (sMod) {
+    sMod.classList.add("active");
+  }
 }
 
-function setSettings() {
-  var inputTimer = document.getElementById("timer-input");
-  var inputDelay = document.getElementById("original-delay-input");
-  var mode = document.getElementById("mix-mode").value;
-  var newInteractive = document.getElementById("interactive-mode-toggle").value === "true";
-  var newStreamAudio = document.getElementById("stream-audio-toggle").value === "true";
-  var newChatMode = document.getElementById("chat-mode-toggle").value;
-  var newShowScore = document.getElementById("show-score-toggle").value === "true";
-  var newShowOpponent = document.getElementById("show-opponent-score-toggle").value === "true";
-  
-  var valTimer = parseInt(inputTimer.value);
-  var valDelay = parseFloat(inputDelay.value);
-
-  if (isNaN(valTimer) || valTimer < 1 || valTimer > 300) return alert("Таймер: от 1 до 300 сек.");
-  if (isNaN(valDelay) || valDelay < 0 || valDelay > 30) return alert("Задержка оригинала: от 0 до 30 сек.");
-
-  var needReload = (newInteractive !== isInteractiveMode);
-
-  timerDuration = valTimer;
-  originalDelay = valDelay;
-  mixMode = mode === "mixed";
-  isInteractiveMode = newInteractive;
-  streamAudioToPlayers = newStreamAudio;
-  chatMode = newChatMode;
-  showScoreToPlayers = newShowScore;
-  showOpponentScore = newShowOpponent;
-
-  if (isInteractiveMode && roomRef) {
-    roomRef.update({ 
-      showScore: showScoreToPlayers,
-      showOpponentScore: showOpponentScore,
-      streamAudio: streamAudioToPlayers,
-      chatMode: chatMode
-    });
+// Гарантированное закрытие настроек
+function closeSettings() {
+  var sMod = document.getElementById("settings-modal");
+  if (sMod) {
+    sMod.classList.remove("active");
   }
+  if (document.activeElement && typeof document.activeElement.blur === "function") {
+    document.activeElement.blur();
+  }
+}
 
-  saveState();
-  closeSettings();
-  updateHostChatButtonVisibility();
+// Безопасное сохранение настроек
+function setSettings() {
+  try {
+    var inputTimer = document.getElementById("timer-input");
+    var inputDelay = document.getElementById("original-delay-input");
+    var mode = document.getElementById("mix-mode").value;
+    var newInteractive = document.getElementById("interactive-mode-toggle").value === "true";
+    var newStreamAudio = document.getElementById("stream-audio-toggle").value === "true";
+    var newChatMode = document.getElementById("chat-mode-toggle").value;
+    var newShowScore = document.getElementById("show-score-toggle").value === "true";
+    var newShowOpponent = document.getElementById("show-opponent-score-toggle").value === "true";
+    
+    var valTimer = parseInt(inputTimer.value);
+    var valDelay = parseFloat(inputDelay.value);
 
-  if (needReload) {
-    location.reload();
-  } else {
-    updateFolderSection();
-    showActionNotification('⚙️ Настройки сохранены');
+    if (isNaN(valTimer) || valTimer < 1 || valTimer > 300) return alert("Таймер: от 1 до 300 сек.");
+    if (isNaN(valDelay) || valDelay < 0 || valDelay > 30) return alert("Задержка оригинала: от 0 до 30 сек.");
+
+    var needReload = (newInteractive !== isInteractiveMode);
+
+    timerDuration = valTimer;
+    originalDelay = valDelay;
+    mixMode = mode === "mixed";
+    isInteractiveMode = newInteractive;
+    streamAudioToPlayers = newStreamAudio;
+    chatMode = newChatMode;
+    showScoreToPlayers = newShowScore;
+    showOpponentScore = newShowOpponent;
+
+    if (isInteractiveMode && roomRef) {
+      roomRef.update({ 
+        showScore: showScoreToPlayers,
+        showOpponentScore: showOpponentScore,
+        streamAudio: streamAudioToPlayers,
+        chatMode: chatMode
+      });
+    }
+
+    saveState();
+    updateHostChatButtonVisibility();
+
+    if (needReload) {
+      location.reload();
+    } else {
+      updateFolderSection();
+      showActionNotification('⚙️ Настройки сохранены');
+    }
+  } catch (err) {
+    console.error("Ошибка при сохранении настроек:", err);
+  } finally {
+    closeSettings();
   }
 }
 
