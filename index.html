@@ -2014,7 +2014,7 @@ function sendHostChatMessage() {
   if (!text || !roomRef) return;
 
   roomRef.child("chat").push({
-    author: "🎙️ Ведущий",
+    author: "🎙️️ Ведущий",
     text: text,
     isHost: true,
     time: Date.now()
@@ -2079,7 +2079,6 @@ async function manualCheckAppUpdate() {
   }
 }
 
-// Форматирование счёта без отсечения отрицательных чисел
 function formatScore(val) {
   var num = parseFloat(val);
   if (isNaN(num)) num = 0;
@@ -2265,37 +2264,45 @@ function playSound(type) {
   }, delayMs);
 }
 
+// Запуск оригинала с надёжным назначением URL
 function startOriginalPlayback() {
   var p = document.getElementById("original-player");
   var b = document.getElementById("normal-toggle");
   var a = document.getElementById("audio-normal");
   var i = document.getElementById("normal-play-icon");
 
-  if (!currentTrackName || !files[currentTrackName] || !files[currentTrackName].normal) return;
+  var trackObj = files[currentTrackName];
+  if (!currentTrackName || !trackObj || !trackObj.normal) {
+    console.warn("Файл оригинала не найден для:", currentTrackName);
+    return;
+  }
 
   if (p) p.style.display = "block";
   if (b) b.textContent = "Скрыть оригинал";
 
-  if (!a.src || a.src === "" || a.src === window.location.href) {
-    a.src = files[currentTrackName].normal;
+  if (a.src !== trackObj.normal) {
+    a.src = trackObj.normal;
     a.load();
   }
 
   a.currentTime = 0;
-  a.play().then(function() {
-    if (i) i.classList.replace("fa-play", "fa-pause");
-    updateNormalProgress();
+  var playPromise = a.play();
+  if (playPromise !== undefined) {
+    playPromise.then(function() {
+      if (i) i.classList.replace("fa-play", "fa-pause");
+      updateNormalProgress();
 
-    if (isInteractiveMode && roomRef && streamAudioToPlayers) {
-      roomRef.child("audioSync").update({
-        playAction: "play_normal",
-        currentTime: 0,
-        startAt: Date.now() + 150
-      });
-    }
-  }).catch(function(err) {
-    console.warn("Автовоспроизведение оригинала:", err);
-  });
+      if (isInteractiveMode && roomRef && streamAudioToPlayers) {
+        roomRef.child("audioSync").update({
+          playAction: "play_normal",
+          currentTime: 0,
+          startAt: Date.now() + 150
+        });
+      }
+    }).catch(function(err) {
+      console.warn("Автовоспроизведение оригинала заблокировано браузером:", err);
+    });
+  }
 }
 
 function formatTime(seconds) {
@@ -2312,11 +2319,13 @@ function updateFolderSection() {
   }
 }
 
+// Загрузка треков с умной нормализацией пар REVERS / NORMAL
 async function fetchFolderFiles(path) {
   var limit = 100;
   var offset = 0;
   var allItems = [];
   var filesMap = {};
+
   try {
     while (true) {
       var url = "https://cloud-api.yandex.net/v1/disk/public/resources?public_key=" + encodeURIComponent(PUBLIC_KEY) + "&path=" + encodeURIComponent(path) + "&limit=" + limit + "&offset=" + offset;
@@ -2329,13 +2338,44 @@ async function fetchFolderFiles(path) {
       if (items.length < limit) break;
       offset += limit;
     }
+
     var mp3Files = allItems.filter(function(f) { return f.name && f.name.toLowerCase().endsWith('.mp3'); });
+
+    // Нормализация и сопоставление
     mp3Files.forEach(function(file) {
-      var cleanName = file.name.replace(/_(REVERS|NORMAL)\.mp3$/i, "");
-      if (!filesMap[cleanName]) filesMap[cleanName] = {};
-      if (file.name.indexOf("_REVERS") !== -1) filesMap[cleanName].revers = file.file;
-      if (file.name.indexOf("_NORMAL") !== -1) filesMap[cleanName].normal = file.file;
+      var rawName = file.name.trim();
+      var isRevers = /_REVERS\.mp3$/i.test(rawName);
+      var isNormal = /_NORMAL\.mp3$/i.test(rawName);
+
+      var cleanName = rawName
+        .replace(/_(REVERS|NORMAL)\.mp3$/i, "")
+        .replace(/[\u200E\u200F\u00A0]/g, "")
+        .trim();
+
+      if (!filesMap[cleanName]) {
+        filesMap[cleanName] = {};
+      }
+
+      if (isRevers) {
+        filesMap[cleanName].revers = file.file;
+      } else if (isNormal) {
+        filesMap[cleanName].normal = file.file;
+      }
     });
+
+    // Резервный поиск недостающих пар, если имена имели мелкие несовпадения
+    var keys = Object.keys(filesMap);
+    keys.forEach(function(k) {
+      if (!filesMap[k].normal) {
+        var match = keys.find(function(candidate) {
+          return candidate !== k && candidate.toLowerCase() === k.toLowerCase() && filesMap[candidate].normal;
+        });
+        if (match) {
+          filesMap[k].normal = filesMap[match].normal;
+        }
+      }
+    });
+
     return filesMap;
   } catch (e) {
     console.error("Ошибка загрузки папки:", e);
@@ -2559,6 +2599,7 @@ function playTrack(name) {
       toggleRevers();
     };
 
+    // Предзагрузка нормального трека
     if (track.normal) {
       audioNormal.src = track.normal;
       audioNormal.preload = "auto";
@@ -2781,7 +2822,6 @@ function clearTeamHighlight() {
   });
 }
 
-// ИЗМЕНЕНИЕ СЧЁТА: убран Math.max(0, ...), теперь разрешены минусовые значения
 function changeScore(teamId, delta) {
   var team = teamsData.find(function(t) { return t.id === teamId; });
   if (!team) return;
@@ -2830,10 +2870,12 @@ function hideOriginal() {
   document.getElementById("normal-play-icon").classList.replace("fa-pause", "fa-play");
 }
 
+// Запуск оригинала из плеера с гарантированной привязкой источника трека
 function toggleNormal() {
   var a = document.getElementById("audio-normal");
   var r = document.getElementById("audio-revers");
   var i = document.getElementById("normal-play-icon");
+
   if (a.paused) {
     if (originalTimeout) {
       clearTimeout(originalTimeout);
@@ -2848,12 +2890,19 @@ function toggleNormal() {
       var rIcon = document.getElementById("revers-play-icon");
       if (rIcon) rIcon.classList.replace("fa-pause", "fa-play");
     }
-    
-    if (!a.src && files[currentTrackName] && files[currentTrackName].normal) {
-      a.src = files[currentTrackName].normal;
+
+    var trackObj = files[currentTrackName];
+    if (!trackObj || !trackObj.normal) {
+      showActionNotification("⚠️ Оригинал трека не найден");
+      return;
+    }
+
+    // Всегда жестко привязываем URL перед запуском
+    if (a.src !== trackObj.normal) {
+      a.src = trackObj.normal;
       a.load();
     }
-    
+
     if (isInteractiveMode && roomRef) {
       roomRef.update({
         status: "reveal",
@@ -2862,23 +2911,26 @@ function toggleNormal() {
       });
     }
 
-    a.play().then(function() {
-      i.classList.replace("fa-play", "fa-pause");
-      updateNormalProgress();
+    var playPromise = a.play();
+    if (playPromise !== undefined) {
+      playPromise.then(function() {
+        if (i) i.classList.replace("fa-play", "fa-pause");
+        updateNormalProgress();
 
-      if (isInteractiveMode && roomRef && streamAudioToPlayers) {
-        roomRef.child("audioSync").update({
-          playAction: "play_normal",
-          currentTime: 0,
-          startAt: Date.now() + 150
-        });
-      }
-    }).catch(function(err) {
-      console.warn("Воспроизведение оригинала заблокировано:", err);
-    });
+        if (isInteractiveMode && roomRef && streamAudioToPlayers) {
+          roomRef.child("audioSync").update({
+            playAction: "play_normal",
+            currentTime: 0,
+            startAt: Date.now() + 150
+          });
+        }
+      }).catch(function(err) {
+        console.warn("Воспроизведение оригинала заблокировано:", err);
+      });
+    }
   } else {
     a.pause();
-    i.classList.replace("fa-play", "fa-pause");
+    if (i) i.classList.replace("fa-play", "fa-pause");
 
     if (isInteractiveMode && roomRef && streamAudioToPlayers) {
       roomRef.child("audioSync").update({ playAction: "pause" });
