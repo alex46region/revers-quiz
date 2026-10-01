@@ -247,11 +247,19 @@ h1 i {
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  transition: all 0.3s ease;
 }
 
 .team-pill.ready {
   border-color: var(--neon-lime);
   color: var(--neon-lime);
+}
+
+.team-pill.offline {
+  border-color: rgba(255, 255, 255, 0.15);
+  color: var(--text-dim);
+  opacity: 0.65;
+  filter: grayscale(1);
 }
 
 .buzzer-wave-overlay {
@@ -778,6 +786,7 @@ button:active {
   opacity: 1;
 }
 
+/* Окно настроек */
 #settings-modal, #qr-modal {
   position: fixed;
   inset: 0;
@@ -1581,8 +1590,8 @@ var streamAudioToPlayers = false;
 var chatMode = "disabled";
 
 var teamsData = [
-  { id: 'team_1', name: 'Команда 1', score: 0 },
-  { id: 'team_2', name: 'Команда 2', score: 0 }
+  { id: 'team_1', name: 'Команда 1', score: 0, online: true },
+  { id: 'team_2', name: 'Команда 2', score: 0, online: true }
 ];
 
 var activeTeamId = null;
@@ -1747,6 +1756,7 @@ function initHostRoom() {
     chatMode: chatMode,
     buzzer: { locked: true, pressedBy: null, passedBy: [] },
     revealedTrack: "",
+    systemSounds: soundUrls,
     audioSync: {
       trackSessionId: "",
       reversUrl: "",
@@ -1766,6 +1776,7 @@ function initHostRoom() {
   initEmojiPicker("host-emoji-popover", "host-chat-input");
   listenToChatMessages();
 
+  // 2. Отслеживание подключения команд и их онлайн-статуса
   roomRef.child("teams").on("value", function(snapshot) {
     var rawTeams = snapshot.val() || {};
     var cloudKeys = Object.keys(rawTeams);
@@ -1776,7 +1787,8 @@ function initHostRoom() {
           id: key,
           name: rawTeams[key].name || "Команда",
           score: typeof rawTeams[key].score !== 'undefined' ? rawTeams[key].score : 0,
-          readyToPlay: rawTeams[key].readyToPlay || false
+          readyToPlay: rawTeams[key].readyToPlay || false,
+          online: rawTeams[key].online !== false // true по умолчанию
         };
       });
     } else {
@@ -1794,6 +1806,7 @@ function initHostRoom() {
   });
 }
 
+// 2. Визуализация онлайна/оффлайна команд в списке ведущего
 function renderHostTeamsList() {
   var container = document.getElementById("host-teams-container");
   if (!container) return;
@@ -1806,8 +1819,14 @@ function renderHostTeamsList() {
   container.innerHTML = "";
   teamsData.forEach(function(t) {
     var pill = document.createElement("div");
-    pill.className = "team-pill ready";
-    pill.innerHTML = '<i class="fas fa-check-circle"></i> ' + t.name + ' (' + formatScore(t.score) + ')';
+    var isOnline = t.online !== false;
+    pill.className = "team-pill " + (isOnline ? "ready" : "offline");
+    var statusIcon = isOnline 
+      ? '<i class="fas fa-circle" style="font-size:0.6em; color:var(--neon-lime);"></i>' 
+      : '<i class="far fa-circle" style="font-size:0.6em; color:var(--neon-pink);"></i>';
+    var statusText = isOnline ? "" : " <span style='font-size:0.75em; opacity:0.8;'>(вышел)</span>";
+    
+    pill.innerHTML = statusIcon + ' ' + t.name + ' (' + formatScore(t.score) + ')' + statusText;
     container.appendChild(pill);
   });
 }
@@ -1846,7 +1865,8 @@ function addNewOfflineTeam() {
   teamsData.push({
     id: "team_" + Date.now() + "_" + Math.random().toString(36).substr(2, 4),
     name: "Команда " + newIdx,
-    score: 0
+    score: 0,
+    online: true
   });
   renderOfflineTeamsInputs();
   renderScoreboardGrid();
@@ -1883,20 +1903,27 @@ function renderScoreboardGrid() {
     return;
   }
 
-  // Если активная команда ещё не выбрана — по умолчанию выбираем первую
   if (!activeTeamId && teamsData.length > 0) {
     activeTeamId = teamsData[0].id;
   }
 
   teamsData.forEach(function(t) {
+    var isOffline = (t.online === false);
     var group = document.createElement("div");
     group.className = "score-team-group" + (activeTeamId === t.id ? " active" : "");
+    if (isOffline) {
+      group.style.opacity = "0.65";
+      group.style.borderColor = "rgba(255, 0, 85, 0.3)";
+    }
     group.id = "score-card-" + t.id;
     group.onclick = function() { manualActivateTeam(t.id); };
 
+    var labelPrefix = isOffline ? "⚠️ " : "";
+    var labelSuffix = isOffline ? " (не в сети)" : "";
+
     group.innerHTML = 
       '<div class="score-team-header">' +
-        '<div class="score-team-label">' + t.name + '</div>' +
+        '<div class="score-team-label">' + labelPrefix + t.name + labelSuffix + '</div>' +
         '<div class="score-display">' + formatScore(t.score) + '</div>' +
       '</div>' +
       '<div class="score-btn-row remove">' +
@@ -2225,6 +2252,7 @@ function saveState() {
   }
 }
 
+// 1. Загрузка системных звуков и их трансляция участникам
 async function preloadAllSounds() {
   try {
     var rootUrl = "https://cloud-api.yandex.net/v1/disk/public/resources?public_key=" + encodeURIComponent(PUBLIC_KEY) + "&limit=100";
@@ -2247,11 +2275,17 @@ async function preloadAllSounds() {
         }
       }
     });
+
+    // Трансляция системных звуков в комнату для буферизации на смартфонах
+    if (isInteractiveMode && roomRef) {
+      roomRef.child("systemSounds").set(soundUrls);
+    }
   } catch (e) {
     console.error("Ошибка загрузки системных звуков:", e);
   }
 }
 
+// 1. Проигрывание звука с трансляцией триггера на телефоны участников
 function playSound(type) {
   var url = type === 'winner' ? soundUrls.winner : soundUrls.lost;
   var audio = document.getElementById(type === 'winner' ? 'audio-winner' : 'audio-lost');
@@ -2275,12 +2309,19 @@ function playSound(type) {
     showActionNotification(type === 'winner' ? '🎉 Правильно!' : '😢 Мимо!');
   }
 
+  // Трансляция события звука участникам
   if (isInteractiveMode && roomRef) {
     roomRef.update({
       status: "reveal",
       revealedTrack: currentTrackName || "",
       buzzer: { locked: true, pressedBy: null, passedBy: [] }
     });
+
+    if (streamAudioToPlayers) {
+      roomRef.child("audioSync").update({
+        systemTrigger: { type: type, time: Date.now() }
+      });
+    }
   }
 
   if (originalTimeout) {
@@ -2295,12 +2336,11 @@ function playSound(type) {
   }, delayMs);
 }
 
-// 2. Исправленный запуск оригинала: воспроизведение без сброса разогретого буфера
+// Запуск оригинала с авто-восстановлением ссылки
 async function playNormalWithAutoRecovery(audioEl, normalUrl, trackName) {
   var normalIcon = document.getElementById("normal-play-icon");
 
   try {
-    // Если плеер уже заряжен этим треком — не перезагружаем src, не сбрасываем буфер
     if (!audioEl.src || audioEl.src === "" || audioEl.src === window.location.href) {
       audioEl.src = normalUrl;
       audioEl.load();
@@ -2597,7 +2637,6 @@ function purgeAudioBuffer(audioEl) {
   }
 }
 
-// Запуск трека: предбуферизация оригинала и сохранение очереди команд
 function playTrack(name) {
   hideBuzzerAlert();
   if (originalTimeout) {
@@ -2612,7 +2651,6 @@ function playTrack(name) {
     clearTeamHighlight();
   }
 
-  // В обычном режиме: если трек сменился на новый, ход автоматически переходит дальше
   if (!isInteractiveMode && name !== lastPlayedTrack) {
     if (lastPlayedTrack !== null) {
       cycleNextOfflineTeam();
@@ -2640,7 +2678,6 @@ function playTrack(name) {
 
     var newTrackSessionId = "track_" + Date.now();
 
-    // Заранее разогреваем оригинал в буфер браузера
     if (track.normal) {
       audioNormal.src = track.normal;
       audioNormal.preload = "auto";
@@ -2772,7 +2809,7 @@ function waitForAllDevicesReady(localAudio, callback) {
     var hostBuffered = localAudio.readyState >= 3;
     var teamsReady = true;
     teamsData.forEach(function(t) {
-      if (!t.readyToPlay) teamsReady = false;
+      if (t.online !== false && !t.readyToPlay) teamsReady = false;
     });
 
     if (hostBuffered && teamsReady) {
@@ -2856,7 +2893,6 @@ function resumeSynchronizedPlayback() {
   }, delayStart);
 }
 
-// 1. Исправленное переключение очереди: строго следующий после активного
 function cycleNextOfflineTeam() {
   if (teamsData.length === 0) return;
   var currIdx = teamsData.findIndex(function(t) { return t.id === activeTeamId; });
@@ -2865,7 +2901,6 @@ function cycleNextOfflineTeam() {
   activateTeam(teamsData[nextIdx].id);
 }
 
-// 1. Ручной выбор команды ведущим: железно фиксирует выбор ведущего
 function manualActivateTeam(teamId) {
   activateTeam(teamId);
   saveState();
@@ -2889,6 +2924,7 @@ function clearTeamHighlight() {
   });
 }
 
+// 1. Начисление очков с трансляцией триггера звука на телефоны
 function changeScore(teamId, delta) {
   var team = teamsData.find(function(t) { return t.id === teamId; });
   if (!team) return;
@@ -2918,6 +2954,12 @@ function changeScore(teamId, delta) {
       lastScoreDelta: delta,
       lastScoreChangeAt: Date.now()
     });
+
+    if (streamAudioToPlayers && delta > 0) {
+      roomRef.child("audioSync").update({
+        systemTrigger: { type: "ring", time: Date.now() }
+      });
+    }
   }
 }
 
@@ -2937,7 +2979,6 @@ function hideOriginal() {
   document.getElementById("normal-play-icon").classList.replace("fa-pause", "fa-play");
 }
 
-// 2. Включение оригинала из плеера с первого клика
 async function toggleNormal() {
   var a = ensureAudioPlayer("audio-normal");
   var r = document.getElementById("audio-revers");
@@ -3077,6 +3118,7 @@ function updateTrackCounter() {
   updateNextTrackButton();
 }
 
+// 1. Завершение игры с трансляцией триггера Game Over на телефоны
 function endQuiz() {
   localStorage.removeItem('reversQuiz');
   stopAllSounds();
@@ -3100,6 +3142,12 @@ function endQuiz() {
       status: "game_over",
       leaderboard: sortedTeams.map(function(t) { return { name: t.name, score: t.score }; })
     });
+
+    if (streamAudioToPlayers) {
+      roomRef.child("audioSync").update({
+        systemTrigger: { type: "gameOver", time: Date.now() }
+      });
+    }
   }
 
   localStorage.removeItem("host_room_pin");
@@ -3210,7 +3258,8 @@ function setSettings() {
         showScore: showScoreToPlayers,
         showOpponentScore: showOpponentScore,
         streamAudio: streamAudioToPlayers,
-        chatMode: chatMode
+        chatMode: chatMode,
+        systemSounds: soundUrls
       });
     }
 
@@ -3249,6 +3298,13 @@ function startTimer() {
     aStart.play().catch(function() {});
   }
 
+  // Трансляция звука старта таймера на телефоны
+  if (isInteractiveMode && roomRef && streamAudioToPlayers) {
+    roomRef.child("audioSync").update({
+      systemTrigger: { type: "start", time: Date.now() }
+    });
+  }
+
   timerInterval = setInterval(function() {
     timerValue--;
     updateTimerDisplay();
@@ -3266,6 +3322,11 @@ function startTimer() {
           if (circle) circle.classList.remove("active");
         };
         aFinal.play().catch(function() {});
+      }
+      if (isInteractiveMode && roomRef && streamAudioToPlayers) {
+        roomRef.child("audioSync").update({
+          systemTrigger: { type: "final", time: Date.now() }
+        });
       }
     }
 
