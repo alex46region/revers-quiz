@@ -786,6 +786,7 @@ button:active {
   opacity: 1;
 }
 
+/* Окно настроек */
 #settings-modal, #qr-modal {
   position: fixed;
   inset: 0;
@@ -1435,7 +1436,7 @@ button:active {
 
 <!-- Аудио-элементы ведущего -->
 <audio id="audio-revers" preload="auto" playsinline style="display:none;"></audio>
-<audio id="audio-normal" preload="auto" playsinline style="display:none;"></audio>
+<audio id="audio-normal" preload="none" playsinline style="display:none;"></audio>
 <audio id="audio-winner" preload="auto" playsinline style="display:none;"></audio>
 <audio id="audio-lost" preload="auto" playsinline style="display:none;"></audio>
 <audio id="audio-ring" preload="auto" playsinline style="display:none;"></audio>
@@ -2330,6 +2331,7 @@ function playSound(type) {
   }, delayMs);
 }
 
+// Запуск оригинала
 async function playNormalWithAutoRecovery(audioEl, normalUrl, trackName) {
   var normalIcon = document.getElementById("normal-play-icon");
 
@@ -2630,6 +2632,7 @@ function purgeAudioBuffer(audioEl) {
   }
 }
 
+// 1. ПОСЛЕДОВАТЕЛЬНЫЙ СТАРТ: Буферизация оригинала начинается ТОЛЬКО КОГДА реверс уже играет
 function playTrack(name) {
   hideBuzzerAlert();
   if (originalTimeout) {
@@ -2657,11 +2660,16 @@ function playTrack(name) {
   purgeAudioBuffer(audioRevers);
   purgeAudioBuffer(audioNormal);
 
+  // Сбрасываем оригинал, чтобы он не конкурировал за канал при старте реверса
+  audioNormal.src = "";
+  audioNormal.preload = "none";
+
   currentTrackName = name;
   var track = files[name];
 
   if (track && track.revers) {
     audioRevers.src = track.revers;
+    audioRevers.preload = "auto";
     audioRevers.load();
     
     audioRevers.onended = function() {
@@ -2669,19 +2677,26 @@ function playTrack(name) {
       hideTrackPopup();
     };
 
+    // ГАРАНТИЯ: оригинал начинает подгружаться ТОЛЬКО КОГДА реверс уже уверенно играет
+    audioRevers.onplaying = function() {
+      audioRevers.onplaying = null;
+      if (track.normal && currentTrackName === name) {
+        audioNormal.src = track.normal;
+        audioNormal.preload = "auto";
+        audioNormal.load();
+        audioNormal.onloadedmetadata = function() {
+          document.getElementById("normal-duration").textContent = formatTime(audioNormal.duration);
+        };
+      }
+    };
+
     var newTrackSessionId = "track_" + Date.now();
+    var hasStartedThisTrack = false;
 
-    if (track.normal) {
-      audioNormal.src = track.normal;
-      audioNormal.preload = "auto";
-      audioNormal.load();
-      audioNormal.onloadedmetadata = function() {
-        document.getElementById("normal-duration").textContent = formatTime(audioNormal.duration);
-      };
-    }
+    function launchReversPlayback(dur) {
+      if (hasStartedThisTrack) return;
+      hasStartedThisTrack = true;
 
-    audioRevers.onloadedmetadata = function() {
-      var dur = audioRevers.duration || 0;
       document.getElementById("revers-duration").textContent = formatTime(dur);
 
       if (isInteractiveMode && roomRef) {
@@ -2708,7 +2723,20 @@ function playTrack(name) {
       }
 
       toggleRevers();
+    }
+
+    // Слушатель метаданных реверса
+    audioRevers.onloadedmetadata = function() {
+      audioRevers.onloadedmetadata = null;
+      launchReversPlayback(audioRevers.duration || 0);
     };
+
+    // Защитный таймаут на случай подвисания метаданных с CDN
+    setTimeout(function() {
+      if (!hasStartedThisTrack && currentTrackName === name) {
+        launchReversPlayback(audioRevers.duration || 0);
+      }
+    }, 1200);
   }
   updateShuffleButtonState();
   updateNextTrackButton();
@@ -3080,7 +3108,7 @@ function endQuiz() {
   var aGameOver = document.getElementById("audio-game-over");
   if (aGameOver && soundUrls.gameOver) {
     aGameOver.currentTime = 0;
-    aGameOver.play().catch(function() {});
+    aGameOver.play().catch(function(e) { console.warn(e); });
   }
 
   purgeAudioBuffer(document.getElementById("audio-revers"));
@@ -3233,7 +3261,6 @@ function setSettings() {
   }
 }
 
-// Таймер ведущего: звук только у ведущего, участникам передаётся только состояние
 function startTimer() {
   if (isTimerActive) return;
   stopTimerSounds();
@@ -3247,14 +3274,12 @@ function startTimer() {
   var aStart = document.getElementById("audio-start");
   var aFinal = document.getElementById("audio-final");
 
-  // Звук играет строго у ведущего
   if (soundUrls.start && aStart) {
     aStart.src = soundUrls.start;
     aStart.currentTime = 0;
     aStart.play().catch(function() {});
   }
 
-  // Участникам транслируем только статус таймера и число секунд
   if (isInteractiveMode && roomRef) {
     roomRef.child("timerState").set({
       active: true,
