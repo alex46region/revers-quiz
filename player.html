@@ -100,6 +100,47 @@ body::after {
   z-index: 9999;
 }
 
+/* Компактный аккуратный визуальный таймер для участников */
+.player-countdown-badge {
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%) scale(0.8);
+  font-family: 'Orbitron', monospace;
+  font-size: 1.3em;
+  font-weight: 900;
+  color: var(--neon-cyan);
+  background: rgba(8, 4, 24, 0.9);
+  border: 2px solid var(--neon-cyan);
+  padding: 6px 18px;
+  border-radius: 20px;
+  box-shadow: 0 0 25px rgba(0, 243, 255, 0.5);
+  display: none;
+  align-items: center;
+  gap: 8px;
+  z-index: 2500;
+  pointer-events: none;
+  transition: all 0.25s ease;
+}
+
+.player-countdown-badge.show {
+  display: flex;
+  transform: translateX(-50%) scale(1);
+}
+
+.player-countdown-badge.urgent {
+  color: var(--neon-magenta);
+  border-color: var(--neon-magenta);
+  box-shadow: 0 0 35px rgba(255, 0, 127, 0.8);
+  animation: pulseUrgent 0.6s infinite alternate;
+}
+
+@keyframes pulseUrgent {
+  0% { transform: translateX(-50%) scale(0.96); }
+  100% { transform: translateX(-50%) scale(1.06); }
+}
+
+/* Всплывающий индикатор изменения счёта */
 .score-delta-overlay {
   position: fixed;
   top: 50%;
@@ -164,7 +205,7 @@ body::after {
   box-shadow: 
     0 0 55px rgba(255, 0, 127, 0.7),
     0 0 110px rgba(255, 0, 127, 0.35),
-    inset 0 0 25px rgba(0, 255, 127, 0.4);
+    inset 0 0 25px rgba(255, 0, 127, 0.4);
   text-shadow: 0 0 24px var(--neon-magenta);
 }
 
@@ -179,6 +220,7 @@ body::after {
   text-shadow: 0 0 10px rgba(255,255,255,0.7);
 }
 
+/* Окно авторизации / входа в игру */
 .login-wrap {
   margin: auto;
   width: 100%;
@@ -290,6 +332,7 @@ body::after {
   display: none;
 }
 
+/* Игровой интерфейс */
 #game-view {
   display: none;
   flex-direction: column;
@@ -299,8 +342,10 @@ body::after {
   margin: 0 auto;
   justify-content: space-between;
   gap: 10px;
+  position: relative;
 }
 
+/* Табло очков */
 .top-action-bar {
   display: flex;
   gap: 8px;
@@ -419,6 +464,7 @@ body::after {
   display: none;
 }
 
+/* Статус раунда и шкала времени */
 .player-status-wrapper {
   display: flex;
   flex-direction: column;
@@ -488,6 +534,7 @@ body::after {
   font-weight: 700;
 }
 
+/* Плашка показа оригинала: ретро-кассета */
 .revealed-track-box {
   background: linear-gradient(135deg, rgba(255, 0, 127, 0.18) 0%, rgba(0, 243, 255, 0.12) 100%);
   border: 2px solid var(--neon-cyan);
@@ -585,6 +632,7 @@ body::after {
   text-shadow: 0 0 15px rgba(0, 243, 255, 0.6);
 }
 
+/* Кнопка-баззер */
 .buzzer-stage {
   flex: 1;
   display: flex;
@@ -705,6 +753,7 @@ body::after {
   color: #fff;
 }
 
+/* Экран завершения игры */
 #game-over-view {
   display: none;
   flex-direction: column;
@@ -789,6 +838,7 @@ body::after {
   font-size: 1.2em;
 }
 
+/* Модальное окно чата */
 #player-chat-modal {
   position: fixed;
   inset: 0;
@@ -979,15 +1029,19 @@ body::after {
 </head>
 <body>
 
-<!-- Аудиоэлементы участника (включая системные звуки) -->
+<!-- Аудиоэлементы участника (только музыка и игровые сигналы) -->
 <audio id="player-audio-revers" preload="auto" playsinline crossorigin="anonymous" style="display:none;"></audio>
 <audio id="player-audio-normal" preload="auto" playsinline crossorigin="anonymous" style="display:none;"></audio>
 <audio id="player-sound-winner" preload="auto" playsinline style="display:none;"></audio>
 <audio id="player-sound-lost" preload="auto" playsinline style="display:none;"></audio>
 <audio id="player-sound-ring" preload="auto" playsinline style="display:none;"></audio>
-<audio id="player-sound-start" preload="auto" playsinline style="display:none;"></audio>
-<audio id="player-sound-final" preload="auto" playsinline style="display:none;"></audio>
 <audio id="player-sound-game-over" preload="auto" playsinline style="display:none;"></audio>
+
+<!-- Неоновый бейдж визуального таймера для участников -->
+<div class="player-countdown-badge" id="player-timer-badge">
+  <i class="fas fa-stopwatch"></i>
+  <span id="player-timer-badge-num">10</span>
+</div>
 
 <!-- Всплывающий бейдж счёта -->
 <div class="score-delta-overlay" id="player-score-delta-popup">
@@ -1222,7 +1276,7 @@ function formatTime(seconds) {
 }
 
 function primeAudioElements() {
-  ['player-audio-revers', 'player-audio-normal', 'player-sound-winner', 'player-sound-lost', 'player-sound-ring', 'player-sound-start', 'player-sound-final', 'player-sound-game-over'].forEach(function(id) {
+  ['player-audio-revers', 'player-audio-normal', 'player-sound-winner', 'player-sound-lost', 'player-sound-ring', 'player-sound-game-over'].forEach(function(id) {
     var a = document.getElementById(id);
     if (a) {
       a.play().then(function() {
@@ -1418,7 +1472,7 @@ function stopSyntheticTimer() {
   if (progressAnimFrame) cancelAnimationFrame(progressAnimFrame);
 }
 
-// Прослушивание синхронизации звука с мгновенным сбросом оригинала при смене трека
+// Прослушивание звука: реверс играет строго при действиях play_revers / resume_revers
 function listenToAudioStream() {
   var audioSyncRef = db.ref("rooms/" + currentRoom + "/audioSync");
   var aRevers = document.getElementById("player-audio-revers");
@@ -1435,8 +1489,6 @@ function listenToAudioStream() {
       if (trigType === "lost") playLocalSystemSound("player-sound-lost");
       if (trigType === "ring") playLocalSystemSound("player-sound-ring");
       if (trigType === "gameOver") playLocalSystemSound("player-sound-game-over");
-      if (trigType === "start") playLocalSystemSound("player-sound-start");
-      if (trigType === "final") playLocalSystemSound("player-sound-final");
     }
 
     if (!hasWaitedForNewTrack) {
@@ -1457,7 +1509,6 @@ function listenToAudioStream() {
     if (sync.reversUrl && sync.reversUrl !== currentLoadedReversUrl) {
       currentLoadedReversUrl = sync.reversUrl;
 
-      // Мгновенно глушим и сбрасываем старый оригинал
       aNormal.pause();
       aNormal.currentTime = 0;
 
@@ -1477,7 +1528,6 @@ function listenToAudioStream() {
       };
     }
 
-    // Мгновенная остановка любого звучания по команде ведущего
     if (sync.playAction === "prepare") {
       stopSyntheticTimer();
       aRevers.pause();
@@ -1486,8 +1536,7 @@ function listenToAudioStream() {
       aNormal.currentTime = 0;
       updateProgressDisplay(0, currentTrackDuration);
 
-    } else if (sync.playAction === "play_revers" || sync.playAction === "play_timer") {
-      // Гарантированно глушим оригинал перед реверсом
+    } else if (sync.playAction === "play_revers") {
       aNormal.pause();
       aNormal.currentTime = 0;
 
@@ -1495,7 +1544,7 @@ function listenToAudioStream() {
       var duration = sync.duration || currentTrackDuration || 0;
 
       setTimeout(function() {
-        if (isStreamAudioAllowed && sync.playAction === "play_revers") {
+        if (isStreamAudioAllowed) {
           aRevers.currentTime = 0;
           aRevers.play().catch(function() {});
         } else {
@@ -1504,7 +1553,16 @@ function listenToAudioStream() {
         startSyntheticTimer(0, duration);
       }, targetDelay);
 
-    } else if (sync.playAction === "resume_revers" || sync.playAction === "resume_timer") {
+    } else if (sync.playAction === "play_silent") {
+      aNormal.pause();
+      aRevers.pause();
+      var targetDelay = Math.max(0, (sync.startAt || Date.now()) - Date.now());
+      var duration = sync.duration || currentTrackDuration || 0;
+      setTimeout(function() {
+        startSyntheticTimer(0, duration);
+      }, targetDelay);
+
+    } else if (sync.playAction === "resume_revers") {
       aNormal.pause();
       aNormal.currentTime = 0;
 
@@ -1513,12 +1571,22 @@ function listenToAudioStream() {
       var rDur = sync.duration || currentTrackDuration || 0;
 
       setTimeout(function() {
-        if (isStreamAudioAllowed && sync.playAction === "resume_revers") {
+        if (isStreamAudioAllowed) {
           aRevers.currentTime = resumeTime;
           aRevers.play().catch(function() {});
         } else {
           aRevers.pause();
         }
+        startSyntheticTimer(resumeTime, rDur);
+      }, resumeDelay);
+
+    } else if (sync.playAction === "resume_silent") {
+      aNormal.pause();
+      aRevers.pause();
+      var resumeTime = sync.currentTime || 0;
+      var resumeDelay = Math.max(0, (sync.startAt || Date.now()) - Date.now());
+      var rDur = sync.duration || currentTrackDuration || 0;
+      setTimeout(function() {
         startSyntheticTimer(resumeTime, rDur);
       }, resumeDelay);
 
@@ -1587,9 +1655,24 @@ function listenToGameState() {
       bufferSystemSound("player-sound-winner", data.systemSounds.winner);
       bufferSystemSound("player-sound-lost", data.systemSounds.lost);
       bufferSystemSound("player-sound-ring", data.systemSounds.ring);
-      bufferSystemSound("player-sound-start", data.systemSounds.start);
-      bufferSystemSound("player-sound-final", data.systemSounds.final);
       bufferSystemSound("player-sound-game-over", data.systemSounds.gameOver);
+    }
+
+    // Визуальное отображение таймера на экране участников
+    var timerBadge = document.getElementById("player-timer-badge");
+    var timerNum = document.getElementById("player-timer-badge-num");
+    var timerState = data.timerState || {};
+
+    if (timerState.active && timerState.value > 0) {
+      timerNum.textContent = timerState.value;
+      timerBadge.classList.add("show");
+      if (timerState.value <= 5) {
+        timerBadge.classList.add("urgent");
+      } else {
+        timerBadge.classList.remove("urgent");
+      }
+    } else {
+      timerBadge.classList.remove("show", "urgent");
     }
 
     if (data.status === "reveal" || data.status === "playing") {
