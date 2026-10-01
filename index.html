@@ -778,7 +778,6 @@ button:active {
   opacity: 1;
 }
 
-/* Окно настроек */
 #settings-modal, #qr-modal {
   position: fixed;
   inset: 0;
@@ -1274,7 +1273,7 @@ button:active {
       </div>
 
       <div class="online-link-area">
-        <span style="font-size:0.8em; color:var(--text-dim); text-transform:uppercase;">Быстрая ссылка:</span>
+        <span style="font-size:0.8em; color:var(--text-dim);">Быстрая ссылка:</span>
         <div class="link-actions">
           <div class="copy-link-btn" onclick="copyPlayerLink()" title="Нажмите, чтобы скопировать">
             <i class="fas fa-copy"></i> https://clck.ru/3WBWUq
@@ -1426,7 +1425,7 @@ button:active {
   </div>
 </div>
 
-<!-- Динамические аудио-элементы -->
+<!-- Аудио-элементы -->
 <audio id="audio-revers" preload="auto" playsinline style="display:none;"></audio>
 <audio id="audio-normal" preload="auto" playsinline style="display:none;"></audio>
 <audio id="audio-winner" preload="auto" playsinline style="display:none;"></audio>
@@ -1884,6 +1883,11 @@ function renderScoreboardGrid() {
     return;
   }
 
+  // Если активная команда ещё не выбрана — по умолчанию выбираем первую
+  if (!activeTeamId && teamsData.length > 0) {
+    activeTeamId = teamsData[0].id;
+  }
+
   teamsData.forEach(function(t) {
     var group = document.createElement("div");
     group.className = "score-team-group" + (activeTeamId === t.id ? " active" : "");
@@ -2291,22 +2295,27 @@ function playSound(type) {
   }, delayMs);
 }
 
-// Запуск оригинала с авто-восстановлением ссылки
+// 2. Исправленный запуск оригинала: воспроизведение без сброса разогретого буфера
 async function playNormalWithAutoRecovery(audioEl, normalUrl, trackName) {
   var normalIcon = document.getElementById("normal-play-icon");
 
   try {
-    if (!audioEl.src || audioEl.src !== normalUrl) {
+    // Если плеер уже заряжен этим треком — не перезагружаем src, не сбрасываем буфер
+    if (!audioEl.src || audioEl.src === "" || audioEl.src === window.location.href) {
       audioEl.src = normalUrl;
       audioEl.load();
     }
+    
     audioEl.currentTime = 0;
-    await audioEl.play();
+    var p = audioEl.play();
+    if (p !== undefined) {
+      await p;
+    }
     if (normalIcon) normalIcon.classList.replace("fa-play", "fa-pause");
     updateNormalProgress();
     return true;
   } catch (err) {
-    console.warn("Повторная попытка: запрос свежей ссылки оригинала с Яндекс.Диска...", err);
+    console.warn("Мягкий перезапуск аудио оригинала:", err);
 
     try {
       var folder = selectedFolder || (mixMode ? "/Русские" : "");
@@ -2320,18 +2329,17 @@ async function playNormalWithAutoRecovery(audioEl, normalUrl, trackName) {
       }
       var data = await res.json();
       if (data && data.href) {
-        var freshAudio = ensureAudioPlayer("audio-normal");
-        freshAudio.src = data.href;
-        freshAudio.load();
-        freshAudio.currentTime = 0;
-        await freshAudio.play();
+        audioEl.src = data.href;
+        audioEl.load();
+        audioEl.currentTime = 0;
+        await audioEl.play();
         if (normalIcon) normalIcon.classList.replace("fa-play", "fa-pause");
         updateNormalProgress();
         if (files[trackName]) files[trackName].normal = data.href;
         return true;
       }
     } catch (recoverErr) {
-      console.error("Восстановление ссылки не удалось:", recoverErr);
+      console.error("Восстановление трека не удалось:", recoverErr);
     }
     return false;
   }
@@ -2589,6 +2597,7 @@ function purgeAudioBuffer(audioEl) {
   }
 }
 
+// Запуск трека: предбуферизация оригинала и сохранение очереди команд
 function playTrack(name) {
   hideBuzzerAlert();
   if (originalTimeout) {
@@ -2601,6 +2610,14 @@ function playTrack(name) {
 
   if (isInteractiveMode) {
     clearTeamHighlight();
+  }
+
+  // В обычном режиме: если трек сменился на новый, ход автоматически переходит дальше
+  if (!isInteractiveMode && name !== lastPlayedTrack) {
+    if (lastPlayedTrack !== null) {
+      cycleNextOfflineTeam();
+    }
+    lastPlayedTrack = name;
   }
 
   var audioRevers = ensureAudioPlayer("audio-revers");
@@ -2623,6 +2640,7 @@ function playTrack(name) {
 
     var newTrackSessionId = "track_" + Date.now();
 
+    // Заранее разогреваем оригинал в буфер браузера
     if (track.normal) {
       audioNormal.src = track.normal;
       audioNormal.preload = "auto";
@@ -2802,12 +2820,6 @@ function startSynchronizedPlayback() {
       icon.classList.replace("fa-play", "fa-pause");
       showTrackPopup(currentTrackName);
       updateReversProgress();
-
-      if (!isInteractiveMode && currentTrackName !== lastPlayedTrack) {
-        cycleNextOfflineTeam();
-        lastPlayedTrack = currentTrackName;
-        saveState();
-      }
     }).catch(function(err) {
       console.warn("Воспроизведение ведущего ожидает разрешения:", err);
     });
@@ -2844,13 +2856,16 @@ function resumeSynchronizedPlayback() {
   }, delayStart);
 }
 
+// 1. Исправленное переключение очереди: строго следующий после активного
 function cycleNextOfflineTeam() {
   if (teamsData.length === 0) return;
   var currIdx = teamsData.findIndex(function(t) { return t.id === activeTeamId; });
+  if (currIdx === -1) currIdx = 0;
   var nextIdx = (currIdx + 1) % teamsData.length;
   activateTeam(teamsData[nextIdx].id);
 }
 
+// 1. Ручной выбор команды ведущим: железно фиксирует выбор ведущего
 function manualActivateTeam(teamId) {
   activateTeam(teamId);
   saveState();
@@ -2922,6 +2937,7 @@ function hideOriginal() {
   document.getElementById("normal-play-icon").classList.replace("fa-pause", "fa-play");
 }
 
+// 2. Включение оригинала из плеера с первого клика
 async function toggleNormal() {
   var a = ensureAudioPlayer("audio-normal");
   var r = document.getElementById("audio-revers");
@@ -3151,7 +3167,6 @@ function openSettings() {
   }
 }
 
-// Гарантированное закрытие настроек
 function closeSettings() {
   var sMod = document.getElementById("settings-modal");
   if (sMod) {
@@ -3162,7 +3177,6 @@ function closeSettings() {
   }
 }
 
-// Безопасное сохранение настроек
 function setSettings() {
   try {
     var inputTimer = document.getElementById("timer-input");
