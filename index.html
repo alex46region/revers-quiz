@@ -2489,6 +2489,7 @@ function isTrackOrderValid(filesMap) {
   return valid;
 }
 
+// 1. Загрузка файлов с автоматическим перемешиванием треков во всех режимах
 async function loadFiles() {
   var loadBtn = document.getElementById("load-songs-btn");
   loadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Загрузка...';
@@ -2500,29 +2501,21 @@ async function loadFiles() {
       var results = await Promise.all([rPromise, fPromise]);
       var rFiles = results[0];
       var fFiles = results[1];
-      var rNames = Object.keys(rFiles).sort(function() { return Math.random() - 0.5; });
-      var fNames = Object.keys(fFiles).sort(function() { return Math.random() - 0.5; });
-      var maxLength = Math.max(rNames.length, fNames.length);
+      var rNames = Object.keys(rFiles);
+      var fNames = Object.keys(fFiles);
+      
+      // Объединяем треки и рандомизируем очередность
+      var mergedNames = Array.from(new Set(rNames.concat(fNames))).sort(function() { return Math.random() - 0.5; });
       var mixedFiles = {};
       var newTrackOrder = {};
-      var index = 0;
-      for (var i = 0; i < maxLength; i++) {
-        if (rNames[i]) {
-          var nameR = rNames[i];
-          mixedFiles[nameR] = Object.assign({}, rFiles[nameR]);
-          newTrackOrder[nameR] = ++index;
-        }
-        if (fNames[i]) {
-          var nameF = fNames[i];
-          mixedFiles[nameF] = Object.assign(mixedFiles[nameF] || {}, fFiles[nameF]);
-          if (!newTrackOrder[nameF]) newTrackOrder[nameF] = ++index;
-        }
-      }
+      
+      mergedNames.forEach(function(name, idx) {
+        mixedFiles[name] = Object.assign({}, rFiles[name] || {}, fFiles[name] || {});
+        newTrackOrder[name] = idx + 1;
+      });
+
       allFiles = mixedFiles;
       trackOrder = newTrackOrder;
-      var shuffleBtn = document.getElementById("shuffle-btn");
-      shuffleBtn.disabled = true;
-      shuffleBtn.textContent = '🔁 Чередование';
     } else {
       var path = document.getElementById("folder-select").value;
       if (!path) {
@@ -2531,26 +2524,32 @@ async function loadFiles() {
       }
       selectedFolder = path;
       allFiles = await fetchFolderFiles(path);
-      if (Object.keys(trackOrder).length === 0 || !isTrackOrderValid(allFiles)) {
-        var names = Object.keys(allFiles).sort();
-        trackOrder = {};
-        names.forEach(function(name, idx) {
-          trackOrder[name] = idx + 1;
-        });
-      }
-      updateShuffleButtonState();
+
+      // Автоматическое перемешивание загруженных треков
+      var names = Object.keys(allFiles).sort(function() { return Math.random() - 0.5; });
+      trackOrder = {};
+      names.forEach(function(name, idx) {
+        trackOrder[name] = idx + 1;
+      });
     }
+
     if (Object.keys(allFiles).length === 0) {
       loadBtn.innerHTML = '<i class="fas fa-cloud-download-alt"></i> Загрузить треки';
       return alert("Файлы не найдены.");
     }
+
     files = allFiles;
+    lastPlayedTrack = null;
+    playedTracks.clear();
+    
     updateTrackCounter();
     document.getElementById("quiz-area").style.display = "block";
     generateSongButtons();
+    updateShuffleButtonState();
     saveState();
     preloadAllSounds();
     updateNextTrackButton();
+    showActionNotification('✅ Треки загружены и перемешаны!');
   } catch (e) {
     console.error("КРИТИЧЕСКАЯ ОШИБКА ЗАГРУЗКИ:", e);
     alert("Ошибка загрузки.");
@@ -3095,7 +3094,6 @@ function updateTrackCounter() {
   updateNextTrackButton();
 }
 
-// 1. ИСПРАВЛЕНО: Завершение игры с полной гарантированной остановкой плеера оригинала
 function endQuiz() {
   localStorage.removeItem('reversQuiz');
   stopAllSounds();
@@ -3103,7 +3101,7 @@ function endQuiz() {
   var aGameOver = document.getElementById("audio-game-over");
   if (aGameOver && soundUrls.gameOver) {
     aGameOver.currentTime = 0;
-    aGameOver.play().catch(function(e) { console.warn(e); });
+    aGameOver.play().catch(function() {});
   }
 
   purgeAudioBuffer(document.getElementById("audio-revers"));
@@ -3115,7 +3113,6 @@ function endQuiz() {
     : (sortedTeams[0] ? sortedTeams[0].name + " побеждает!" : "Игра завершена");
 
   if (isInteractiveMode && roomRef) {
-    // Жёстко глушим и сбрасываем аудио-синхронизацию, чтобы исключить запуск треков
     roomRef.update({
       status: "game_over",
       revealedTrack: "",
@@ -3253,7 +3250,7 @@ function setSettings() {
       location.reload();
     } else {
       updateFolderSection();
-      showActionNotification('⚙️ Настройки сохранены');
+      showActionNotification('⚙️️ Настройки сохранены');
     }
   } catch (err) {
     console.error("Ошибка при сохранении настроек:", err);
