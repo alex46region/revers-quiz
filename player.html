@@ -625,6 +625,7 @@ body::after {
   text-shadow: 0 0 15px rgba(0, 243, 255, 0.6);
 }
 
+/* Кнопка-баззер */
 .buzzer-stage {
   flex: 1;
   display: flex;
@@ -745,6 +746,204 @@ body::after {
   color: #fff;
 }
 
+/* ОВЕРЛЕИ РЕЖИМА "ТРЕКИ ПО НОМЕРАМ" */
+.mode-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(8, 3, 24, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  z-index: 5000;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  text-align: center;
+}
+
+.mode-overlay.active {
+  display: flex;
+  animation: fadeInOverlay 0.3s ease;
+}
+
+@keyframes fadeInOverlay {
+  from { opacity: 0; transform: scale(0.97); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* 1. Блок готовности */
+.ready-box {
+  background: var(--card-bg);
+  border: 2px solid var(--neon-cyan);
+  border-radius: 28px;
+  padding: 34px 22px;
+  max-width: 360px;
+  width: 100%;
+  box-shadow: 0 0 50px rgba(0, 243, 255, 0.35);
+}
+
+.ready-box h3 {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 1.6em;
+  font-weight: 900;
+  color: var(--neon-cyan);
+  margin-bottom: 12px;
+  text-shadow: 0 0 15px var(--neon-cyan);
+}
+
+.ready-box p {
+  font-size: 1.05em;
+  font-weight: 600;
+  color: #b7aedb;
+  margin-bottom: 24px;
+}
+
+.btn-im-ready {
+  width: 100%;
+  padding: 20px;
+  border-radius: 18px;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 18px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  background: linear-gradient(135deg, var(--neon-lime), #00aa55);
+  color: #000;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 0 35px rgba(0, 255, 102, 0.6);
+  transition: transform 0.15s ease;
+}
+
+.btn-im-ready:active {
+  transform: scale(0.96);
+}
+
+/* 2. Сетка выбора номеров */
+.numbers-grid-container {
+  max-width: 440px;
+  width: 100%;
+  background: var(--card-bg);
+  border: 2px solid var(--neon-purple);
+  border-radius: 26px;
+  padding: 20px 16px;
+  box-shadow: 0 0 45px rgba(157, 0, 255, 0.35);
+  max-height: 82vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.numbers-grid-title {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 1.3em;
+  font-weight: 900;
+  color: var(--neon-yellow);
+  margin-bottom: 14px;
+  text-shadow: 0 0 10px var(--neon-yellow);
+}
+
+.numbers-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  overflow-y: auto;
+  padding: 4px;
+}
+
+.number-cell-btn {
+  padding: 18px 0;
+  border-radius: 14px;
+  font-family: 'Orbitron', monospace;
+  font-size: 1.4em;
+  font-weight: 900;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1.5px solid var(--neon-cyan);
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.number-cell-btn:active {
+  transform: scale(0.9);
+  background: var(--neon-cyan);
+  color: #000;
+}
+
+.number-cell-btn.selected-locked {
+  background: var(--neon-magenta);
+  border-color: #fff;
+  box-shadow: 0 0 25px var(--neon-magenta);
+  color: #fff;
+}
+
+/* 3. Мозаика и Вихрь-рандомайзер */
+.mosaic-board {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+  max-width: 380px;
+  margin-bottom: 20px;
+}
+
+.mosaic-card {
+  width: 80px;
+  height: 80px;
+  border-radius: 18px;
+  background: rgba(16, 10, 38, 0.9);
+  border: 2px solid var(--neon-cyan);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Orbitron', monospace;
+  font-size: 2.2em;
+  font-weight: 900;
+  color: #fff;
+  box-shadow: 0 0 25px var(--neon-cyan);
+}
+
+.vortex-spinner {
+  width: 240px;
+  height: 240px;
+  border-radius: 50%;
+  border: 6px dashed var(--neon-magenta);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: spinVortex 1s infinite linear;
+  box-shadow: 0 0 60px var(--neon-magenta);
+}
+
+@keyframes spinVortex {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.vortex-inner-number {
+  font-family: 'Orbitron', monospace;
+  font-size: 4.5em;
+  font-weight: 900;
+  color: var(--neon-yellow);
+  text-shadow: 0 0 30px var(--neon-yellow);
+  animation: spinReverse 1s infinite linear;
+}
+
+@keyframes spinReverse {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(-360deg); }
+}
+
+.result-winner-badge {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 1.8em;
+  font-weight: 900;
+  color: var(--neon-green);
+  margin-top: 16px;
+  text-shadow: 0 0 25px var(--neon-green);
+}
+
+/* Экран завершения игры */
 #game-over-view {
   display: none;
   flex-direction: column;
@@ -829,6 +1028,7 @@ body::after {
   font-size: 1.2em;
 }
 
+/* Модальное окно чата */
 #player-chat-modal {
   position: fixed;
   inset: 0;
@@ -1056,6 +1256,29 @@ body::after {
   <div class="error-banner" id="login-error"></div>
 </div>
 
+<!-- ОВЕРЛЕИ РЕЖИМА "ТРЕКИ ПО НОМЕРАМ" -->
+<!-- 1. Готовность к раунду -->
+<div class="mode-overlay" id="overlay-ready-check">
+  <div class="ready-box">
+    <h3>ГОТОВЫ К ИГРЕ?</h3>
+    <p>Подтвердите готовность вашей команды к раунду</p>
+    <button class="btn-im-ready" id="btn-team-confirm-ready" onclick="confirmTeamReady()">МЫ ГОТОВЫ!</button>
+  </div>
+</div>
+
+<!-- 2. Сетка выбора номеров -->
+<div class="mode-overlay" id="overlay-numbers-select">
+  <div class="numbers-grid-container">
+    <div class="numbers-grid-title">ВЫБЕРИТЕ НОМЕР ТРЕКА</div>
+    <div class="numbers-grid" id="player-numbers-grid"></div>
+  </div>
+</div>
+
+<!-- 3. Мозаика и Вихрь-рандомайзер -->
+<div class="mode-overlay" id="overlay-vortex">
+  <div id="vortex-stage-content"></div>
+</div>
+
 <!-- 2. Игровой экран участника -->
 <div id="game-view">
   <div class="top-action-bar">
@@ -1184,6 +1407,7 @@ var isChatOpen = false;
 var unreadChatCount = 0;
 var lastSeenScoreTimestamp = 0;
 var lastHandledSystemSoundTime = 0;
+var myChosenNumber = null;
 
 var wakeLockObj = null;
 
@@ -1670,6 +1894,10 @@ function listenToGameState() {
       timerBadge.classList.remove("show", "urgent");
     }
 
+    // Режим "Треки по номерам"
+    var numbersRound = data.numbersRound || {};
+    handleNumbersRoundStages(numbersRound);
+
     if (data.status === "reveal" || data.status === "playing") {
       closePlayerChat();
     }
@@ -1817,6 +2045,95 @@ function listenToGameState() {
   });
 }
 
+/* Управление экранами режима "Треки по номерам" */
+function handleNumbersRoundStages(round) {
+  var overlayReady = document.getElementById("overlay-ready-check");
+  var overlaySelect = document.getElementById("overlay-numbers-select");
+  var overlayVortex = document.getElementById("overlay-vortex");
+
+  overlayReady.classList.remove("active");
+  overlaySelect.classList.remove("active");
+  overlayVortex.classList.remove("active");
+
+  if (round.stage === "ready_check") {
+    overlayReady.classList.add("active");
+    myChosenNumber = null;
+    var btn = document.getElementById("btn-team-confirm-ready");
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = "МЫ ГОТОВЫ!";
+    }
+  } else if (round.stage === "selecting") {
+    overlaySelect.classList.add("active");
+    renderNumbersSelectionGrid(round.availableNumbers || []);
+  } else if (round.stage === "mosaic") {
+    overlayVortex.classList.add("active");
+    renderMosaicScreen(round.chosenNumbers || {});
+  } else if (round.stage === "vortex") {
+    overlayVortex.classList.add("active");
+    renderVortexSpinner();
+  } else if (round.stage === "result") {
+    overlayVortex.classList.add("active");
+    renderVortexResult(round.winningNumber);
+    setTimeout(function() {
+      overlayVortex.classList.remove("active");
+    }, 2500);
+  }
+}
+
+function confirmTeamReady() {
+  if (!currentRoom || !myTeamId) return;
+  db.ref("rooms/" + currentRoom + "/teams/" + myTeamId).update({ isReadyForRound: true });
+  var btn = document.getElementById("btn-team-confirm-ready");
+  if (btn) {
+    btn.textContent = "ОЖИДАЕМ ОСТАЛЬНЫХ...";
+    btn.disabled = true;
+  }
+}
+
+function renderNumbersSelectionGrid(numbers) {
+  var grid = document.getElementById("player-numbers-grid");
+  if (!grid) return;
+  grid.innerHTML = "";
+  numbers.forEach(function(num) {
+    var btn = document.createElement("button");
+    btn.className = "number-cell-btn" + (myChosenNumber === num ? " selected-locked" : "");
+    btn.textContent = num;
+    btn.onclick = function() {
+      if (myChosenNumber !== null) return;
+      myChosenNumber = num;
+      btn.classList.add("selected-locked");
+      db.ref("rooms/" + currentRoom + "/teams/" + myTeamId).update({ chosenNumber: num });
+    };
+    grid.appendChild(btn);
+  });
+}
+
+function renderMosaicScreen(chosenMap) {
+  var stage = document.getElementById("vortex-stage-content");
+  if (!stage) return;
+  stage.innerHTML = '<h3 style="font-family:Orbitron; font-weight:900; color:var(--neon-cyan); margin-bottom:16px;">ВЫБРАННЫЕ НОМЕРА:</h3><div class="mosaic-board"></div>';
+  var board = stage.querySelector(".mosaic-board");
+  Object.values(chosenMap).forEach(function(val) {
+    var card = document.createElement("div");
+    card.className = "mosaic-card";
+    card.textContent = val;
+    board.appendChild(card);
+  });
+}
+
+function renderVortexSpinner() {
+  var stage = document.getElementById("vortex-stage-content");
+  if (!stage) return;
+  stage.innerHTML = '<div class="vortex-spinner"><div class="vortex-inner-number">?</div></div><h3 style="font-family:Orbitron; font-weight:900; color:var(--neon-yellow); margin-top:20px;">РАНДОМАЙЗЕР ВЫБИРАЕТ...</h3>';
+}
+
+function renderVortexResult(winningNum) {
+  var stage = document.getElementById("vortex-stage-content");
+  if (!stage) return;
+  stage.innerHTML = '<div class="mosaic-card" style="width:120px; height:120px; font-size:3.5em; border-color:var(--neon-green); box-shadow:0 0 45px var(--neon-green);">' + winningNum + '</div><div class="result-winner-badge">ВЫБРАН ТРЕК №' + winningNum + '!</div>';
+}
+
 function updateChatTriggerButtonState() {
   var triggerBtn = document.getElementById("player-chat-toggle-btn");
   if (!triggerBtn) return;
@@ -1945,14 +2262,12 @@ function sendPlayerChatMessage() {
   document.getElementById("player-emoji-popover").style.display = "none";
 }
 
-// 2. ИСПРАВЛЕНО: Полная очистка буферов плееров при показе экрана завершения игры
 function showGameOverScreen(leaderboard) {
   if (gameOverTimer) return;
 
   var aRevers = document.getElementById("player-audio-revers");
   var aNormal = document.getElementById("player-audio-normal");
 
-  // Жёстко глушим и сбрасываем треки оригинала и реверса, чтобы они не играли поверх победного звука
   if (aRevers) {
     aRevers.pause();
     aRevers.currentTime = 0;
