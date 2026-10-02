@@ -2,23 +2,24 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover" />
 <meta name="theme-color" content="#05060a" />
 <meta name="referrer" content="no-referrer" />
-<title>🎧 Revers Викторина: Neon Stage</title>
+<title>🎧 Revers Quiz: Master Stage Pro</title>
 
 <link rel="manifest" href="manifest.json">
 <script>
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js').catch(function(e) { console.warn(e); });
+    navigator.serviceWorker.register('sw.js').catch(function(e) { console.warn('SW error:', e); });
   }
 </script>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Space+Grotesk:wght@500;700&family=Syne:wght@700;800;900&family=Ubuntu+Mono:wght@700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800;900&family=Space+Grotesk:wght@400;500;700&family=Syne:wght@700;800;900&family=Ubuntu+Mono:wght@700&display=swap" rel="stylesheet">
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
 
+<!-- Firebase Core & Database SDKs -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
@@ -27,100 +28,723 @@
   --bg-deep: #05060a;
   --bg-surface: #0e121a;
   --bg-elevated: #161c28;
+  --bg-card: rgba(22, 28, 40, 0.7);
+
   --neon-yellow: #ffea00;
   --neon-lime: #00ff66;
   --neon-pink: #ff0055;
   --neon-cyan: #00e5ff;
   --neon-purple: #7000ff;
+  --neon-orange: #ff7700;
+
   --text-pure: #ffffff;
   --text-dim: #8b9bb4;
-  --border-subtle: rgba(255, 255, 255, 0.07);
-  --border-glow: rgba(0, 229, 255, 0.4);
+  --text-muted: #536279;
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-glow: rgba(0, 229, 255, 0.35);
+  --radius-lg: 20px;
+  --radius-md: 14px;
 }
 
-* { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Space Grotesk', sans-serif; -webkit-tap-highlight-color: transparent; }
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: 'Space Grotesk', sans-serif;
+  -webkit-tap-highlight-color: transparent;
+}
+
 body {
   background-color: var(--bg-deep);
-  background-image: radial-gradient(ellipse at 50% 0%, rgba(112, 0, 255, 0.25) 0%, transparent 60%), radial-gradient(circle at 100% 100%, rgba(255, 0, 85, 0.15) 0%, transparent 40%), radial-gradient(circle at 0% 100%, rgba(0, 229, 255, 0.15) 0%, transparent 40%);
-  background-attachment: fixed; color: var(--text-pure); min-height: 100vh; padding: 16px 8px 80px;
+  background-image: 
+    radial-gradient(ellipse at 50% 0%, rgba(112, 0, 255, 0.25) 0%, transparent 60%),
+    radial-gradient(circle at 100% 100%, rgba(255, 0, 85, 0.15) 0%, transparent 40%),
+    radial-gradient(circle at 0% 100%, rgba(0, 229, 255, 0.15) 0%, transparent 40%);
+  background-attachment: fixed;
+  color: var(--text-pure);
+  min-height: 100vh;
+  padding: 16px 8px 100px;
 }
-.container { max-width: 900px; margin: 0 auto; background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: 24px; box-shadow: 0 25px 60px -10px rgba(0, 0, 0, 0.9); overflow: hidden; position: relative; }
-.container::before { content: ''; display: block; height: 4px; background: linear-gradient(90deg, var(--neon-cyan), var(--neon-purple), var(--neon-pink), var(--neon-yellow)); }
-.header { padding: 32px 20px 20px; text-align: center; }
-h1 { font-family: 'Syne', sans-serif; font-size: 2.2em; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; display: flex; align-items: center; justify-content: center; gap: 12px; }
-h1 i { color: var(--neon-cyan); filter: drop-shadow(0 0 12px var(--neon-cyan)); }
-.subtitle { font-size: 0.85em; font-weight: 700; color: var(--neon-yellow); text-transform: uppercase; letter-spacing: 3px; margin-top: 6px; }
-.section { background: var(--bg-elevated); margin: 16px 20px; padding: 20px; border-radius: 18px; border: 1px solid var(--border-subtle); position: relative; }
-.section-title { font-family: 'Syne', sans-serif; font-size: 1.1em; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-dim); margin-bottom: 16px; display: flex; align-items: center; justify-content: center; gap: 10px; }
-.section-title i { color: var(--neon-cyan); }
-.online-box { background: rgba(0, 229, 255, 0.05); border: 1px solid var(--neon-cyan); border-radius: 14px; padding: 16px; margin-bottom: 16px; display: flex; flex-direction: column; gap: 14px; }
-.online-row-top { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
-.pin-display { font-family: 'Ubuntu Mono', monospace; font-size: 1.8em; font-weight: 700; color: var(--neon-yellow); letter-spacing: 3px; }
-.online-link-area { background: rgba(5, 6, 10, 0.6); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; }
-.link-actions { display: flex; align-items: center; gap: 8px; width: 100%; }
-.copy-link-btn { flex: 1; font-family: 'Ubuntu Mono', monospace; font-size: 0.9em; font-weight: 700; color: var(--neon-cyan); background: rgba(0, 229, 255, 0.08); border: 1px dashed var(--neon-cyan); padding: 10px 12px; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
-.qr-trigger-btn { background: rgba(255, 234, 0, 0.1); border: 1px solid var(--neon-yellow); color: var(--neon-yellow); padding: 10px 16px; border-radius: 8px; font-size: 0.9em; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
-.connected-teams-list { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
-.team-pill { background: var(--bg-deep); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 8px 14px; font-size: 0.9em; font-weight: 700; display: inline-flex; align-items: center; gap: 8px; }
-.team-pill.ready { border-color: var(--neon-lime); color: var(--neon-lime); }
-.team-pill.offline { border-color: rgba(255, 255, 255, 0.15); color: var(--text-dim); opacity: 0.65; }
 
-/* Панель управления новым режимом "Треки по номерам" */
-.numbers-mode-panel { background: rgba(112, 0, 255, 0.12); border: 2px solid var(--neon-purple); border-radius: 16px; padding: 16px; margin: 16px 20px; display: none; flex-direction: column; gap: 14px; box-shadow: 0 0 30px rgba(112, 0, 255, 0.25); }
-.numbers-mode-title { font-family: 'Syne', sans-serif; font-size: 1.15em; font-weight: 800; color: var(--neon-cyan); text-transform: uppercase; letter-spacing: 1px; display: flex; align-items: center; justify-content: space-between; }
-.numbers-btn-row { display: flex; gap: 10px; flex-wrap: wrap; }
-.btn-round-control { flex: 1; min-width: 150px; padding: 14px 18px; border-radius: 12px; font-weight: 800; font-size: 0.95em; text-transform: uppercase; letter-spacing: 1px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
-.btn-check-ready { background: linear-gradient(135deg, var(--neon-cyan), #0077ff); color: #000; box-shadow: 0 0 20px rgba(0, 229, 255, 0.4); }
-.btn-start-choice { background: linear-gradient(135deg, var(--neon-lime), #00bb55); color: #000; box-shadow: 0 0 20px rgba(0, 255, 102, 0.4); }
-.btn-round-control:disabled { background: #252b3b; color: #556077; cursor: not-allowed; box-shadow: none; border: 1px solid rgba(255,255,255,0.05); }
+.container {
+  max-width: 960px;
+  margin: 0 auto;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 26px;
+  box-shadow: 0 30px 80px -10px rgba(0, 0, 0, 0.95);
+  overflow: hidden;
+  position: relative;
+}
 
-.teams-choices-monitor { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-top: 6px; }
-.choice-monitor-card { background: rgba(5, 6, 10, 0.85); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 10px; text-align: center; }
-.choice-monitor-card.chosen { border-color: var(--neon-lime); box-shadow: 0 0 15px rgba(0,255,102,0.25); }
-.choice-monitor-card .c-team { font-size: 0.8em; color: var(--text-dim); font-weight: 700; text-transform: uppercase; }
-.choice-monitor-card .c-val { font-family: 'Orbitron', monospace; font-size: 1.6em; font-weight: 900; color: var(--neon-yellow); margin-top: 2px; }
+.container::before {
+  content: '';
+  display: block;
+  height: 5px;
+  background: linear-gradient(90deg, var(--neon-cyan), var(--neon-purple), var(--neon-pink), var(--neon-yellow));
+}
 
-input[type="text"], input[type="number"], select { width: 100%; padding: 14px 16px; background: var(--bg-deep); border: 1px solid var(--border-subtle); border-radius: 12px; color: var(--text-pure); font-size: 15px; outline: none; }
-input[type="text"]:focus, select:focus { border-color: var(--neon-cyan); box-shadow: 0 0 15px rgba(0, 229, 255, 0.2); }
-select { cursor: pointer; appearance: none; }
-button { font-family: 'Space Grotesk', sans-serif; font-weight: 700; border-radius: 12px; border: none; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; transition: transform 0.15s ease; }
-button:active { transform: scale(0.98); }
+.header {
+  padding: 30px 20px 18px;
+  text-align: center;
+  position: relative;
+}
 
-#load-songs-btn { width: 100%; padding: 15px; font-size: 15px; text-transform: uppercase; letter-spacing: 1px; background: linear-gradient(135deg, var(--neon-purple), var(--neon-pink)); color: #fff; box-shadow: 0 4px 20px rgba(255, 0, 85, 0.35); }
-#shuffle-btn { width: 100%; padding: 14px; background: transparent; border: 1px solid var(--border-subtle); color: var(--text-dim); text-transform: uppercase; font-size: 14px; }
-.score-controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; margin-top: 6px; }
-.score-team-group { background: var(--bg-deep); border: 1px solid var(--border-subtle); border-radius: 16px; padding: 16px 12px; cursor: pointer; transition: all 0.25s ease; }
-.score-team-header { text-align: center; margin-bottom: 10px; }
-.score-team-label { font-size: 0.9em; font-weight: 700; text-transform: uppercase; color: var(--text-dim); }
-.score-display { font-family: 'Ubuntu Mono', monospace; font-size: 2.6em; font-weight: 700; color: var(--text-pure); line-height: 1; margin: 6px 0; }
-.score-team-group.active { border-color: var(--neon-cyan); background: rgba(0, 229, 255, 0.04); box-shadow: 0 0 25px rgba(0, 229, 255, 0.25); }
-.score-btn-row { display: flex; gap: 5px; margin-top: 5px; }
-.btn { flex: 1; padding: 9px 2px; font-size: 0.8em; font-weight: 700; border-radius: 8px; }
-.btn.add { background: rgba(0, 255, 102, 0.1); color: var(--neon-lime); border: 1px solid rgba(0, 255, 102, 0.25); }
-.btn.remove { background: rgba(255, 0, 85, 0.1); color: var(--neon-pink); border: 1px solid rgba(255, 0, 85, 0.25); }
+h1 {
+  font-family: 'Syne', sans-serif;
+  font-size: 2.3em;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  background: linear-gradient(180deg, #ffffff 30%, #a5b4fc 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
 
-.result-sounds { display: flex; gap: 12px; margin: 18px 0 6px; flex-wrap: wrap; }
-.result-btn { flex: 1; min-width: 140px; padding: 16px; font-size: 1em; text-transform: uppercase; border-radius: 14px; }
-.result-btn.winner { background: var(--neon-lime); color: #000; box-shadow: 0 4px 20px rgba(0, 255, 102, 0.3); }
-.result-btn.lost { background: var(--neon-pink); color: #fff; box-shadow: 0 4px 20px rgba(255, 0, 85, 0.3); }
+h1 i {
+  -webkit-text-fill-color: var(--neon-cyan);
+  filter: drop-shadow(0 0 14px var(--neon-cyan));
+}
 
-.player-container { background: var(--bg-deep); border: 1px solid var(--border-subtle); border-radius: 16px; padding: 14px 16px; margin: 10px 0; }
-.player-label { font-size: 0.85em; font-weight: 700; text-transform: uppercase; color: var(--neon-cyan); margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
-.player-controls { display: flex; align-items: center; gap: 12px; }
-.play-btn { width: 40px; height: 40px; border-radius: 10px; background: var(--neon-cyan); color: #000; font-size: 14px; flex-shrink: 0; }
-.progress-bar { flex: 1; height: 6px; background: rgba(255, 255, 255, 0.1); border-radius: 4px; cursor: pointer; overflow: hidden; }
-.progress-bar-fill { height: 100%; background: var(--neon-cyan); width: 0%; }
-.time-info { font-family: 'Ubuntu Mono', monospace; font-size: 0.85em; color: var(--text-dim); min-width: 85px; text-align: right; }
-#next-track-btn { width: 100%; padding: 16px; margin-top: 10px; background: var(--neon-yellow); color: #000; font-size: 15px; text-transform: uppercase; }
-#normal-toggle { width: 100%; padding: 12px; margin-top: 8px; background: transparent; border: 1px solid var(--border-subtle); color: var(--text-dim); }
-.song-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; margin-top: 8px; }
-.song-list button { background: var(--bg-deep); border: 1px solid var(--border-subtle); padding: 12px 14px; font-size: 13px; color: var(--text-pure); justify-content: flex-start; text-align: left; border-radius: 12px; }
-.song-number { font-family: 'Ubuntu Mono', monospace; display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 6px; background: rgba(255, 255, 255, 0.05); color: var(--neon-cyan); font-weight: 700; flex-shrink: 0; }
-.song-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.song-list button.played { opacity: 0.35; filter: grayscale(1); cursor: not-allowed; }
+.subtitle {
+  font-size: 0.85em;
+  font-weight: 700;
+  color: var(--neon-yellow);
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  margin-top: 6px;
+}
 
-#end-quiz-btn { width: 100%; padding: 18px; margin-top: 20px; background: transparent; border: 1px solid var(--neon-pink); color: var(--neon-pink); text-transform: uppercase; font-size: 14px; }
-#timer-circle { font-family: 'Ubuntu Mono', monospace; position: fixed; top: 20px; right: 20px; width: 60px; height: 60px; border-radius: 16px; background: rgba(5, 6, 10, 0.85); backdrop-filter: blur(10px); border: 2px solid var(--neon-cyan); color: var(--neon-cyan); display: flex; align-items: center; justify-content: center; font-size: 1.6em; font-weight: 700; z-index: 1000; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+.section {
+  background: var(--bg-elevated);
+  margin: 14px 18px;
+  padding: 20px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-subtle);
+  position: relative;
+}
+
+.section-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 1.1em;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--text-dim);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.section-title i {
+  color: var(--neon-cyan);
+}
+
+/* Онлайн-блок комнаты */
+.online-box {
+  background: rgba(0, 229, 255, 0.04);
+  border: 1px solid var(--neon-cyan);
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 0 25px rgba(0, 229, 255, 0.1);
+}
+
+.online-row-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.pin-display {
+  font-family: 'Ubuntu Mono', monospace;
+  font-size: 2em;
+  font-weight: 700;
+  color: var(--neon-yellow);
+  letter-spacing: 3px;
+}
+
+.online-link-area {
+  background: rgba(5, 6, 10, 0.65);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.link-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.copy-link-btn {
+  flex: 1;
+  min-width: 0;
+  font-family: 'Ubuntu Mono', monospace;
+  font-size: 0.9em;
+  font-weight: 700;
+  color: var(--neon-cyan);
+  background: rgba(0, 229, 255, 0.08);
+  border: 1px dashed var(--neon-cyan);
+  padding: 11px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.copy-link-btn:active {
+  background: var(--neon-cyan);
+  color: #000;
+}
+
+.qr-trigger-btn {
+  background: rgba(255, 234, 0, 0.1);
+  border: 1px solid var(--neon-yellow);
+  color: var(--neon-yellow);
+  padding: 11px 16px;
+  border-radius: 10px;
+  font-size: 0.9em;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.connected-teams-list {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.team-pill {
+  background: var(--bg-deep);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  padding: 8px 14px;
+  font-size: 0.9em;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.25s ease;
+}
+
+.team-pill.ready {
+  border-color: var(--neon-lime);
+  color: var(--neon-lime);
+}
+
+.team-pill.offline {
+  border-color: rgba(255, 255, 255, 0.15);
+  color: var(--text-dim);
+  opacity: 0.65;
+}
+
+/* Панель режима "Треки по номерам" */
+.numbers-mode-panel {
+  background: rgba(112, 0, 255, 0.12);
+  border: 2px solid var(--neon-purple);
+  border-radius: var(--radius-lg);
+  padding: 18px;
+  margin: 14px 18px;
+  display: none;
+  flex-direction: column;
+  gap: 14px;
+  box-shadow: 0 0 35px rgba(112, 0, 255, 0.25);
+}
+
+.numbers-mode-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 1.15em;
+  font-weight: 800;
+  color: var(--neon-cyan);
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.numbers-btn-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.btn-round-control {
+  flex: 1;
+  min-width: 170px;
+  padding: 14px 18px;
+  border-radius: 12px;
+  font-weight: 800;
+  font-size: 0.9em;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn-check-ready {
+  background: linear-gradient(135deg, var(--neon-cyan), #0077ff);
+  color: #000;
+  box-shadow: 0 0 20px rgba(0, 229, 255, 0.35);
+}
+
+.btn-start-choice {
+  background: linear-gradient(135deg, var(--neon-lime), #00bb55);
+  color: #000;
+  box-shadow: 0 0 20px rgba(0, 255, 102, 0.35);
+}
+
+.btn-round-control:disabled {
+  background: #252b3b;
+  color: #556077;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.teams-choices-monitor {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.choice-monitor-card {
+  background: rgba(5, 6, 10, 0.85);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  padding: 10px;
+  text-align: center;
+}
+
+.choice-monitor-card.chosen {
+  border-color: var(--neon-lime);
+  box-shadow: 0 0 15px rgba(0, 255, 102, 0.25);
+}
+
+.choice-monitor-card .c-team {
+  font-size: 0.8em;
+  color: var(--text-dim);
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.choice-monitor-card .c-val {
+  font-family: 'Orbitron', monospace;
+  font-size: 1.6em;
+  font-weight: 900;
+  color: var(--neon-yellow);
+  margin-top: 2px;
+}
+
+/* Формы, кнопки и списки */
+input[type="text"], input[type="number"], select {
+  width: 100%;
+  padding: 14px 16px;
+  background: var(--bg-deep);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  color: var(--text-pure);
+  font-size: 15px;
+  outline: none;
+}
+
+input[type="text"]:focus, select:focus {
+  border-color: var(--neon-cyan);
+  box-shadow: 0 0 15px rgba(0, 229, 255, 0.2);
+}
+
+select {
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2300e5ff' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  background-size: 14px;
+}
+
+.teams-input-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.team-input-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.team-input-row button.btn-del-team {
+  background: rgba(255, 0, 85, 0.1);
+  border: 1px solid rgba(255, 0, 85, 0.3);
+  color: var(--neon-pink);
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.add-team-btn {
+  background: transparent;
+  border: 1px dashed var(--neon-cyan);
+  color: var(--neon-cyan);
+  width: 100%;
+  padding: 12px;
+  border-radius: 12px;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  cursor: pointer;
+  margin-top: 6px;
+}
+
+button {
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 700;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+button:active {
+  transform: scale(0.98);
+}
+
+#save-teams-btn {
+  width: 100%;
+  padding: 14px;
+  margin-top: 10px;
+  background: var(--neon-cyan);
+  color: #000;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+#load-songs-btn {
+  width: 100%;
+  padding: 15px;
+  font-size: 15px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  background: linear-gradient(135deg, var(--neon-purple), var(--neon-pink));
+  color: #fff;
+  box-shadow: 0 4px 20px rgba(255, 0, 85, 0.35);
+}
+
+#shuffle-btn {
+  width: 100%;
+  padding: 14px;
+  background: transparent;
+  border: 1px solid var(--border-subtle);
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-size: 14px;
+}
+
+/* Табло счёта команд */
+.score-controls {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 12px;
+  margin-top: 6px;
+}
+
+.score-team-group {
+  background: var(--bg-deep);
+  border: 1px solid var(--border-subtle);
+  border-radius: 16px;
+  padding: 16px 12px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.score-team-header {
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.score-team-label {
+  font-size: 0.9em;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.score-display {
+  font-family: 'Ubuntu Mono', monospace;
+  font-size: 2.6em;
+  font-weight: 700;
+  color: var(--text-pure);
+  line-height: 1;
+  margin: 6px 0;
+}
+
+.score-team-group.active {
+  border-color: var(--neon-cyan);
+  background: rgba(0, 229, 255, 0.04);
+  box-shadow: 0 0 25px rgba(0, 229, 255, 0.25);
+}
+
+.score-team-group.active .score-team-label,
+.score-team-group.active .score-display {
+  color: var(--neon-cyan);
+  text-shadow: 0 0 15px rgba(0, 229, 255, 0.4);
+}
+
+.score-btn-row {
+  display: flex;
+  gap: 5px;
+  margin-top: 5px;
+}
+
+.btn {
+  flex: 1;
+  padding: 9px 2px;
+  font-size: 0.8em;
+  font-weight: 700;
+  border-radius: 8px;
+}
+
+.btn.add {
+  background: rgba(0, 255, 102, 0.1);
+  color: var(--neon-lime);
+  border: 1px solid rgba(0, 255, 102, 0.25);
+}
+
+.btn.remove {
+  background: rgba(255, 0, 85, 0.1);
+  color: var(--neon-pink);
+  border: 1px solid rgba(255, 0, 85, 0.25);
+}
+
+.result-sounds {
+  display: flex;
+  gap: 12px;
+  margin: 18px 0 6px;
+  flex-wrap: wrap;
+}
+
+.result-btn {
+  flex: 1;
+  min-width: 140px;
+  padding: 16px;
+  font-size: 1em;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  border-radius: 14px;
+}
+
+.result-btn.winner {
+  background: var(--neon-lime);
+  color: #000;
+  box-shadow: 0 4px 20px rgba(0, 255, 102, 0.3);
+}
+
+.result-btn.lost {
+  background: var(--neon-pink);
+  color: #fff;
+  box-shadow: 0 4px 20px rgba(255, 0, 85, 0.3);
+}
+
+/* Плеер */
+.player-container {
+  background: var(--bg-deep);
+  border: 1px solid var(--border-subtle);
+  border-radius: 16px;
+  padding: 14px 16px;
+  margin: 10px 0;
+}
+
+.player-label {
+  font-size: 0.85em;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--neon-cyan);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.player-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.play-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: var(--neon-cyan);
+  color: #000;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.progress-bar {
+  flex: 1;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: var(--neon-cyan);
+  width: 0%;
+}
+
+.time-info {
+  font-family: 'Ubuntu Mono', monospace;
+  font-size: 0.85em;
+  color: var(--text-dim);
+  min-width: 85px;
+  text-align: right;
+}
+
+#next-track-btn {
+  width: 100%;
+  padding: 16px;
+  margin-top: 10px;
+  background: var(--neon-yellow);
+  color: #000;
+  font-size: 15px;
+  text-transform: uppercase;
+}
+
+#normal-toggle {
+  width: 100%;
+  padding: 12px;
+  margin-top: 8px;
+  background: transparent;
+  border: 1px solid var(--border-subtle);
+  color: var(--text-dim);
+}
+
+/* Список композиций */
+.song-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 10px;
+  margin-top: 8px;
+  max-height: 440px;
+  overflow-y: auto;
+}
+
+.song-list button {
+  background: var(--bg-deep);
+  border: 1px solid var(--border-subtle);
+  padding: 12px 14px;
+  font-size: 13px;
+  color: var(--text-pure);
+  justify-content: flex-start;
+  text-align: left;
+  border-radius: 12px;
+}
+
+.song-number {
+  font-family: 'Ubuntu Mono', monospace;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--neon-cyan);
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.song-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.song-list button.played {
+  opacity: 0.35;
+  filter: grayscale(1);
+  cursor: not-allowed;
+}
+
+#end-quiz-btn {
+  width: 100%;
+  padding: 18px;
+  margin-top: 20px;
+  background: transparent;
+  border: 1px solid var(--neon-pink);
+  color: var(--neon-pink);
+  text-transform: uppercase;
+  font-size: 14px;
+}
+
+#timer-circle {
+  font-family: 'Ubuntu Mono', monospace;
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  width: 60px;
+  height: 60px;
+  border-radius: 16px;
+  background: rgba(5, 6, 10, 0.85);
+  backdrop-filter: blur(10px);
+  border: 2px solid var(--neon-cyan);
+  color: var(--neon-cyan);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.6em;
+  font-weight: 700;
+  z-index: 1000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s;
+}
+
 #timer-circle.active { opacity: 1; }
 #settings-btn { position: fixed; top: 20px; left: 20px; width: 44px; height: 44px; background: rgba(5, 6, 10, 0.85); border: 1px solid var(--border-subtle); border-radius: 12px; color: var(--text-dim); display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 1000; }
 #track-name-popup { position: fixed; top: 80px; left: 50%; transform: translateX(-50%); background: rgba(5, 6, 10, 0.95); border: 1px solid var(--neon-cyan); color: var(--neon-cyan); padding: 10px 20px; border-radius: 12px; font-size: 1.1em; font-weight: 700; z-index: 1000; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
@@ -128,9 +752,42 @@ button:active { transform: scale(0.98); }
 .action-notification { top: 75px; border-color: var(--neon-yellow); color: var(--neon-yellow); }
 .score-notification.show, .action-notification.show { opacity: 1; }
 
+/* Чат ведущего */
+#host-chat-toggle-btn {
+  position: fixed; bottom: 20px; right: 20px; width: 52px; height: 52px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--neon-cyan), #0077ff); color: #000; display: none;
+  align-items: center; justify-content: center; font-size: 1.3em; cursor: pointer; z-index: 2500;
+  box-shadow: 0 8px 25px rgba(0, 229, 255, 0.4);
+}
+
+.chat-unread-badge {
+  position: absolute; top: -4px; right: -4px; background: var(--neon-pink); color: #fff;
+  font-size: 11px; font-weight: 800; padding: 2px 7px; border-radius: 10px; display: none;
+}
+
+#host-chat-box {
+  position: fixed; bottom: 82px; right: 20px; width: min(360px, calc(100vw - 32px)); height: 440px;
+  background: var(--bg-surface); border: 1px solid var(--border-glow); border-radius: 20px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.95); display: none; flex-direction: column; z-index: 2500;
+  overflow: hidden;
+}
+
+.host-chat-head { background: var(--bg-elevated); padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-subtle); font-weight: 700; }
+.host-chat-msgs { flex: 1; padding: 12px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+.chat-msg-row { display: flex; flex-direction: column; font-size: 0.85em; }
+.chat-msg-row .author { font-weight: 700; font-size: 0.8em; color: var(--neon-cyan); margin-bottom: 2px; }
+.chat-msg-row.host-author .author { color: var(--neon-yellow); }
+.chat-msg-row .bubble { background: var(--bg-deep); border: 1px solid var(--border-subtle); padding: 8px 12px; border-radius: 12px; }
+.host-quick-replies { display: flex; gap: 6px; padding: 6px 10px; background: var(--bg-elevated); border-top: 1px solid var(--border-subtle); overflow-x: auto; }
+.quick-reply-btn { background: var(--bg-deep); border: 1px solid var(--border-subtle); color: #fff; padding: 5px 9px; border-radius: 8px; font-size: 11px; font-weight: 700; white-space: nowrap; cursor: pointer; flex-shrink: 0; }
+.host-chat-footer { padding: 8px 10px; background: var(--bg-deep); border-top: 1px solid var(--border-subtle); display: flex; gap: 6px; align-items: center; }
+.host-chat-footer input { flex: 1; padding: 8px 12px; font-size: 13px; border-radius: 10px; }
+.host-chat-footer button.btn-send { background: var(--neon-cyan); color: #000; width: 40px; height: 40px; border-radius: 10px; }
+
+/* Модальные окна */
 #settings-modal, #qr-modal { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; z-index: 2000; opacity: 0; pointer-events: none; transition: opacity 0.2s ease; }
 #settings-modal.active, #qr-modal.active { opacity: 1; pointer-events: auto; }
-.modal-content.settings-redesign { background: var(--bg-surface); padding: 24px 20px; border-radius: 24px; width: 94%; max-width: 440px; max-height: 88vh; overflow-y: auto; border: 1px solid var(--border-glow); position: relative; }
+.modal-content.settings-redesign { background: var(--bg-surface); padding: 24px 20px; border-radius: 24px; width: 94%; max-width: 460px; max-height: 88vh; overflow-y: auto; border: 1px solid var(--border-glow); position: relative; }
 .settings-header { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; padding-bottom: 10px; border-bottom: 1px solid var(--border-subtle); }
 .settings-header h3 { font-family: 'Syne', sans-serif; font-size: 1.4em; color: #fff; }
 .settings-group { background: var(--bg-deep); border: 1px solid var(--border-subtle); border-radius: 16px; padding: 14px; margin-bottom: 14px; display: flex; flex-direction: column; gap: 12px; }
@@ -141,6 +798,11 @@ button:active { transform: scale(0.98); }
 .qr-modal-content { background: var(--bg-surface); border: 1px solid var(--neon-cyan); border-radius: 24px; padding: 28px 24px; width: 90%; max-width: 340px; text-align: center; }
 .qr-box-img { background: #fff; border-radius: 16px; padding: 14px; margin: 16px auto; display: inline-block; }
 .qr-box-img img { width: 190px; height: 190px; display: block; }
+
+.winner-screen { text-align: center; padding: 20px; }
+.winner-screen h2 { font-family: 'Syne', sans-serif; font-size: 1.8em; margin-bottom: 20px; }
+.winner-screen h2 strong { color: var(--neon-yellow); }
+.final-scores { display: flex; flex-direction: column; gap: 8px; font-size: 1.1em; color: var(--text-dim); }
 </style>
 </head>
 <body>
@@ -155,6 +817,7 @@ button:active { transform: scale(0.98); }
     <div class="subtitle" id="game-subtitle">Угадай трек наоборот</div>
   </div>
 
+  <!-- Онлайн блок -->
   <div class="section" id="host-online-section" style="display:none;">
     <div class="online-box">
       <div class="online-row-top">
@@ -163,7 +826,7 @@ button:active { transform: scale(0.98); }
           <div class="pin-display" id="host-pin">----</div>
         </div>
         <div>
-          <span style="font-size:0.8em; color:var(--text-dim); text-transform:uppercase;">Для участников:</span>
+          <span style="font-size:0.8em; color:var(--text-dim); text-transform:uppercase;">Участники:</span>
           <div style="font-size:0.85em; color:var(--neon-cyan); font-weight:700;">/player.html</div>
         </div>
       </div>
@@ -175,14 +838,14 @@ button:active { transform: scale(0.98); }
         </div>
       </div>
     </div>
-    <div style="font-size:0.9em; color:var(--text-dim); text-transform:uppercase; margin-bottom:6px;">Подключённые команды:</div>
+    <div style="font-size:0.85em; color:var(--text-dim); text-transform:uppercase; margin-bottom:6px;">Подключённые команды:</div>
     <div class="connected-teams-list" id="host-teams-container"></div>
   </div>
 
-  <!-- Блок управления режимом "Треки по номерам" -->
+  <!-- Панель управления режима "Треки по номерам" -->
   <div class="numbers-mode-panel" id="numbers-mode-panel">
     <div class="numbers-mode-title">
-      <span><i class="fas fa-dice" style="color:var(--neon-purple); margin-right:8px;"></i> Режим: Треки по номерам</span>
+      <span><i class="fas fa-dice" style="color:var(--neon-purple); margin-right:8px;"></i> Треки по номерам</span>
       <span id="ready-counter-badge" style="font-size:0.75em; color:var(--neon-yellow);">Готово: 0/0</span>
     </div>
     <div class="numbers-btn-row">
@@ -193,10 +856,19 @@ button:active { transform: scale(0.98); }
         <i class="fas fa-play-circle"></i> Начать игру
       </button>
     </div>
-    <div style="font-size:0.8em; color:var(--text-dim); text-transform:uppercase; margin-top:4px;">Выбор номеров командами:</div>
+    <div style="font-size:0.8em; color:var(--text-dim); text-transform:uppercase; margin-top:4px;">Выбор номеров командами в реальном времени:</div>
     <div class="teams-choices-monitor" id="teams-choices-monitor"></div>
   </div>
 
+  <!-- Оффлайн команды -->
+  <div class="section" id="local-teams-section">
+    <h2 class="section-title"><i class="fas fa-users"></i> Команды игры</h2>
+    <div class="teams-input-list" id="teams-input-container"></div>
+    <button class="add-team-btn" onclick="addNewOfflineTeam()"><i class="fas fa-plus-circle"></i> Добавить команду</button>
+    <button id="save-teams-btn" onclick="saveOfflineTeams()">Сохранить составы</button>
+  </div>
+
+  <!-- Категории и треки -->
   <div class="section" id="folder-section">
     <h2 class="section-title"><i class="fas fa-folder"></i> Категория</h2>
     <select id="folder-select" onchange="saveState()">
@@ -211,9 +883,10 @@ button:active { transform: scale(0.98); }
   </div>
 
   <div class="section">
-    <button id="shuffle-btn" onclick="shuffleTracks()"><i class="fas fa-random"></i> Перемешать</button>
+    <button id="shuffle-btn" onclick="shuffleTracks()"><i class="fas fa-random"></i> Перемешать треки</button>
   </div>
 
+  <!-- Зона самой викторины -->
   <div id="quiz-area" style="display: none;">
     <div class="section">
       <h2 class="section-title"><i class="fas fa-trophy"></i> Счёт игры</h2>
@@ -259,6 +932,30 @@ button:active { transform: scale(0.98); }
   </div>
 </div>
 
+<!-- Кнопка и окно чата ведущего -->
+<button id="host-chat-toggle-btn" onclick="toggleHostChat()">
+  <i class="fas fa-comments"></i>
+  <span class="chat-unread-badge" id="host-unread-badge">0</span>
+</button>
+
+<div id="host-chat-box">
+  <div class="host-chat-head">
+    <span><i class="fas fa-comment-dots" style="color:var(--neon-cyan);"></i> Чат ведущего</span>
+    <i class="fas fa-times" onclick="toggleHostChat()" style="cursor:pointer; color:var(--text-dim);"></i>
+  </div>
+  <div class="host-chat-msgs" id="host-chat-messages"></div>
+  <div class="host-quick-replies">
+    <button class="quick-reply-btn" onclick="sendQuickReply('✅ Абсолютно верно!')">✅ Верно</button>
+    <button class="quick-reply-btn" onclick="sendQuickReply('❌ Неверно!')">❌ Неверно</button>
+    <button class="quick-reply-btn" onclick="sendQuickReply('⏳ Почти... Вспоминайте!')">⏳ Близко</button>
+    <button class="quick-reply-btn" onclick="sendQuickReply('🔥 В точку!')">🔥 В точку</button>
+  </div>
+  <div class="host-chat-footer">
+    <input type="text" id="host-chat-input" placeholder="Сообщение или подсказка..." onkeydown="if(event.key==='Enter') sendHostChatMessage();" />
+    <button class="btn-send" onclick="sendHostChatMessage()"><i class="fas fa-paper-plane"></i></button>
+  </div>
+</div>
+
 <audio id="audio-revers" preload="auto" playsinline style="display:none;"></audio>
 <audio id="audio-normal" preload="none" playsinline style="display:none;"></audio>
 <audio id="audio-winner" preload="auto" playsinline style="display:none;"></audio>
@@ -271,6 +968,7 @@ button:active { transform: scale(0.98); }
 <div id="settings-btn" onclick="openSettings()"><i class="fas fa-sliders-h"></i></div>
 <div id="timer-circle">0</div>
 
+<!-- Настройки -->
 <div id="settings-modal" onclick="if(event.target === this) closeSettings();">
   <div class="modal-content settings-redesign" onclick="event.stopPropagation();">
     <button type="button" class="close-modal" onclick="closeSettings()">&times;</button>
@@ -300,7 +998,7 @@ button:active { transform: scale(0.98); }
       <div class="settings-field row">
         <label for="chat-mode-toggle">Режим чата участников</label>
         <select id="chat-mode-toggle">
-          <option value="disabled" selected>🚫 Выключен</option>
+          <option value="disabled">🚫 Выключен</option>
           <option value="restricted">🔒 Ограниченный (по кнопке)</option>
           <option value="free">💬 Свободный (всегда доступен)</option>
         </select>
@@ -326,13 +1024,14 @@ button:active { transform: scale(0.98); }
       </div>
       <div class="settings-field row">
         <label for="mix-mode">Категории треков</label>
-        <select id="mix-mode" style="max-width:170px;"><option value="normal">По категориям</option><option value="mixed">Mix Mode</option></select>
+        <select id="mix-mode" style="max-width:170px;"><option value="normal">По категориям</option><option value="mixed">Mix Mode (микс)</option></select>
       </div>
     </div>
     <button type="button" class="settings-save-btn" onclick="setSettings()"><i class="fas fa-check"></i> Сохранить настройки</button>
   </div>
 </div>
 
+<!-- QR Modal -->
 <div id="qr-modal" onclick="if(event.target === this) closeQrModal();">
   <div class="qr-modal-content" onclick="event.stopPropagation();">
     <button type="button" class="close-modal" onclick="closeQrModal()">&times;</button>
@@ -357,12 +1056,14 @@ var firebaseConfig = {
 var db = null;
 var currentRoomPin = null;
 var roomRef = null;
-var gameMode = "offline"; // "offline", "interactive", "numbers"
+var gameMode = "offline";
 var isInteractiveMode = false;
 var showScoreToPlayers = true;
 var showOpponentScore = true;
 var streamAudioToPlayers = false;
 var chatMode = "disabled";
+var hostChatOpen = false;
+var hostUnreadCount = 0;
 
 var teamsData = [
   { id: 'team_1', name: 'Команда 1', score: 0, online: true },
@@ -389,20 +1090,40 @@ var soundUrls = { winner: null, lost: null, ring: null, start: null, final: null
 
 function ensureAudioPlayer(id) {
   var a = document.getElementById(id);
-  if (!a) { a = document.createElement("audio"); a.id = id; a.style.display = "none"; document.body.appendChild(a); }
+  if (!a) {
+    a = document.createElement("audio");
+    a.id = id;
+    a.style.display = "none";
+    a.setAttribute("playsinline", "true");
+    document.body.appendChild(a);
+  }
   return a;
 }
 
 function copyPlayerLink() {
   var link = "https://clck.ru/3WBWUq";
-  if (navigator.clipboard) navigator.clipboard.writeText(link).then(function() { showActionNotification("📋 Ссылка скопирована!"); });
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(link).then(function() { showActionNotification("📋 Ссылка скопирована!"); });
+  }
 }
 function openQrModal() { document.getElementById("qr-modal").classList.add("active"); }
 function closeQrModal() { document.getElementById("qr-modal").classList.remove("active"); }
+
 function generateNewRoomPin() {
   var newPin = Math.floor(1000 + Math.random() * 9000).toString();
   localStorage.setItem("host_room_pin", newPin);
   return newPin;
+}
+
+function updateHostChatButtonVisibility() {
+  var btn = document.getElementById("host-chat-toggle-btn");
+  if (!btn) return;
+  btn.style.display = (gameMode !== "offline" && chatMode !== "disabled") ? "flex" : "none";
+  if (chatMode === "disabled") {
+    var box = document.getElementById("host-chat-box");
+    if (box) box.style.display = "none";
+    hostChatOpen = false;
+  }
 }
 
 function initHostRoom() {
@@ -428,6 +1149,8 @@ function initHostRoom() {
   });
 
   listenToTeamsAndNumbers();
+  listenToChatMessages();
+  updateHostChatButtonVisibility();
 }
 
 function listenToTeamsAndNumbers() {
@@ -461,14 +1184,22 @@ function listenToTeamsAndNumbers() {
 
 function handleBuzzerTriggered(teamId, teamName) {
   var r = document.getElementById("audio-revers");
-  if (r && !r.paused) { r.pause(); document.getElementById("revers-play-icon").classList.replace("fa-pause", "fa-play"); }
+  if (r && !r.paused) {
+    r.pause();
+    document.getElementById("revers-play-icon").classList.replace("fa-pause", "fa-play");
+  }
   stopTimer();
   activateTeam(teamId);
-  if (soundUrls.ring) { var a = document.getElementById("audio-ring"); a.src = soundUrls.ring; a.currentTime = 0; a.play().catch(function(){}); }
+  if (soundUrls.ring) {
+    var a = document.getElementById("audio-ring");
+    a.src = soundUrls.ring;
+    a.currentTime = 0;
+    a.play().catch(function(){});
+  }
   showActionNotification("⚡ " + teamName + " отвечает!");
 }
 
-/* ЛОГИКА РЕЖИМА "ТРЕКИ ПО НОМЕРАМ" */
+/* Режим: Треки по номерам */
 function requestTeamsReady() {
   if (!roomRef || teamsData.length === 0) return alert("Ожидаем подключение команд!");
   teamsData.forEach(function(t) {
@@ -526,7 +1257,6 @@ function updateNumbersModeMonitor() {
     monitor.appendChild(card);
   });
 
-  // Если все выбрали номера в режиме выбора — запускаем вихрь-рандомайзер
   roomRef.child("numbersRound/stage").once("value", function(snap) {
     if (snap.val() === "selecting" && allChosen) {
       triggerVortexSpin(chosenMap);
@@ -551,8 +1281,6 @@ function startNumbersSelectionRound() {
 function triggerVortexSpin(chosenMap) {
   var values = Object.values(chosenMap);
   if (values.length === 0) return;
-  
-  // Выбираем один случайный номер из выбранных командами
   var winningNum = values[Math.floor(Math.random() * values.length)];
 
   roomRef.child("numbersRound").update({
@@ -561,12 +1289,10 @@ function triggerVortexSpin(chosenMap) {
     winningNumber: winningNum
   });
 
-  // Через 3 секунды мозаики запускаем вихрь
   setTimeout(function() {
     roomRef.child("numbersRound").update({ stage: "vortex" });
   }, 2500);
 
-  // Через 6 секунд вихря фиксируем победный номер и переносим трек в плеер
   setTimeout(function() {
     roomRef.child("numbersRound").update({ stage: "result", winningNumber: winningNum });
     selectTrackByNumber(winningNum);
@@ -595,6 +1321,57 @@ function renderHostTeamsList() {
   });
 }
 
+function renderOfflineTeamsInputs() {
+  var container = document.getElementById("teams-input-container");
+  if (!container) return;
+  container.innerHTML = "";
+
+  teamsData.forEach(function(t, idx) {
+    var row = document.createElement("div");
+    row.className = "team-input-row";
+    row.innerHTML = '<input type="text" value="' + t.name + '" id="input-team-' + idx + '" placeholder="Команда ' + (idx+1) + '" />';
+    if (teamsData.length > 2) {
+      var delBtn = document.createElement("button");
+      delBtn.className = "btn-del-team";
+      delBtn.innerHTML = '<i class="fas fa-trash-alt"></i>';
+      delBtn.onclick = function() { removeOfflineTeam(idx); };
+      row.appendChild(delBtn);
+    }
+    container.appendChild(row);
+  });
+}
+
+function addNewOfflineTeam() {
+  var newIdx = teamsData.length + 1;
+  teamsData.push({
+    id: "team_" + Date.now() + "_" + Math.random().toString(36).substr(2, 4),
+    name: "Команда " + newIdx,
+    score: 0,
+    online: true
+  });
+  renderOfflineTeamsInputs();
+  renderScoreboardGrid();
+  saveState();
+}
+
+function removeOfflineTeam(index) {
+  if (teamsData.length <= 2) return;
+  teamsData.splice(index, 1);
+  renderOfflineTeamsInputs();
+  renderScoreboardGrid();
+  saveState();
+}
+
+function saveOfflineTeams() {
+  teamsData.forEach(function(t, idx) {
+    var el = document.getElementById("input-team-" + idx);
+    if (el && el.value.trim()) t.name = el.value.trim();
+  });
+  renderScoreboardGrid();
+  saveState();
+  showActionNotification('✅ Составы команд сохранены!');
+}
+
 function renderScoreboardGrid() {
   var grid = document.getElementById("teams-scoreboard-grid");
   if (!grid) return;
@@ -602,13 +1379,35 @@ function renderScoreboardGrid() {
   if (!activeTeamId && teamsData.length > 0) activeTeamId = teamsData[0].id;
 
   teamsData.forEach(function(t) {
+    var isOffline = (t.online === false);
     var group = document.createElement("div");
     group.className = "score-team-group" + (activeTeamId === t.id ? " active" : "");
+    if (isOffline) {
+      group.style.opacity = "0.65";
+      group.style.borderColor = "rgba(255, 0, 85, 0.3)";
+    }
+    group.id = "score-card-" + t.id;
     group.onclick = function() { manualActivateTeam(t.id); };
+
+    var labelPrefix = isOffline ? "⚠️ " : "";
+    var labelSuffix = isOffline ? " (не в сети)" : "";
+
     group.innerHTML = 
-      '<div class="score-team-header"><div class="score-team-label">' + t.name + '</div><div class="score-display">' + formatScore(t.score) + '</div></div>' +
-      '<div class="score-btn-row remove"><button class="btn remove" onclick="event.stopPropagation(); changeScore(\'' + t.id + '\', -0.5)">-0.5</button><button class="btn remove" onclick="event.stopPropagation(); changeScore(\'' + t.id + '\', -1)">-1</button><button class="btn remove" onclick="event.stopPropagation(); changeScore(\'' + t.id + '\', -2)">-2</button></div>' +
-      '<div class="score-btn-row add"><button class="btn add" onclick="event.stopPropagation(); changeScore(\'' + t.id + '\', 0.5)">+0.5</button><button class="btn add" onclick="event.stopPropagation(); changeScore(\'' + t.id + '\', 1)">+1</button><button class="btn add" onclick="event.stopPropagation(); changeScore(\'' + t.id + '\', 2)">+2</button></div>';
+      '<div class="score-team-header">' +
+        '<div class="score-team-label">' + labelPrefix + t.name + labelSuffix + '</div>' +
+        '<div class="score-display">' + formatScore(t.score) + '</div>' +
+      '</div>' +
+      '<div class="score-btn-row remove">' +
+        '<button class="btn remove" onclick="event.stopPropagation(); changeScore(\'' + t.id + '\', -0.5)">-0.5</button>' +
+        '<button class="btn remove" onclick="event.stopPropagation(); changeScore(\'' + t.id + '\', -1)">-1</button>' +
+        '<button class="btn remove" onclick="event.stopPropagation(); changeScore(\'' + t.id + '\', -2)">-2</button>' +
+      '</div>' +
+      '<div class="score-btn-row add">' +
+        '<button class="btn add" onclick="event.stopPropagation(); changeScore(\'' + t.id + '\', 0.5)">+0.5</button>' +
+        '<button class="btn add" onclick="event.stopPropagation(); changeScore(\'' + t.id + '\', 1)">+1</button>' +
+        '<button class="btn add" onclick="event.stopPropagation(); changeScore(\'' + t.id + '\', 2)">+2</button>' +
+      '</div>';
+
     grid.appendChild(group);
   });
 }
@@ -620,68 +1419,188 @@ function clearTeamHighlight() { activeTeamId = null; renderScoreboardGrid(); }
 function changeScore(teamId, delta) {
   var team = teamsData.find(function(t) { return t.id === teamId; });
   if (!team) return;
-  team.score = Math.round((parseFloat(team.score || 0) + delta) * 10) / 10;
-  renderScoreboardGrid(); saveState();
-  if (delta > 0 && soundUrls.ring) { var a = document.getElementById("audio-ring"); a.src = soundUrls.ring; a.currentTime = 0; a.play().catch(function(){}); }
-  if (roomRef) {
-    roomRef.child("teams/" + teamId).update({ score: team.score, lastScoreDelta: delta, lastScoreChangeAt: Date.now() });
-    if (streamAudioToPlayers && delta > 0) roomRef.child("audioSync").update({ systemTrigger: { type: "ring", time: Date.now() } });
+
+  var currentScore = parseFloat(team.score) || 0;
+  var newScore = Math.round((currentScore + delta) * 10) / 10;
+  team.score = newScore;
+  renderScoreboardGrid();
+  saveState();
+
+  if (delta > 0) {
+    if (soundUrls.ring) {
+      var a = document.getElementById("audio-ring");
+      a.src = soundUrls.ring;
+      a.currentTime = 0;
+      a.play().catch(function() {});
+    }
+    showNotification('+' + formatScore(delta) + ' (' + team.name + ')', true);
+  } else {
+    showNotification(formatScore(delta) + ' (' + team.name + ')', false);
+  }
+
+  if (gameMode !== "offline" && roomRef) {
+    roomRef.child("teams/" + teamId).update({
+      score: team.score,
+      lastScoreDelta: delta,
+      lastScoreChangeAt: Date.now()
+    });
+
+    if (streamAudioToPlayers && delta > 0) {
+      roomRef.child("audioSync").update({
+        systemTrigger: { type: "ring", time: Date.now() }
+      });
+    }
   }
 }
 
 function playTrack(name) {
-  stopAllSounds(); hideOriginal(); hideTrackPopup();
-  if (isInteractiveMode) clearTeamHighlight();
+  stopAllSounds();
+  hideOriginal();
+  hideTrackPopup();
+
+  if (gameMode !== "offline") clearTeamHighlight();
   if (gameMode === "offline" && name !== lastPlayedTrack && lastPlayedTrack !== null) {
     cycleNextOfflineTeam();
   }
   lastPlayedTrack = name;
   currentTrackName = name;
+
   var track = files[name];
-  var aR = ensureAudioPlayer("audio-revers");
-  var aN = ensureAudioPlayer("audio-normal");
-  aN.src = ""; aN.preload = "none";
+  var audioRevers = ensureAudioPlayer("audio-revers");
+  var audioNormal = ensureAudioPlayer("audio-normal");
+  audioNormal.src = "";
+  audioNormal.preload = "none";
 
   if (track && track.revers) {
-    aR.src = track.revers; aR.preload = "auto"; aR.load();
-    aR.onended = function() { if (timerDuration > 0) startTimer(); hideTrackPopup(); };
-    aR.onplaying = function() {
-      aR.onplaying = null;
+    audioRevers.src = track.revers;
+    audioRevers.preload = "auto";
+    audioRevers.load();
+
+    audioRevers.onended = function() {
+      if (timerDuration > 0) startTimer();
+      hideTrackPopup();
+    };
+
+    audioRevers.onplaying = function() {
+      audioRevers.onplaying = null;
       if (track.normal && currentTrackName === name) {
-        aN.src = track.normal; aN.preload = "auto"; aN.load();
-        aN.onloadedmetadata = function() { document.getElementById("normal-duration").textContent = formatTime(aN.duration); };
+        audioNormal.src = track.normal;
+        audioNormal.preload = "auto";
+        audioNormal.load();
+        audioNormal.onloadedmetadata = function() {
+          document.getElementById("normal-duration").textContent = formatTime(audioNormal.duration);
+        };
       }
     };
-    var newSession = "track_" + Date.now();
-    aR.onloadedmetadata = function() {
-      var dur = aR.duration || 0;
+
+    var newTrackSessionId = "track_" + Date.now();
+    var hasStartedThisTrack = false;
+
+    function launchReversPlayback(dur) {
+      if (hasStartedThisTrack) return;
+      hasStartedThisTrack = true;
+
       document.getElementById("revers-duration").textContent = formatTime(dur);
-      if (roomRef) {
-        roomRef.update({ status: "idle", revealedTrack: "", timerState: { active: false, value: 0 }, buzzer: { locked: false, pressedBy: null, passedBy: [] } });
-        roomRef.child("audioSync").set({ trackSessionId: newSession, reversUrl: track.revers, normalUrl: track.normal || "", duration: dur, playAction: "prepare", startAt: 0 });
+
+      if (gameMode !== "offline" && roomRef) {
+        teamsData.forEach(function(t) {
+          roomRef.child("teams/" + t.id + "/readyToPlay").set(false);
+        });
+
+        roomRef.update({
+          status: "idle",
+          revealedTrack: "",
+          timerState: { active: false, value: 0 },
+          buzzer: { locked: false, pressedBy: null, passedBy: [] }
+        });
+
+        roomRef.child("audioSync").set({
+          trackSessionId: newTrackSessionId,
+          reversUrl: track.revers || "",
+          normalUrl: track.normal || "",
+          duration: dur,
+          currentTime: 0,
+          playAction: "prepare",
+          startAt: 0
+        });
       }
+
       toggleRevers();
+    }
+
+    audioRevers.onloadedmetadata = function() {
+      audioRevers.onloadedmetadata = null;
+      launchReversPlayback(audioRevers.duration || 0);
     };
+
+    setTimeout(function() {
+      if (!hasStartedThisTrack && currentTrackName === name) {
+        launchReversPlayback(audioRevers.duration || 0);
+      }
+    }, 1200);
   }
+  updateShuffleButtonState();
+  updateNextTrackButton();
   saveState();
 }
 
+function playNextTrack() {
+  var allNames = Object.keys(files).sort(function(a, b) {
+    return (trackOrder[a] || 0) - (trackOrder[b] || 0);
+  });
+  var unplayed = allNames.filter(function(name) { return !playedTracks.has(name); });
+  if (unplayed.length === 0) {
+    showActionNotification('❗ Все треки сыграны');
+    return;
+  }
+  playTrack(unplayed[0]);
+}
+
+function updateNextTrackButton() {
+  var btn = document.getElementById("next-track-btn");
+  if (!btn) return;
+  var allNames = Object.keys(files);
+  var unplayed = allNames.filter(function(name) { return !playedTracks.has(name); });
+  btn.disabled = unplayed.length === 0;
+}
+
 function toggleRevers() {
-  var a = document.getElementById("audio-revers");
-  var i = document.getElementById("revers-play-icon");
-  if (a.paused) {
+  var audio = document.getElementById("audio-revers");
+  var icon = document.getElementById("revers-play-icon");
+
+  if (audio.paused) {
     stopTimer();
-    var startAt = Date.now() + 250;
-    if (roomRef) {
+    var serverStartAt = Date.now() + 250;
+
+    if (gameMode !== "offline" && roomRef) {
       roomRef.update({ status: "playing", revealedTrack: "", timerState: { active: false, value: 0 } });
-      roomRef.child("audioSync").update({ playAction: streamAudioToPlayers ? "play_revers" : "play_silent", startAt: startAt, duration: a.duration || 0 });
+      roomRef.child("audioSync").update({
+        playAction: streamAudioToPlayers ? "play_revers" : "play_silent",
+        startAt: serverStartAt,
+        duration: audio.duration || 0,
+        currentTime: 0
+      });
     }
+
     setTimeout(function() {
-      a.play().then(function() { i.classList.replace("fa-play", "fa-pause"); showTrackPopup(currentTrackName); updateReversProgress(); });
-    }, Math.max(0, startAt - Date.now()));
+      audio.currentTime = 0;
+      audio.play().then(function() {
+        icon.classList.replace("fa-play", "fa-pause");
+        showTrackPopup(currentTrackName);
+        updateReversProgress();
+      }).catch(function(err) { console.warn('Play error:', err); });
+    }, Math.max(0, serverStartAt - Date.now()));
   } else {
-    a.pause(); i.classList.replace("fa-pause", "fa-play");
-    if (roomRef) roomRef.child("audioSync").update({ playAction: "pause", currentTime: a.currentTime });
+    audio.pause();
+    icon.classList.replace("fa-pause", "fa-play");
+    hideTrackPopup();
+
+    if (gameMode !== "offline" && roomRef) {
+      roomRef.child("audioSync").update({
+        playAction: "pause",
+        currentTime: audio.currentTime
+      });
+    }
   }
 }
 
@@ -689,35 +1608,85 @@ async function toggleNormal() {
   var a = ensureAudioPlayer("audio-normal");
   var r = document.getElementById("audio-revers");
   var i = document.getElementById("normal-play-icon");
+
   if (a.paused) {
-    stopTimer(); r.pause();
-    document.getElementById("revers-play-icon").classList.replace("fa-pause", "fa-play");
+    if (originalTimeout) { clearTimeout(originalTimeout); originalTimeout = null; }
+    stopTimer();
+    if (r && !r.paused) {
+      r.pause();
+      document.getElementById("revers-play-icon").classList.replace("fa-pause", "fa-play");
+    }
+
     var trackObj = files[currentTrackName];
-    if (!trackObj || !trackObj.normal) return showActionNotification("⚠️ Оригинал не найден");
-    if (roomRef) roomRef.update({ status: "reveal", revealedTrack: currentTrackName, buzzer: { locked: true, pressedBy: null, passedBy: [] } });
-    if (!a.src || a.src === window.location.href) { a.src = trackObj.normal; a.load(); }
+    if (!trackObj || !trackObj.normal) return showActionNotification("⚠️ Оригинал трека не найден");
+
+    if (gameMode !== "offline" && roomRef) {
+      roomRef.update({
+        status: "reveal",
+        revealedTrack: currentTrackName || "",
+        buzzer: { locked: true, pressedBy: null, passedBy: [] }
+      });
+    }
+
+    if (!a.src || a.src === window.location.href) {
+      a.src = trackObj.normal;
+      a.load();
+    }
+
     a.currentTime = 0;
     await a.play();
     i.classList.replace("fa-play", "fa-pause");
     updateNormalProgress();
-    if (roomRef && streamAudioToPlayers) roomRef.child("audioSync").update({ playAction: "play_normal", currentTime: 0, startAt: Date.now() + 150 });
+
+    if (gameMode !== "offline" && roomRef && streamAudioToPlayers) {
+      roomRef.child("audioSync").update({
+        playAction: "play_normal",
+        currentTime: 0,
+        startAt: Date.now() + 150
+      });
+    }
   } else {
-    a.pause(); i.classList.replace("fa-play", "fa-pause");
-    if (roomRef && streamAudioToPlayers) roomRef.child("audioSync").update({ playAction: "pause" });
+    a.pause();
+    i.classList.replace("fa-play", "fa-pause");
+    if (gameMode !== "offline" && roomRef && streamAudioToPlayers) {
+      roomRef.child("audioSync").update({ playAction: "pause" });
+    }
   }
 }
 
 function playSound(type) {
   var url = type === 'winner' ? soundUrls.winner : soundUrls.lost;
   var audio = document.getElementById(type === 'winner' ? 'audio-winner' : 'audio-lost');
-  var r = document.getElementById("audio-revers"); if (r) r.pause();
+  var r = document.getElementById("audio-revers");
+  if (r) r.pause();
   stopTimer();
-  if (url && audio) { audio.src = url; audio.currentTime = 0; audio.play().catch(function(){}); }
-  if (roomRef) {
-    roomRef.update({ status: "reveal", revealedTrack: currentTrackName || "", buzzer: { locked: true, pressedBy: null, passedBy: [] } });
-    if (streamAudioToPlayers) roomRef.child("audioSync").update({ systemTrigger: { type: type, time: Date.now() } });
+  hideTrackPopup();
+
+  if (url && audio) {
+    audio.src = url;
+    audio.currentTime = 0;
+    audio.play().catch(function(){});
   }
-  setTimeout(function() { showOriginal(); toggleNormal(); }, Math.max(0, originalDelay * 1000));
+
+  if (gameMode !== "offline" && roomRef) {
+    roomRef.update({
+      status: "reveal",
+      revealedTrack: currentTrackName || "",
+      buzzer: { locked: true, pressedBy: null, passedBy: [] }
+    });
+
+    if (streamAudioToPlayers) {
+      roomRef.child("audioSync").update({
+        systemTrigger: { type: type, time: Date.now() }
+      });
+    }
+  }
+
+  if (originalTimeout) { clearTimeout(originalTimeout); originalTimeout = null; }
+  originalTimeout = setTimeout(function() {
+    showOriginal();
+    toggleNormal();
+  }, Math.max(0, originalDelay * 1000));
 }
 
 function showOriginal() {
@@ -725,35 +1694,52 @@ function showOriginal() {
   p.style.display = p.style.display === "none" ? "block" : "none";
   document.getElementById("normal-toggle").textContent = p.style.display === "none" ? "Показать оригинал" : "Скрыть оригинал";
 }
+
 function hideOriginal() {
   document.getElementById("original-player").style.display = "none";
   document.getElementById("normal-toggle").textContent = "Показать оригинал";
-  var a = document.getElementById("audio-normal"); if (a) a.pause();
+  var a = document.getElementById("audio-normal");
+  if (a) a.pause();
 }
 
 function stopAllSounds() {
   ["audio-revers", "audio-normal", "audio-winner", "audio-lost", "audio-ring", "audio-start", "audio-final", "audio-game-over"].forEach(function(id) {
-    var el = document.getElementById(id); if (el) { el.pause(); el.currentTime = 0; }
+    var el = document.getElementById(id);
+    if (el) { el.pause(); el.currentTime = 0; }
   });
   stopTimer();
 }
 
 function startTimer() {
   if (isTimerActive) return;
-  isTimerActive = true; timerValue = timerDuration;
-  var circle = document.getElementById("timer-circle"); circle.classList.add("active");
+  isTimerActive = true;
+  timerValue = timerDuration;
+  var circle = document.getElementById("timer-circle");
+  circle.classList.add("active");
+  circle.textContent = timerValue;
+
   var aStart = document.getElementById("audio-start");
-  if (soundUrls.start && aStart) { aStart.src = soundUrls.start; aStart.currentTime = 0; aStart.play().catch(function(){}); }
-  if (roomRef) roomRef.child("timerState").set({ active: true, value: timerValue });
+  if (soundUrls.start && aStart) {
+    aStart.src = soundUrls.start;
+    aStart.currentTime = 0;
+    aStart.play().catch(function(){});
+  }
+
+  if (gameMode !== "offline" && roomRef) {
+    roomRef.child("timerState").set({ active: true, value: timerValue });
+  }
 
   timerInterval = setInterval(function() {
     timerValue--;
     circle.textContent = timerValue;
-    if (roomRef) roomRef.child("timerState").update({ value: timerValue });
+    if (gameMode !== "offline" && roomRef) {
+      roomRef.child("timerState").update({ value: timerValue });
+    }
     if (timerValue <= 0) {
       clearInterval(timerInterval);
-      if (roomRef) roomRef.child("timerState").set({ active: false, value: 0 });
-      circle.classList.remove("active"); isTimerActive = false;
+      if (gameMode !== "offline" && roomRef) roomRef.child("timerState").set({ active: false, value: 0 });
+      circle.classList.remove("active");
+      isTimerActive = false;
     }
   }, 1000);
 }
@@ -762,7 +1748,7 @@ function stopTimer() {
   if (timerInterval) clearInterval(timerInterval);
   isTimerActive = false;
   document.getElementById("timer-circle").classList.remove("active");
-  if (roomRef) roomRef.child("timerState").set({ active: false, value: 0 });
+  if (gameMode !== "offline" && roomRef) roomRef.child("timerState").set({ active: false, value: 0 });
 }
 
 function cycleNextOfflineTeam() {
@@ -778,6 +1764,7 @@ function updateReversProgress() {
   document.getElementById("revers-current-time").textContent = formatTime(a.currentTime);
   if (!a.paused) requestAnimationFrame(updateReversProgress);
 }
+
 function updateNormalProgress() {
   var a = document.getElementById("audio-normal");
   var fill = document.getElementById("normal-progress-fill");
@@ -797,6 +1784,15 @@ function showActionNotification(text) {
   notif.textContent = text; notif.classList.add("show");
   setTimeout(function() { notif.classList.remove("show"); }, 2000);
 }
+
+function showNotification(text, isAddition) {
+  var notif = document.getElementById("score-notification");
+  notif.textContent = text;
+  notif.style.color = isAddition ? 'var(--neon-lime)' : 'var(--neon-pink)';
+  notif.classList.add("show");
+  setTimeout(function() { notif.classList.remove("show"); }, 1200);
+}
+
 function showTrackPopup(name) { var p = document.getElementById("track-name-popup"); p.textContent = name; p.style.opacity = 1; }
 function hideTrackPopup() { document.getElementById("track-name-popup").style.opacity = 0; }
 
@@ -809,35 +1805,77 @@ function markAsPlayed() {
     playedTracks.add(currentTrackName);
     updateTrackCounter();
     document.querySelectorAll('[data-song="' + currentTrackName + '"]').forEach(function(b) { b.classList.add("played"); });
+    updateNextTrackButton();
+    saveState();
   }
 }
 document.getElementById("audio-revers").addEventListener("playing", markAsPlayed);
 
+/* Загрузка треков */
 async function loadFiles() {
   var btn = document.getElementById("load-songs-btn");
   btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Загрузка...';
-  var path = document.getElementById("folder-select").value;
-  if (!path && !mixMode) return alert("Выберите категорию!");
 
-  var allFiles = await fetchFolderFiles(path || "/Русские");
-  var names = Object.keys(allFiles).sort(function() { return Math.random() - 0.5; }); // Автоматическое перемешивание!
-  trackOrder = {};
-  names.forEach(function(n, idx) { trackOrder[n] = idx + 1; });
-  files = allFiles;
-  playedTracks.clear();
-  generateSongButtons();
-  updateTrackCounter();
-  document.getElementById("quiz-area").style.display = "block";
+  try {
+    var allFiles = {};
+    if (mixMode) {
+      var rPromise = fetchFolderFiles("/Русские").catch(function() { return {}; });
+      var fPromise = fetchFolderFiles("/Зарубежные").catch(function() { return {}; });
+      var results = await Promise.all([rPromise, fPromise]);
+      var rFiles = results[0];
+      var fFiles = results[1];
+      var rNames = Object.keys(rFiles);
+      var fNames = Object.keys(fFiles);
+      var merged = Array.from(new Set(rNames.concat(fNames))).sort(function() { return Math.random() - 0.5; });
+      var mixedFiles = {};
+      var newOrder = {};
+
+      merged.forEach(function(name, idx) {
+        mixedFiles[name] = Object.assign({}, rFiles[name] || {}, fFiles[name] || {});
+        newOrder[name] = idx + 1;
+      });
+
+      allFiles = mixedFiles;
+      trackOrder = newOrder;
+    } else {
+      var path = document.getElementById("folder-select").value;
+      if (!path) {
+        btn.innerHTML = '<i class="fas fa-cloud-download-alt"></i> Загрузить треки';
+        return alert("Выберите категорию!");
+      }
+      selectedFolder = path;
+      allFiles = await fetchFolderFiles(path);
+
+      var names = Object.keys(allFiles).sort(function() { return Math.random() - 0.5; });
+      trackOrder = {};
+      names.forEach(function(n, idx) { trackOrder[n] = idx + 1; });
+    }
+
+    files = allFiles;
+    playedTracks.clear();
+    generateSongButtons();
+    updateTrackCounter();
+    document.getElementById("quiz-area").style.display = "block";
+    updateNextTrackButton();
+    updateShuffleButtonState();
+    saveState();
+    preloadAllSounds();
+    showActionNotification("✅ Треки загружены и перемешаны!");
+  } catch(e) {
+    console.error(e);
+    alert("Ошибка загрузки папки!");
+  }
   btn.innerHTML = '<i class="fas fa-cloud-download-alt"></i> Загрузить треки';
-  showActionNotification("✅ Треки загружены и перемешаны!");
 }
 
 async function fetchFolderFiles(path) {
   var limit = 100, offset = 0, all = [], res = {};
   while (true) {
     var url = "https://cloud-api.yandex.net/v1/disk/public/resources?public_key=" + encodeURIComponent(PUBLIC_KEY) + "&path=" + encodeURIComponent(path) + "&limit=" + limit + "&offset=" + offset;
-    var r = await fetch(url); if (!r.ok) break;
-    var d = await r.json(); var items = (d._embedded && d._embedded.items) || [];
+    var r = await fetch(url);
+    if (!r.ok) break;
+    var d = await r.json();
+    var items = (d._embedded && d._embedded.items) || [];
     if (!items.length) break;
     all.push.apply(all, items);
     if (items.length < limit) break;
@@ -853,7 +1891,8 @@ async function fetchFolderFiles(path) {
 }
 
 function generateSongButtons() {
-  var c = document.getElementById("song-buttons"); c.innerHTML = "";
+  var c = document.getElementById("song-buttons");
+  c.innerHTML = "";
   Object.keys(files).sort(function(a,b){ return (trackOrder[a]||0) - (trackOrder[b]||0); }).forEach(function(name) {
     var b = document.createElement("button");
     b.setAttribute("data-song", name);
@@ -863,28 +1902,162 @@ function generateSongButtons() {
   });
 }
 
+function updateShuffleButtonState() {
+  var shuffleBtn = document.getElementById("shuffle-btn");
+  var hasStarted = lastPlayedTrack !== null;
+  if (shuffleBtn) {
+    shuffleBtn.disabled = hasStarted;
+    shuffleBtn.style.opacity = hasStarted ? 0.4 : 1;
+    shuffleBtn.style.cursor = hasStarted ? "not-allowed" : "pointer";
+    shuffleBtn.textContent = hasStarted ? '❌ Игра начата' : '🔄 Перемешать треки';
+  }
+}
+
 function shuffleTracks() {
+  if (lastPlayedTrack !== null) return showActionNotification('❌ Нельзя перемешивать после начала!');
   var names = Object.keys(files).sort(function() { return Math.random() - 0.5; });
   trackOrder = {};
   names.forEach(function(n, idx) { trackOrder[n] = idx + 1; });
   generateSongButtons();
+  saveState();
   showActionNotification("✅ Треки перемешаны!");
 }
 
+async function preloadAllSounds() {
+  try {
+    var rootUrl = "https://cloud-api.yandex.net/v1/disk/public/resources?public_key=" + encodeURIComponent(PUBLIC_KEY) + "&limit=100";
+    var res = await fetch(rootUrl);
+    var data = await res.json();
+    var items = (data._embedded && data._embedded.items) || [];
+    items.forEach(function(f) {
+      var n = f.name.toLowerCase();
+      if (n.indexOf("time_start") !== -1 && n.endsWith(".mp3")) soundUrls.start = f.file;
+      if (n.indexOf("time_final") !== -1 && n.endsWith(".mp3")) soundUrls.final = f.file;
+      if (n.indexOf("winner") !== -1 && n.endsWith(".mp3")) soundUrls.winner = f.file;
+      if (n.indexOf("lost") !== -1 && n.endsWith(".mp3")) soundUrls.lost = f.file;
+      if (n.indexOf("ring_score") !== -1 && n.endsWith(".mp3")) soundUrls.ring = f.file;
+      if (n.indexOf("game_over") !== -1 && n.endsWith(".mp3")) {
+        soundUrls.gameOver = f.file;
+        var aGameOver = document.getElementById("audio-game-over");
+        if (aGameOver) { aGameOver.src = f.file; aGameOver.load(); }
+      }
+    });
+    if (gameMode !== "offline" && roomRef) {
+      roomRef.child("systemSounds").set(soundUrls);
+    }
+  } catch(e) {
+    console.error("Ошибка звуков:", e);
+  }
+}
+
+/* Чат ведущего */
+function toggleHostChat() {
+  if (chatMode === "disabled") return;
+  var box = document.getElementById("host-chat-box");
+  hostChatOpen = !hostChatOpen;
+  box.style.display = hostChatOpen ? "flex" : "none";
+  if (hostChatOpen) {
+    hostUnreadCount = 0;
+    updateHostUnreadBadge();
+    var msgs = document.getElementById("host-chat-messages");
+    msgs.scrollTop = msgs.scrollHeight;
+  }
+}
+
+function updateHostUnreadBadge() {
+  var b = document.getElementById("host-unread-badge");
+  b.textContent = hostUnreadCount;
+  b.style.display = hostUnreadCount > 0 ? "inline-block" : "none";
+}
+
+function listenToChatMessages() {
+  if (!roomRef) return;
+  roomRef.child("chat").limitToLast(50).on("child_added", function(snap) {
+    var msg = snap.val();
+    if (!msg) return;
+    var row = document.createElement("div");
+    row.className = "chat-msg-row" + (msg.isHost ? " host-author" : "");
+    row.innerHTML = '<div class="author">' + msg.author + '</div><div class="bubble">' + msg.text + '</div>';
+    var box = document.getElementById("host-chat-messages");
+    box.appendChild(row);
+    box.scrollTop = box.scrollHeight;
+    if (!hostChatOpen && !msg.isHost) {
+      hostUnreadCount++;
+      updateHostUnreadBadge();
+    }
+  });
+}
+
+function sendHostChatMessage() {
+  var input = document.getElementById("host-chat-input");
+  var text = input.value.trim();
+  if (!text || !roomRef) return;
+  roomRef.child("chat").push({ author: "🎙 Ведущий", text: text, isHost: true, time: Date.now() });
+  input.value = "";
+}
+
+function sendQuickReply(txt) {
+  if (!roomRef) return;
+  roomRef.child("chat").push({ author: "🎙 Ведущий", text: txt, isHost: true, time: Date.now() });
+}
+
+/* Финал игры */
 function endQuiz() {
+  localStorage.removeItem('reversQuiz');
   stopAllSounds();
-  if (roomRef) {
+  var aGameOver = document.getElementById("audio-game-over");
+  if (aGameOver && soundUrls.gameOver) {
+    aGameOver.currentTime = 0;
+    aGameOver.play().catch(function(){});
+  }
+
+  var sorted = teamsData.slice().sort(function(a, b) { return b.score - a.score; });
+  var winnerText = (sorted[0] && sorted[1] && sorted[0].score === sorted[1].score) 
+    ? "Боевая ничья!" 
+    : (sorted[0] ? sorted[0].name + " побеждает!" : "Игра завершена");
+
+  if (gameMode !== "offline" && roomRef) {
     roomRef.update({
       status: "game_over",
-      leaderboard: teamsData.map(function(t){ return { name: t.name, score: t.score }; }),
+      revealedTrack: "",
+      leaderboard: sorted.map(function(t) { return { name: t.name, score: t.score }; }),
       audioSync: { playAction: "stop", systemTrigger: { type: "gameOver", time: Date.now() } }
     });
   }
-  alert("Игра завершена!"); location.reload();
+
+  var qArea = document.getElementById("quiz-area");
+  qArea.innerHTML = '';
+  var res = document.createElement('div');
+  res.className = 'winner-screen';
+  var listHtml = sorted.map(function(t, idx) {
+    return '<div>' + (idx+1) + '. ' + t.name + ': <strong>' + formatScore(t.score) + '</strong></div>';
+  }).join('');
+  res.innerHTML = '<h2>🏆 Итоги игры:<br><strong>' + winnerText + '</strong></h2><div class="final-scores">' + listHtml + '</div>';
+  qArea.appendChild(res);
+
+  var restartBtn = document.createElement("button");
+  restartBtn.innerHTML = '<i class="fas fa-redo"></i> Новая игра';
+  restartBtn.style.cssText = 'width: 100%; padding: 16px; margin-top: 24px; background: var(--neon-cyan); color: #000; font-size: 15px; text-transform: uppercase;';
+  restartBtn.onclick = function() { location.reload(); };
+  qArea.appendChild(restartBtn);
 }
 
-function openSettings() { document.getElementById("settings-modal").classList.add("active"); }
+/* Настройки */
+function openSettings() {
+  document.getElementById("timer-input").value = timerDuration;
+  document.getElementById("original-delay-input").value = originalDelay;
+  document.getElementById("mix-mode").value = mixMode ? "mixed" : "normal";
+  document.getElementById("game-mode-selector").value = gameMode;
+  document.getElementById("stream-audio-toggle").value = streamAudioToPlayers ? "true" : "false";
+  document.getElementById("chat-mode-toggle").value = chatMode;
+  document.getElementById("show-score-toggle").value = showScoreToPlayers ? "true" : "false";
+  document.getElementById("show-opponent-score-toggle").value = showOpponentScore ? "true" : "false";
+  toggleInteractiveSettingsVisibility();
+  document.getElementById("settings-modal").classList.add("active");
+}
+
 function closeSettings() { document.getElementById("settings-modal").classList.remove("active"); }
+
 function toggleInteractiveSettingsVisibility() {
   var val = document.getElementById("game-mode-selector").value;
   document.getElementById("interactive-sub-settings").style.display = (val !== "offline") ? "flex" : "none";
@@ -899,29 +2072,87 @@ function setSettings() {
   showOpponentScore = document.getElementById("show-opponent-score-toggle").value === "true";
   timerDuration = parseInt(document.getElementById("timer-input").value) || 10;
   originalDelay = parseFloat(document.getElementById("original-delay-input").value) || 2;
+  mixMode = document.getElementById("mix-mode").value === "mixed";
 
   applyGameModeUI();
   saveState();
   closeSettings();
   if (isInteractiveMode) initHostRoom();
+  updateHostChatButtonVisibility();
   showActionNotification("⚙️ Настройки сохранены");
 }
 
 function applyGameModeUI() {
   document.getElementById("host-online-section").style.display = (gameMode !== "offline") ? "block" : "none";
+  document.getElementById("local-teams-section").style.display = (gameMode === "offline") ? "block" : "none";
   document.getElementById("numbers-mode-panel").style.display = (gameMode === "numbers") ? "flex" : "none";
+  document.getElementById("folder-section").style.display = mixMode ? "none" : "block";
+
   document.getElementById("game-subtitle").textContent = 
     gameMode === "numbers" ? "Режим: Треки по номерам" : (gameMode === "interactive" ? "Интерактивный режим" : "Угадай трек наоборот");
 }
 
 function saveState() {
-  localStorage.setItem('reversQuiz_mode', gameMode);
+  var state = {
+    gameMode: gameMode,
+    isInteractiveMode: isInteractiveMode,
+    showScoreToPlayers: showScoreToPlayers,
+    showOpponentScore: showOpponentScore,
+    streamAudioToPlayers: streamAudioToPlayers,
+    chatMode: chatMode,
+    teamsData: teamsData,
+    playedTracks: Array.from(playedTracks),
+    selectedFolder: selectedFolder,
+    timerDuration: timerDuration,
+    originalDelay: originalDelay,
+    mixMode: mixMode,
+    activeTeamId: activeTeamId,
+    lastPlayedTrack: lastPlayedTrack,
+    trackOrder: trackOrder,
+    files: files
+  };
+  localStorage.setItem('reversQuiz', JSON.stringify(state));
+}
+
+function restoreSession() {
+  var saved = localStorage.getItem('reversQuiz');
+  if (saved) {
+    try {
+      var d = JSON.parse(saved);
+      gameMode = d.gameMode || "offline";
+      isInteractiveMode = (gameMode !== "offline");
+      showScoreToPlayers = d.showScoreToPlayers !== false;
+      showOpponentScore = d.showOpponentScore !== false;
+      streamAudioToPlayers = d.streamAudioToPlayers === true;
+      chatMode = d.chatMode || "disabled";
+      teamsData = d.teamsData || teamsData;
+      playedTracks = new Set(d.playedTracks || []);
+      selectedFolder = d.selectedFolder || "";
+      timerDuration = d.timerDuration || 10;
+      originalDelay = d.originalDelay || 2;
+      mixMode = d.mixMode || false;
+      activeTeamId = d.activeTeamId || null;
+      lastPlayedTrack = d.lastPlayedTrack || null;
+      trackOrder = d.trackOrder || {};
+      files = d.files || {};
+
+      document.getElementById("folder-select").value = selectedFolder;
+      if (Object.keys(files).length > 0) {
+        document.getElementById("quiz-area").style.display = "block";
+        generateSongButtons();
+        updateTrackCounter();
+        updateShuffleButtonState();
+        updateNextTrackButton();
+      }
+    } catch(e) { console.warn(e); }
+  }
 }
 
 window.addEventListener('load', function() {
-  gameMode = localStorage.getItem('reversQuiz_mode') || "offline";
-  document.getElementById("game-mode-selector").value = gameMode;
+  restoreSession();
   applyGameModeUI();
+  if (gameMode === "offline") renderOfflineTeamsInputs();
+  renderScoreboardGrid();
   if (gameMode !== "offline") initHostRoom();
   preloadAllSounds();
 });
