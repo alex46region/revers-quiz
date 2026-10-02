@@ -16,7 +16,7 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Space+Grotesk:wght@500;700&family=Syne:wght@700;800&family=Ubuntu+Mono:wght@700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Syne:wght@700;800&family=Ubuntu+Mono:wght@700&display=swap" rel="stylesheet">
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
 
 <!-- Firebase App & Database -->
@@ -260,106 +260,6 @@ h1 i {
   color: var(--text-dim);
   opacity: 0.65;
   filter: grayscale(1);
-}
-
-/* Панель управления режима "Треки по номерам" */
-.numbers-mode-panel {
-  background: rgba(112, 0, 255, 0.12);
-  border: 2px solid var(--neon-purple);
-  border-radius: 18px;
-  padding: 18px;
-  margin: 16px 20px;
-  display: none;
-  flex-direction: column;
-  gap: 14px;
-  box-shadow: 0 0 35px rgba(112, 0, 255, 0.25);
-}
-
-.numbers-mode-title {
-  font-family: 'Syne', sans-serif;
-  font-size: 1.15em;
-  font-weight: 800;
-  color: var(--neon-cyan);
-  text-transform: uppercase;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.numbers-btn-row {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.btn-round-control {
-  flex: 1;
-  min-width: 170px;
-  padding: 14px 18px;
-  border-radius: 12px;
-  font-weight: 800;
-  font-size: 0.9em;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-}
-
-.btn-check-ready {
-  background: linear-gradient(135deg, var(--neon-cyan), #0077ff);
-  color: #000;
-  box-shadow: 0 0 20px rgba(0, 229, 255, 0.35);
-}
-
-.btn-start-choice {
-  background: linear-gradient(135deg, var(--neon-lime), #00bb55);
-  color: #000;
-  box-shadow: 0 0 20px rgba(0, 255, 102, 0.35);
-}
-
-.btn-round-control:disabled {
-  background: #252b3b;
-  color: #556077;
-  cursor: not-allowed;
-  box-shadow: none;
-}
-
-.teams-choices-monitor {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-  gap: 10px;
-  margin-top: 4px;
-}
-
-.choice-monitor-card {
-  background: rgba(5, 6, 10, 0.85);
-  border: 1px solid var(--border-subtle);
-  border-radius: 12px;
-  padding: 10px;
-  text-align: center;
-}
-
-.choice-monitor-card.chosen {
-  border-color: var(--neon-lime);
-  box-shadow: 0 0 15px rgba(0, 255, 102, 0.25);
-}
-
-.choice-monitor-card .c-team {
-  font-size: 0.8em;
-  color: var(--text-dim);
-  font-weight: 700;
-  text-transform: uppercase;
-}
-
-.choice-monitor-card .c-val {
-  font-family: 'Orbitron', monospace;
-  font-size: 1.6em;
-  font-weight: 900;
-  color: var(--neon-yellow);
-  margin-top: 2px;
 }
 
 .buzzer-wave-overlay {
@@ -1402,24 +1302,6 @@ button:active {
     </div>
   </div>
 
-  <!-- Блок управления режимом "Треки по номерам" -->
-  <div class="numbers-mode-panel" id="numbers-mode-panel">
-    <div class="numbers-mode-title">
-      <span><i class="fas fa-dice" style="color:var(--neon-purple); margin-right:8px;"></i> Режим: Треки по номерам</span>
-      <span id="ready-counter-badge" style="font-size:0.75em; color:var(--neon-yellow);">Готово: 0/0</span>
-    </div>
-    <div class="numbers-btn-row">
-      <button class="btn-round-control btn-check-ready" id="btn-request-ready" onclick="requestTeamsReady()">
-        <i class="fas fa-bell"></i> Проверить готовность
-      </button>
-      <button class="btn-round-control btn-start-choice" id="btn-start-game-round" disabled onclick="startNumbersSelectionRound()">
-        <i class="fas fa-play-circle"></i> Начать игру
-      </button>
-    </div>
-    <div style="font-size:0.8em; color:var(--text-dim); text-transform:uppercase; margin-top:4px;">Выбор номеров командами в реальном времени:</div>
-    <div class="teams-choices-monitor" id="teams-choices-monitor"></div>
-  </div>
-
   <div class="section" id="local-teams-section">
     <h2 class="section-title"><i class="fas fa-users"></i> Команды игры</h2>
     <div class="teams-input-list" id="teams-input-container"></div>
@@ -1583,10 +1465,9 @@ button:active {
         <i class="fas fa-gamepad"></i> Режим игры и сеть
       </div>
       <div class="settings-field">
-        <select id="game-mode-selector" onchange="toggleInteractiveSettingsVisibility()">
-          <option value="offline">🕹️ Обычный режим (оффлайн табло)</option>
-          <option value="interactive">🌐 Интерактивный (онлайн для команд)</option>
-          <option value="numbers">🎯 Треки по номерам (интерактивный выбор)</option>
+        <select id="interactive-mode-toggle" onchange="toggleInteractiveSettingsVisibility()">
+          <option value="false">🕹️ Обычный режим (оффлайн табло)</option>
+          <option value="true">🌐 Интерактивный (онлайн для команд)</option>
         </select>
       </div>
     </div>
@@ -1702,7 +1583,6 @@ var firebaseConfig = {
 var db = null;
 var currentRoomPin = null;
 var roomRef = null;
-var gameMode = "offline"; // "offline", "interactive", "numbers"
 var isInteractiveMode = false;
 var showScoreToPlayers = true;
 var showOpponentScore = true;
@@ -1844,7 +1724,7 @@ function generateNewRoomPin() {
 function updateHostChatButtonVisibility() {
   var btn = document.getElementById("host-chat-toggle-btn");
   if (!btn) return;
-  btn.style.display = (gameMode !== "offline" && chatMode !== "disabled") ? "flex" : "none";
+  btn.style.display = (isInteractiveMode && chatMode !== "disabled") ? "flex" : "none";
   if (chatMode === "disabled") {
     var box = document.getElementById("host-chat-box");
     if (box) box.style.display = "none";
@@ -1853,7 +1733,7 @@ function updateHostChatButtonVisibility() {
 }
 
 function initHostRoom() {
-  if (gameMode === "offline") return;
+  if (!isInteractiveMode) return;
   
   if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
@@ -1870,7 +1750,6 @@ function initHostRoom() {
   
   roomRef.update({
     status: "idle",
-    gameMode: gameMode,
     showScore: showScoreToPlayers,
     showOpponentScore: showOpponentScore,
     streamAudio: streamAudioToPlayers,
@@ -1879,7 +1758,6 @@ function initHostRoom() {
     revealedTrack: "",
     systemSounds: soundUrls,
     timerState: { active: false, value: 0 },
-    numbersRound: { stage: "idle", chosenNumbers: {}, winningNumber: null, availableNumbers: [] },
     audioSync: {
       trackSessionId: "",
       reversUrl: "",
@@ -1898,12 +1776,7 @@ function initHostRoom() {
   updateHostChatButtonVisibility();
   initEmojiPicker("host-emoji-popover", "host-chat-input");
   listenToChatMessages();
-  listenToTeamsAndNumbers();
-}
 
-function listenToTeamsAndNumbers() {
-  if (!roomRef) return;
-  
   roomRef.child("teams").on("value", function(snapshot) {
     var rawTeams = snapshot.val() || {};
     var cloudKeys = Object.keys(rawTeams);
@@ -1915,9 +1788,7 @@ function listenToTeamsAndNumbers() {
           name: rawTeams[key].name || "Команда",
           score: typeof rawTeams[key].score !== 'undefined' ? rawTeams[key].score : 0,
           readyToPlay: rawTeams[key].readyToPlay || false,
-          online: rawTeams[key].online !== false,
-          isReadyForRound: rawTeams[key].isReadyForRound || false,
-          chosenNumber: rawTeams[key].chosenNumber || null
+          online: rawTeams[key].online !== false
         };
       });
     } else {
@@ -1925,7 +1796,6 @@ function listenToTeamsAndNumbers() {
     }
     renderHostTeamsList();
     renderScoreboardGrid();
-    updateNumbersModeMonitor();
   });
 
   roomRef.child("buzzer").on("value", function(snapshot) {
@@ -1934,117 +1804,6 @@ function listenToTeamsAndNumbers() {
       handleBuzzerTriggered(buzzer.pressedBy, buzzer.pressedByName);
     }
   });
-}
-
-/* ЛОГИКА РЕЖИМА "ТРЕКИ ПО НОМЕРАМ" */
-function requestTeamsReady() {
-  if (!roomRef || teamsData.length === 0) return alert("Ожидаем подключение команд!");
-  teamsData.forEach(function(t) {
-    roomRef.child("teams/" + t.id).update({ isReadyForRound: false, chosenNumber: null });
-  });
-  roomRef.child("numbersRound").set({
-    stage: "ready_check",
-    chosenNumbers: {},
-    winningNumber: null,
-    availableNumbers: getAvailableTrackNumbers()
-  });
-  showActionNotification("📢 Запрос готовности отправлен командам!");
-}
-
-function getAvailableTrackNumbers() {
-  var nums = [];
-  Object.keys(files).forEach(function(name) {
-    if (!playedTracks.has(name) && trackOrder[name]) {
-      nums.push(trackOrder[name]);
-    }
-  });
-  return nums.sort(function(a, b) { return a - b; });
-}
-
-function updateNumbersModeMonitor() {
-  if (gameMode !== "numbers") return;
-  var monitor = document.getElementById("teams-choices-monitor");
-  var readyCounter = document.getElementById("ready-counter-badge");
-  var btnStart = document.getElementById("btn-start-game-round");
-  if (!monitor) return;
-
-  var total = teamsData.length;
-  var readyCount = teamsData.filter(function(t) { return t.isReadyForRound === true; }).length;
-  readyCounter.textContent = "Готово: " + readyCount + "/" + total;
-
-  if (total > 0 && readyCount === total) {
-    btnStart.disabled = false;
-  } else {
-    btnStart.disabled = true;
-  }
-
-  monitor.innerHTML = "";
-  var allChosen = total > 0;
-  var chosenMap = {};
-
-  teamsData.forEach(function(t) {
-    if (!t.chosenNumber) allChosen = false;
-    else chosenMap[t.id] = t.chosenNumber;
-
-    var card = document.createElement("div");
-    card.className = "choice-monitor-card" + (t.chosenNumber ? " chosen" : "");
-    card.innerHTML = 
-      '<div class="c-team">' + t.name + '</div>' +
-      '<div class="c-val">' + (t.chosenNumber ? t.chosenNumber : (t.isReadyForRound ? "ГОТОВ" : "—")) + '</div>';
-    monitor.appendChild(card);
-  });
-
-  roomRef.child("numbersRound/stage").once("value", function(snap) {
-    if (snap.val() === "selecting" && allChosen) {
-      triggerVortexSpin(chosenMap);
-    }
-  });
-}
-
-function startNumbersSelectionRound() {
-  if (!roomRef) return;
-  var avail = getAvailableTrackNumbers();
-  if (avail.length === 0) return alert("Все треки сыграны!");
-  
-  roomRef.child("numbersRound").update({
-    stage: "selecting",
-    availableNumbers: avail,
-    chosenNumbers: {},
-    winningNumber: null
-  });
-  showActionNotification("🎯 Команды выбирают номера треков!");
-}
-
-function triggerVortexSpin(chosenMap) {
-  var values = Object.values(chosenMap);
-  if (values.length === 0) return;
-  
-  var winningNum = values[Math.floor(Math.random() * values.length)];
-
-  roomRef.child("numbersRound").update({
-    stage: "mosaic",
-    chosenNumbers: chosenMap,
-    winningNumber: winningNum
-  });
-
-  setTimeout(function() {
-    roomRef.child("numbersRound").update({ stage: "vortex" });
-  }, 2500);
-
-  setTimeout(function() {
-    roomRef.child("numbersRound").update({ stage: "result", winningNumber: winningNum });
-    selectTrackByNumber(winningNum);
-  }, 6000);
-}
-
-function selectTrackByNumber(trackNum) {
-  var foundName = Object.keys(files).find(function(name) {
-    return trackOrder[name] === trackNum;
-  });
-  if (foundName) {
-    showActionNotification("🎲 Выбран трек №" + trackNum + "!");
-    playTrack(foundName);
-  }
 }
 
 function renderHostTeamsList() {
@@ -2138,7 +1897,7 @@ function renderScoreboardGrid() {
   if (!grid) return;
   grid.innerHTML = "";
 
-  if (gameMode !== "offline" && teamsData.length === 0) {
+  if (isInteractiveMode && teamsData.length === 0) {
     grid.innerHTML = '<div style="color:var(--text-dim); text-align:center; grid-column: 1 / -1; padding:20px;">Участники пока не подключились к комнате</div>';
     return;
   }
@@ -2220,7 +1979,7 @@ function handleBuzzerTriggered(teamId, teamName) {
   }
   stopTimer();
 
-  if (gameMode !== "offline" && roomRef) {
+  if (isInteractiveMode && roomRef) {
     roomRef.child("audioSync").update({ 
       playAction: "pause",
       currentTime: r ? r.currentTime : 0
@@ -2400,29 +2159,25 @@ document.addEventListener('touchstart', unlockMobileAudio, { once: true });
 window.addEventListener('load', function() {
   restoreSession();
   applyGameModeUI();
-  if (gameMode === "offline") {
+  if (!isInteractiveMode) {
     renderOfflineTeamsInputs();
   }
   renderScoreboardGrid();
-  if (gameMode !== "offline") initHostRoom();
-  preloadAllSounds();
+  initHostRoom();
 });
 
 function applyGameModeUI() {
   var onlineSec = document.getElementById("host-online-section");
   var localSec = document.getElementById("local-teams-section");
-  var numbersPanel = document.getElementById("numbers-mode-panel");
   var sub = document.getElementById("game-subtitle");
   
-  if (gameMode !== "offline") {
+  if (isInteractiveMode) {
     onlineSec.style.display = "block";
     localSec.style.display = "none";
-    numbersPanel.style.display = (gameMode === "numbers") ? "flex" : "none";
-    sub.textContent = gameMode === "numbers" ? "Режим: Треки по номерам" : "Интерактивный режим ведущего";
+    sub.textContent = "Интерактивный режим ведущего";
   } else {
     onlineSec.style.display = "none";
     localSec.style.display = "block";
-    numbersPanel.style.display = "none";
     sub.textContent = "Угадай трек наоборот";
   }
 }
@@ -2432,8 +2187,7 @@ function restoreSession() {
   if (saved) {
     try {
       var data = JSON.parse(saved);
-      gameMode = data.gameMode || "offline";
-      isInteractiveMode = (gameMode !== "offline");
+      isInteractiveMode = data.isInteractiveMode === true;
       showScoreToPlayers = data.showScoreToPlayers !== false;
       showOpponentScore = data.showOpponentScore !== false;
       streamAudioToPlayers = data.streamAudioToPlayers === true;
@@ -2464,6 +2218,7 @@ function restoreSession() {
         updateTrackCounter();
         updateShuffleButtonState();
         updateNextTrackButton();
+        preloadAllSounds();
       }
     } catch(e) {
       console.warn("Ошибка восстановления сессии:", e);
@@ -2474,8 +2229,7 @@ function restoreSession() {
 function saveState() {
   try {
     var state = {
-      gameMode: gameMode,
-      isInteractiveMode: (gameMode !== "offline"),
+      isInteractiveMode: isInteractiveMode,
       showScoreToPlayers: showScoreToPlayers,
       showOpponentScore: showOpponentScore,
       streamAudioToPlayers: streamAudioToPlayers,
@@ -2520,7 +2274,7 @@ async function preloadAllSounds() {
       }
     });
 
-    if (gameMode !== "offline" && roomRef) {
+    if (isInteractiveMode && roomRef) {
       roomRef.child("systemSounds").set(soundUrls);
     }
   } catch (e) {
@@ -2546,12 +2300,12 @@ function playSound(type) {
   if (url && audio) {
     audio.src = url;
     audio.currentTime = 0;
-    audio.play().catch(function(e) { console.warn(e); });
+    audio.play().catch(function() {});
   } else {
     showActionNotification(type === 'winner' ? '🎉 Правильно!' : '😢 Мимо!');
   }
 
-  if (gameMode !== "offline" && roomRef) {
+  if (isInteractiveMode && roomRef) {
     roomRef.update({
       status: "reveal",
       revealedTrack: currentTrackName || "",
@@ -2640,7 +2394,7 @@ async function startOriginalPlayback() {
   if (b) b.textContent = "Скрыть оригинал";
 
   var success = await playNormalWithAutoRecovery(a, trackObj.normal, currentTrackName);
-  if (success && gameMode !== "offline" && roomRef && streamAudioToPlayers) {
+  if (success && isInteractiveMode && roomRef && streamAudioToPlayers) {
     roomRef.child("audioSync").update({
       playAction: "play_normal",
       currentTime: 0,
@@ -2735,6 +2489,7 @@ function isTrackOrderValid(filesMap) {
   return valid;
 }
 
+// 1. Загрузка файлов с автоматическим перемешиванием треков во всех режимах
 async function loadFiles() {
   var loadBtn = document.getElementById("load-songs-btn");
   loadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Загрузка...';
@@ -2749,6 +2504,7 @@ async function loadFiles() {
       var rNames = Object.keys(rFiles);
       var fNames = Object.keys(fFiles);
       
+      // Объединяем треки и рандомизируем очередность
       var mergedNames = Array.from(new Set(rNames.concat(fNames))).sort(function() { return Math.random() - 0.5; });
       var mixedFiles = {};
       var newTrackOrder = {};
@@ -2769,6 +2525,7 @@ async function loadFiles() {
       selectedFolder = path;
       allFiles = await fetchFolderFiles(path);
 
+      // Автоматическое перемешивание загруженных треков
       var names = Object.keys(allFiles).sort(function() { return Math.random() - 0.5; });
       trackOrder = {};
       names.forEach(function(name, idx) {
@@ -2883,11 +2640,11 @@ function playTrack(name) {
   stopAllSounds();
   hideTrackPopup();
 
-  if (gameMode !== "offline") {
+  if (isInteractiveMode) {
     clearTeamHighlight();
   }
 
-  if (gameMode === "offline" && name !== lastPlayedTrack) {
+  if (!isInteractiveMode && name !== lastPlayedTrack) {
     if (lastPlayedTrack !== null) {
       cycleNextOfflineTeam();
     }
@@ -2937,7 +2694,7 @@ function playTrack(name) {
 
       document.getElementById("revers-duration").textContent = formatTime(dur);
 
-      if (gameMode !== "offline" && roomRef) {
+      if (isInteractiveMode && roomRef) {
         teamsData.forEach(function(t) {
           roomRef.child("teams/" + t.id + "/readyToPlay").set(false);
         });
@@ -3037,7 +2794,7 @@ function toggleRevers() {
     icon.classList.replace("fa-pause", "fa-play");
     hideTrackPopup();
 
-    if (gameMode !== "offline" && roomRef) {
+    if (isInteractiveMode && roomRef) {
       roomRef.child("audioSync").update({ 
         playAction: "pause",
         currentTime: audio.currentTime
@@ -3053,7 +2810,7 @@ function startSynchronizedPlayback() {
   var icon = document.getElementById("revers-play-icon");
   var serverStartAt = Date.now() + 250;
 
-  if (gameMode !== "offline" && roomRef) {
+  if (isInteractiveMode && roomRef) {
     clearTeamHighlight();
     roomRef.update({
       status: "playing",
@@ -3087,7 +2844,7 @@ function resumeSynchronizedPlayback() {
   var icon = document.getElementById("revers-play-icon");
   var serverStartAt = Date.now() + 150;
 
-  if (gameMode !== "offline" && roomRef) {
+  if (isInteractiveMode && roomRef) {
     roomRef.update({
       status: "playing",
       timerState: { active: false, value: 0 }
@@ -3167,7 +2924,7 @@ function changeScore(teamId, delta) {
     showNotification(formatScore(delta) + ' (' + team.name + ')', false);
   }
 
-  if (gameMode !== "offline" && roomRef) {
+  if (isInteractiveMode && roomRef) {
     roomRef.child("teams/" + teamId).update({
       score: team.score,
       lastScoreDelta: delta,
@@ -3224,7 +2981,7 @@ async function toggleNormal() {
       return;
     }
 
-    if (gameMode !== "offline" && roomRef) {
+    if (isInteractiveMode && roomRef) {
       roomRef.update({
         status: "reveal",
         revealedTrack: currentTrackName || "",
@@ -3233,7 +2990,7 @@ async function toggleNormal() {
     }
 
     var success = await playNormalWithAutoRecovery(a, trackObj.normal, currentTrackName);
-    if (success && gameMode !== "offline" && roomRef && streamAudioToPlayers) {
+    if (success && isInteractiveMode && roomRef && streamAudioToPlayers) {
       roomRef.child("audioSync").update({
         playAction: "play_normal",
         currentTime: 0,
@@ -3244,7 +3001,7 @@ async function toggleNormal() {
     a.pause();
     if (i) i.classList.replace("fa-play", "fa-pause");
 
-    if (gameMode !== "offline" && roomRef && streamAudioToPlayers) {
+    if (isInteractiveMode && roomRef && streamAudioToPlayers) {
       roomRef.child("audioSync").update({ playAction: "pause" });
     }
   }
@@ -3344,7 +3101,7 @@ function endQuiz() {
   var aGameOver = document.getElementById("audio-game-over");
   if (aGameOver && soundUrls.gameOver) {
     aGameOver.currentTime = 0;
-    aGameOver.play().catch(function(e) { console.warn(e); });
+    aGameOver.play().catch(function() {});
   }
 
   purgeAudioBuffer(document.getElementById("audio-revers"));
@@ -3355,7 +3112,7 @@ function endQuiz() {
     ? "Боевая ничья!" 
     : (sortedTeams[0] ? sortedTeams[0].name + " побеждает!" : "Игра завершена");
 
-  if (gameMode !== "offline" && roomRef) {
+  if (isInteractiveMode && roomRef) {
     roomRef.update({
       status: "game_over",
       revealedTrack: "",
@@ -3386,7 +3143,7 @@ function endQuiz() {
   }).join('');
 
   resultDiv.innerHTML = 
-    '<h2>🏆 Итоги игры:<br><strong>' + winnerText + '</strong></h2>' +
+    '<h2>🏆 Итоги битвы:<br><strong>' + winnerText + '</strong></h2>' +
     '<div class="final-scores">' + scoreListHtml + '</div>';
 
   quizArea.appendChild(resultDiv);
@@ -3399,10 +3156,10 @@ function endQuiz() {
 }
 
 function toggleInteractiveSettingsVisibility() {
-  var modeSel = document.getElementById("game-mode-selector");
+  var modeSel = document.getElementById("interactive-mode-toggle");
   var subSettings = document.getElementById("interactive-sub-settings");
   if (modeSel && subSettings) {
-    subSettings.style.display = (modeSel.value !== "offline") ? "flex" : "none";
+    subSettings.style.display = (modeSel.value === "true") ? "flex" : "none";
   }
 }
 
@@ -3410,7 +3167,7 @@ function openSettings() {
   var tIn = document.getElementById("timer-input");
   var dIn = document.getElementById("original-delay-input");
   var mIn = document.getElementById("mix-mode");
-  var modeSel = document.getElementById("game-mode-selector");
+  var modeSel = document.getElementById("interactive-mode-toggle");
   var streamSel = document.getElementById("stream-audio-toggle");
   var chatModeSel = document.getElementById("chat-mode-toggle");
   var scoreSel = document.getElementById("show-score-toggle");
@@ -3421,7 +3178,7 @@ function openSettings() {
   if (tIn) tIn.value = timerDuration;
   if (dIn) dIn.value = originalDelay;
   if (mIn) mIn.value = mixMode ? "mixed" : "normal";
-  if (modeSel) modeSel.value = gameMode;
+  if (modeSel) modeSel.value = isInteractiveMode ? "true" : "false";
   if (streamSel) streamSel.value = streamAudioToPlayers ? "true" : "false";
   if (chatModeSel) chatModeSel.value = chatMode;
   if (scoreSel) scoreSel.value = showScoreToPlayers ? "true" : "false";
@@ -3453,7 +3210,7 @@ function setSettings() {
     var inputTimer = document.getElementById("timer-input");
     var inputDelay = document.getElementById("original-delay-input");
     var mode = document.getElementById("mix-mode").value;
-    var newGameMode = document.getElementById("game-mode-selector").value;
+    var newInteractive = document.getElementById("interactive-mode-toggle").value === "true";
     var newStreamAudio = document.getElementById("stream-audio-toggle").value === "true";
     var newChatMode = document.getElementById("chat-mode-toggle").value;
     var newShowScore = document.getElementById("show-score-toggle").value === "true";
@@ -3465,23 +3222,19 @@ function setSettings() {
     if (isNaN(valTimer) || valTimer < 1 || valTimer > 300) return alert("Таймер: от 1 до 300 сек.");
     if (isNaN(valDelay) || valDelay < 0 || valDelay > 30) return alert("Задержка оригинала: от 0 до 30 сек.");
 
-    var needReload = (newGameMode !== gameMode);
+    var needReload = (newInteractive !== isInteractiveMode);
 
     timerDuration = valTimer;
     originalDelay = valDelay;
     mixMode = mode === "mixed";
-    gameMode = newGameMode;
-    isInteractiveMode = (gameMode !== "offline");
+    isInteractiveMode = newInteractive;
     streamAudioToPlayers = newStreamAudio;
     chatMode = newChatMode;
     showScoreToPlayers = newShowScore;
     showOpponentScore = newShowOpponent;
 
-    applyGameModeUI();
-
-    if (gameMode !== "offline" && roomRef) {
+    if (isInteractiveMode && roomRef) {
       roomRef.update({ 
-        gameMode: gameMode,
         showScore: showScoreToPlayers,
         showOpponentScore: showOpponentScore,
         streamAudio: streamAudioToPlayers,
@@ -3497,7 +3250,7 @@ function setSettings() {
       location.reload();
     } else {
       updateFolderSection();
-      showActionNotification('⚙️ Настройки сохранены');
+      showActionNotification('⚙️️ Настройки сохранены');
     }
   } catch (err) {
     console.error("Ошибка при сохранении настроек:", err);
@@ -3525,7 +3278,7 @@ function startTimer() {
     aStart.play().catch(function() {});
   }
 
-  if (gameMode !== "offline" && roomRef) {
+  if (isInteractiveMode && roomRef) {
     roomRef.child("timerState").set({
       active: true,
       value: timerValue
@@ -3536,7 +3289,7 @@ function startTimer() {
     timerValue--;
     updateTimerDisplay();
 
-    if (gameMode !== "offline" && roomRef) {
+    if (isInteractiveMode && roomRef) {
       roomRef.child("timerState").update({
         value: timerValue
       });
@@ -3561,7 +3314,7 @@ function startTimer() {
     if (timerValue <= 0) {
       clearInterval(timerInterval);
       timerInterval = null;
-      if (gameMode !== "offline" && roomRef) {
+      if (isInteractiveMode && roomRef) {
         roomRef.child("timerState").set({ active: false, value: 0 });
       }
       if (!soundUrls.final && circle) {
@@ -3594,7 +3347,7 @@ function stopTimer() {
   isTimerActive = false;
   stopTimerSounds();
 
-  if (gameMode !== "offline" && roomRef) {
+  if (isInteractiveMode && roomRef) {
     roomRef.child("timerState").set({ active: false, value: 0 });
   }
 
