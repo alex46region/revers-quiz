@@ -1184,7 +1184,6 @@ var isChatOpen = false;
 var unreadChatCount = 0;
 var lastSeenScoreTimestamp = 0;
 var lastHandledSystemSoundTime = 0;
-var lastHandledSoundTime = 0;
 
 var wakeLockObj = null;
 
@@ -1656,18 +1655,6 @@ function listenToGameState() {
       bufferSystemSound("player-sound-game-over", data.systemSounds.gameOver);
     }
 
-    // Мгновенное воспроизведение звуков вердикта в нахлёст без задержки
-    if (data.soundTrigger && data.soundTrigger.time > lastHandledSoundTime) {
-      lastHandledSoundTime = data.soundTrigger.time;
-      if (isStreamAudioAllowed) {
-        var soundEl = document.getElementById(data.soundTrigger.type === 'winner' ? 'player-sound-winner' : 'player-sound-lost');
-        if (soundEl && soundEl.src) {
-          soundEl.currentTime = 0;
-          soundEl.play().catch(function(e) { console.warn("Ошибка звука эффекта:", e); });
-        }
-      }
-    }
-
     var timerBadge = document.getElementById("player-timer-badge");
     var timerNum = document.getElementById("player-timer-badge-num");
     var timerState = data.timerState || {};
@@ -1959,6 +1946,7 @@ function sendPlayerChatMessage() {
   document.getElementById("player-emoji-popover").style.display = "none";
 }
 
+// Полная очистка буферов плееров при показе экрана завершения игры
 function showGameOverScreen(leaderboard) {
   if (gameOverTimer) return;
 
