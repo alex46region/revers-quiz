@@ -8,7 +8,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
-<title>⚡ Revers Quiz — Экран команды</title>
+<title> Revers Quiz — Экран команды</title>
 <script>
 (async function checkClientVersionAndClearCache() {
 try {
@@ -19,8 +19,14 @@ var remoteVer = parseInt(data.nativeVersion) || 0;
 var localVer = parseInt(localStorage.getItem("player_app_version")) || 0;
 if (remoteVer > localVer) {
 localStorage.setItem("player_app_version", remoteVer);
-if ("caches" in window) { var keys = await caches.keys(); await Promise.all(keys.map(function(k) { return caches.delete(k); })); }
-if ("serviceWorker" in navigator) { var regs = await navigator.serviceWorker.getRegistrations(); for (var reg of regs) { await reg.update(); } }
+if ("caches" in window) {
+var keys = await caches.keys();
+await Promise.all(keys.map(function(k) { return caches.delete(k); }));
+}
+if ("serviceWorker" in navigator) {
+var regs = await navigator.serviceWorker.getRegistrations();
+for (var reg of regs) { await reg.update(); }
+}
 window.location.reload(true);
 }
 } catch(e) { console.warn("Проверка версии пропущена:", e); }
@@ -213,7 +219,7 @@ body::after { content: ""; position: fixed; inset: 0; background: repeating-line
 </div>
 
 <div class="lottery-screen" id="lottery-screen-selection">
-<div class="lottery-title">🎲 Выберите номер трека</div>
+<div class="lottery-title"> Выберите номер трека</div>
 <div class="lottery-subtitle">Ваш выбор приватен — другие команды его не увидят</div>
 <div class="lottery-numbers-grid" id="lottery-numbers-grid"></div>
 </div>
@@ -225,12 +231,7 @@ body::after { content: ""; position: fixed; inset: 0; background: repeating-line
 <div class="lottery-waiting-icon"><i class="fas fa-spinner"></i></div>
 </div>
 
-<div class="lottery-screen" id="lottery-screen-mosaic">
-<div class="lottery-title"> Все номера выбраны!</div>
-<div class="lottery-mosaic" id="lottery-mosaic-grid"></div>
-<div class="lottery-subtitle" style="margin-top:14px;">Запускаем рандомайзер...</div>
-</div>
-
+<!-- 🔧 ИСПРАВЛЕНИЕ: При revealing сразу запускаем вихрь, без промежуточных экранов -->
 <div class="lottery-screen" id="lottery-screen-vortex">
 <div class="lottery-title">🎲 Рандомайзер запущен</div>
 <div class="lottery-vortex-container" id="lottery-vortex-container"></div>
@@ -375,7 +376,7 @@ gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
 osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.35);
 } catch(e) {}
 }
-var POPULAR_EMOJIS = ["👍","👏","🔥","🎉","😂","😎","🤩","","😮","🎶","🎤","🎧","🏆","⭐","","❤️","👋","","🚀","💃"];
+var POPULAR_EMOJIS = ["👍","👏","🔥","🎉","😂","","🤩","🤔","","🎵","🎶","","🎧","🏆","⭐","💯","❤️","👋","","🚀","💃"];
 function initEmojiPicker(containerId, inputId) {
 var container = document.getElementById(containerId);
 if (!container) return;
@@ -506,6 +507,7 @@ if (timerRunning) { progressAnimFrame = requestAnimationFrame(tick); }
 tick();
 }
 function stopSyntheticTimer() { timerRunning = false; if (progressAnimFrame) cancelAnimationFrame(progressAnimFrame); }
+
 function listenToAudioStream() {
 var audioSyncRef = db.ref("rooms/" + currentRoom + "/audioSync");
 var aRevers = document.getElementById("player-audio-revers");
@@ -606,6 +608,7 @@ stopSyntheticTimer(); updateProgressDisplay(0, currentTrackDuration);
 });
 }
 
+//  ИСПРАВЛЕНИЕ: Полная переработка listenToLotteryState для корректной работы всех экранов
 function listenToLotteryState() {
 var lotteryRef = db.ref("rooms/" + currentRoom + "/lotteryState");
 lotteryRef.on("value", function(snapshot) {
@@ -615,13 +618,13 @@ var oldPhase = lotteryPhase;
 lotteryPhase = ls.phase || "idle";
 lotteryAllNumbers = ls.allNumbers || [];
 
-// 🔧 ИСПРАВЛЕНИЕ: Сброс при смене фазы
+// Сброс при смене фазы
 if (oldPhase !== lotteryPhase) {
 lotteryMyChoice = null;
 lotterySelectedNumber = null;
 }
 
-// 🔧 ИСПРАВЛЕНИЕ: Проверка фазы ДО показа любого экрана
+// 🔧 Явная проверка фазы с приоритетом
 if (lotteryPhase === "idle") {
 hideAllLotteryScreens();
 document.getElementById("game-view").style.display = "none";
@@ -637,7 +640,6 @@ showLotteryScreen("ready");
 } else if (lotteryPhase === "number_selection") {
 hideAllLotteryScreens();
 document.getElementById("game-view").style.display = "none";
-// 🔧 ИСПРАВЛЕНИЕ: Проверяем, выбрала ли команда номер
 if (ls.numberChoices && typeof ls.numberChoices[myTeamId] !== 'undefined') {
 lotteryMyChoice = ls.numberChoices[myTeamId];
 document.getElementById("lottery-my-chosen-number").textContent = lotteryMyChoice;
@@ -647,18 +649,16 @@ renderLotteryNumbersGrid(lotteryAllNumbers);
 showLotteryScreen("selection");
 }
 } else if (lotteryPhase === "revealing") {
+// 🔧 ИСПРАВЛЕНИЕ: Сразу запускаем вихрь, без мозаики
 hideAllLotteryScreens();
 document.getElementById("game-view").style.display = "none";
-// 🔧 ИСПРАВЛЕНИЕ: Сразу показываем мозаику и запускаем вихрь
-renderLotteryMosaic(ls.numberChoices || {}, ls.allNumbers || []);
-showLotteryScreen("mosaic");
-// Уменьшаем задержку перед вихрем
-setTimeout(function() {
-if (lotteryPhase === "revealing") {
-runPlayerVortexAnimation(ls.numberChoices || {});
+if (vortexAnimationInterval) {
+clearInterval(vortexAnimationInterval);
+vortexAnimationInterval = null;
 }
-}, 1500);
+runPlayerVortexAnimation(ls.numberChoices || {});
 } else if (lotteryPhase === "playing") {
+// 🔧 Останавливаем вихрь, показываем результат, затем переходим к игре
 if (vortexAnimationInterval) {
 clearInterval(vortexAnimationInterval);
 vortexAnimationInterval = null;
@@ -731,29 +731,6 @@ showLotteryScreen("waiting-choices");
 }, 800);
 }
 
-function renderLotteryMosaic(choices, allNumbers) {
-var grid = document.getElementById("lottery-mosaic-grid");
-if (!grid) return;
-grid.innerHTML = "";
-db.ref("rooms/" + currentRoom + "/teams").once("value").then(function(snapshot) {
-var teams = snapshot.val() || {};
-var sortedNums = allNumbers.slice().sort(function(a, b) { return a - b; });
-sortedNums.forEach(function(num, idx) {
-var teamName = "—";
-Object.keys(choices).forEach(function(teamId) {
-if (choices[teamId] === num && teams[teamId]) {
-teamName = teams[teamId].name || "Команда";
-}
-});
-var item = document.createElement("div");
-item.className = "lottery-mosaic-item";
-item.style.animationDelay = (idx * 0.08) + "s";
-item.innerHTML = '<div class="team-name">' + teamName + '</div><div class="chosen-num">№' + num + '</div>';
-grid.appendChild(item);
-});
-});
-}
-
 function runPlayerVortexAnimation(choices) {
 var container = document.getElementById("lottery-vortex-container");
 if (!container) return;
@@ -761,6 +738,7 @@ container.innerHTML = "";
 showLotteryScreen("vortex");
 var chosenNumbers = Object.keys(choices).map(function(k) { return choices[k]; });
 var uniqueNumbers = Array.from(new Set(chosenNumbers));
+if (uniqueNumbers.length === 0) return;
 var containerRect = container.getBoundingClientRect();
 var centerX = containerRect.width / 2;
 var centerY = containerRect.height / 2;
@@ -831,6 +809,7 @@ if (aR && !aR.paused) aR.pause();
 if (aN && !aN.paused) aN.pause();
 }
 
+//  В режиме лотереи обновляем game-view только когда фаза playing
 if (isLotteryMode && lotteryPhase !== "playing") { return; }
 
 var buzzerBtn = document.getElementById("buzzer-btn");
@@ -981,7 +960,7 @@ if (!msg) return;
 var row = document.createElement("div");
 var isMine = msg.teamId === myTeamId;
 row.className = "chat-msg" + (isMine ? " mine" : "") + (msg.isHost ? " host" : "") + (msg.isSystem ? " system" : "");
-if (msg.isSystem) { row.innerHTML = '<div>🔔 ' + msg.text + '</div>'; }
+if (msg.isSystem) { row.innerHTML = '<div> ' + msg.text + '</div>'; }
 else { row.innerHTML = '<div class="name">' + msg.author + '</div><div class="text">' + msg.text + '</div>'; }
 msgBox.appendChild(row); msgBox.scrollTop = msgBox.scrollHeight;
 if (!isChatOpen && !isMine && roomChatMode !== "disabled") {
@@ -1022,11 +1001,11 @@ if (leaderboard.length > 0) {
 var topScore = leaderboard[0].score;
 var winners = leaderboard.filter(function(t) { return t.score === topScore; });
 if (winners.length > 1) { winnerBadge.textContent = "🤝 Боевая ничья!"; }
-else { winnerBadge.textContent = "🏆 " + winners[0].name + " побеждает!"; }
+else { winnerBadge.textContent = " " + winners[0].name + " побеждает!"; }
 leaderboard.forEach(function(t, idx) {
 var row = document.createElement("div");
 row.className = "leaderboard-row" + (idx === 0 ? " gold" : "");
-row.innerHTML = '<span>' + (idx === 0 ? '🥇 ' : (idx + 1) + '. ') + t.name + '</span><span class="pts">' + formatScoreDisplay(t.score) + '</span>';
+row.innerHTML = '<span>' + (idx === 0 ? ' ' : (idx + 1) + '. ') + t.name + '</span><span class="pts">' + formatScoreDisplay(t.score) + '</span>';
 list.appendChild(row);
 });
 }
@@ -1051,7 +1030,7 @@ if (passed.indexOf(myTeamId) !== -1) return;
 return { locked: true, pressedBy: myTeamId, pressedByName: myTeamName, passedBy: passed, time: Date.now() };
 }, function(error, committed) {
 if (committed && roomChatMode !== "disabled") {
-db.ref("rooms/" + currentRoom + "/chat").push({ author: "Система", text: "⚡ " + myTeamName + " жмёт кнопку и отвечает!", isSystem: true, time: Date.now() });
+db.ref("rooms/" + currentRoom + "/chat").push({ author: "Система", text: " " + myTeamName + " жмёт кнопку и отвечает!", isSystem: true, time: Date.now() });
 }
 });
 }
