@@ -8,7 +8,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
-<title> Revers Quiz — Экран команды</title>
+<title>⚡ Revers Quiz — Экран команды</title>
 <script>
 (async function checkClientVersionAndClearCache() {
 try {
@@ -219,7 +219,7 @@ body::after { content: ""; position: fixed; inset: 0; background: repeating-line
 </div>
 
 <div class="lottery-screen" id="lottery-screen-selection">
-<div class="lottery-title"> Выберите номер трека</div>
+<div class="lottery-title">🎲 Выберите номер трека</div>
 <div class="lottery-subtitle">Ваш выбор приватен — другие команды его не увидят</div>
 <div class="lottery-numbers-grid" id="lottery-numbers-grid"></div>
 </div>
@@ -231,7 +231,6 @@ body::after { content: ""; position: fixed; inset: 0; background: repeating-line
 <div class="lottery-waiting-icon"><i class="fas fa-spinner"></i></div>
 </div>
 
-<!-- 🔧 ИСПРАВЛЕНИЕ: При revealing сразу запускаем вихрь, без промежуточных экранов -->
 <div class="lottery-screen" id="lottery-screen-vortex">
 <div class="lottery-title">🎲 Рандомайзер запущен</div>
 <div class="lottery-vortex-container" id="lottery-vortex-container"></div>
@@ -376,7 +375,7 @@ gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
 osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.35);
 } catch(e) {}
 }
-var POPULAR_EMOJIS = ["👍","👏","🔥","🎉","😂","","🤩","🤔","","🎵","🎶","","🎧","🏆","⭐","💯","❤️","👋","","🚀","💃"];
+var POPULAR_EMOJIS = ["👍","👏","🔥","🎉","😂","😎","","🤔","😮","","🎶","🎤","","🏆","⭐","💯","❤️","👋","🤐","","💃"];
 function initEmojiPicker(containerId, inputId) {
 var container = document.getElementById(containerId);
 if (!container) return;
@@ -608,7 +607,6 @@ stopSyntheticTimer(); updateProgressDisplay(0, currentTrackDuration);
 });
 }
 
-//  ИСПРАВЛЕНИЕ: Полная переработка listenToLotteryState для корректной работы всех экранов
 function listenToLotteryState() {
 var lotteryRef = db.ref("rooms/" + currentRoom + "/lotteryState");
 lotteryRef.on("value", function(snapshot) {
@@ -617,14 +615,10 @@ if (!ls) return;
 var oldPhase = lotteryPhase;
 lotteryPhase = ls.phase || "idle";
 lotteryAllNumbers = ls.allNumbers || [];
-
-// Сброс при смене фазы
 if (oldPhase !== lotteryPhase) {
 lotteryMyChoice = null;
 lotterySelectedNumber = null;
 }
-
-// 🔧 Явная проверка фазы с приоритетом
 if (lotteryPhase === "idle") {
 hideAllLotteryScreens();
 document.getElementById("game-view").style.display = "none";
@@ -649,7 +643,6 @@ renderLotteryNumbersGrid(lotteryAllNumbers);
 showLotteryScreen("selection");
 }
 } else if (lotteryPhase === "revealing") {
-// 🔧 ИСПРАВЛЕНИЕ: Сразу запускаем вихрь, без мозаики
 hideAllLotteryScreens();
 document.getElementById("game-view").style.display = "none";
 if (vortexAnimationInterval) {
@@ -658,7 +651,6 @@ vortexAnimationInterval = null;
 }
 runPlayerVortexAnimation(ls.numberChoices || {});
 } else if (lotteryPhase === "playing") {
-// 🔧 Останавливаем вихрь, показываем результат, затем переходим к игре
 if (vortexAnimationInterval) {
 clearInterval(vortexAnimationInterval);
 vortexAnimationInterval = null;
@@ -808,10 +800,7 @@ var aN = document.getElementById("player-audio-normal");
 if (aR && !aR.paused) aR.pause();
 if (aN && !aN.paused) aN.pause();
 }
-
-//  В режиме лотереи обновляем game-view только когда фаза playing
 if (isLotteryMode && lotteryPhase !== "playing") { return; }
-
 var buzzerBtn = document.getElementById("buzzer-btn");
 var passBtn = document.getElementById("pass-btn");
 var hudFooter = document.getElementById("hud-footer");
@@ -960,7 +949,7 @@ if (!msg) return;
 var row = document.createElement("div");
 var isMine = msg.teamId === myTeamId;
 row.className = "chat-msg" + (isMine ? " mine" : "") + (msg.isHost ? " host" : "") + (msg.isSystem ? " system" : "");
-if (msg.isSystem) { row.innerHTML = '<div> ' + msg.text + '</div>'; }
+if (msg.isSystem) { row.innerHTML = '<div>🔔 ' + msg.text + '</div>'; }
 else { row.innerHTML = '<div class="name">' + msg.author + '</div><div class="text">' + msg.text + '</div>'; }
 msgBox.appendChild(row); msgBox.scrollTop = msgBox.scrollHeight;
 if (!isChatOpen && !isMine && roomChatMode !== "disabled") {
@@ -978,6 +967,8 @@ if (!text || !currentRoom) return;
 db.ref("rooms/" + currentRoom + "/chat").push({ author: myTeamName, teamId: myTeamId, text: text, isHost: false, time: Date.now() });
 input.value = ""; document.getElementById("player-emoji-popover").style.display = "none";
 }
+
+// 🔧 ИСПРАВЛЕНИЕ: Корректная логика отображения итогов при ничьей
 function showGameOverScreen(leaderboard) {
 if (gameOverTimer) return;
 var aRevers = document.getElementById("player-audio-revers");
@@ -999,13 +990,25 @@ var list = document.getElementById("final-leaderboard-list");
 list.innerHTML = "";
 if (leaderboard.length > 0) {
 var topScore = leaderboard[0].score;
+// 🔧 Определяем, есть ли ничья (несколько команд с одинаковым максимальным счётом)
 var winners = leaderboard.filter(function(t) { return t.score === topScore; });
-if (winners.length > 1) { winnerBadge.textContent = "🤝 Боевая ничья!"; }
-else { winnerBadge.textContent = " " + winners[0].name + " побеждает!"; }
+var isDraw = winners.length > 1;
+
+// 🔧 Отображаем текст победителя
+if (isDraw) {
+winnerBadge.textContent = "🤝 Боевая ничья!";
+} else {
+winnerBadge.textContent = "🏆 " + winners[0].name + " побеждает!";
+}
+
+// 🔧 Строим таблицу: подсвечиваем ВСЕХ с максимальным счётом
 leaderboard.forEach(function(t, idx) {
 var row = document.createElement("div");
-row.className = "leaderboard-row" + (idx === 0 ? " gold" : "");
-row.innerHTML = '<span>' + (idx === 0 ? ' ' : (idx + 1) + '. ') + t.name + '</span><span class="pts">' + formatScoreDisplay(t.score) + '</span>';
+var isWinner = (t.score === topScore);
+row.className = "leaderboard-row" + (isWinner ? " gold" : "");
+// При ничьей у всех победителей показываем 🥇, у остальных — порядковый номер
+var prefix = isWinner ? '🥇 ' : (idx + 1) + '. ';
+row.innerHTML = '<span>' + prefix + t.name + '</span><span class="pts">' + formatScoreDisplay(t.score) + '</span>';
 list.appendChild(row);
 });
 }
@@ -1018,6 +1021,7 @@ if (secSpan) secSpan.textContent = timeLeft;
 if (timeLeft <= 0) { clearInterval(gameOverTimer); gameOverTimer = null; window.location.reload(); }
 }, 1000);
 }
+
 function pressBuzzer() {
 if (!currentRoom || !myTeamId) return;
 if (navigator.vibrate) navigator.vibrate([40]);
