@@ -2659,8 +2659,6 @@ function playTrack(name) {
 
   audioNormal.src = "";
   audioNormal.preload = "none";
-  document.getElementById("revers-current-time").textContent = "00:00";
-  document.getElementById("revers-duration").textContent = "00:00";
 
   currentTrackName = name;
   var track = files[name];
@@ -2675,81 +2673,16 @@ function playTrack(name) {
       hideTrackPopup();
     };
 
-    // Слушатель для обновления длительности (устраняет 00:00)
-    audioRevers.ondurationchange = function() {
-      if (audioRevers.duration && !isNaN(audioRevers.duration) && isFinite(audioRevers.duration)) {
-        document.getElementById("revers-duration").textContent = formatTime(audioRevers.duration);
-        if (isInteractiveMode && roomRef) {
-          roomRef.child("audioSync").update({ duration: audioRevers.duration });
-        }
-      }
-    };
-
-    // Буферизация оригинала стартует только после начала проигрывания реверса
     audioRevers.onplaying = function() {
       audioRevers.onplaying = null;
       if (track.normal && currentTrackName === name) {
         audioNormal.src = track.normal;
         audioNormal.preload = "auto";
         audioNormal.load();
-        audioNormal.ondurationchange = function() {
-          if (audioNormal.duration && !isNaN(audioNormal.duration) && isFinite(audioNormal.duration)) {
-            document.getElementById("normal-duration").textContent = formatTime(audioNormal.duration);
-          }
+        audioNormal.onloadedmetadata = function() {
+          document.getElementById("normal-duration").textContent = formatTime(audioNormal.duration);
         };
       }
-    };
-
-    var newTrackSessionId = "track_" + Date.now();
-    var hasStartedThisTrack = false;
-
-    function launchReversPlayback(dur) {
-      if (hasStartedThisTrack) return;
-      hasStartedThisTrack = true;
-
-      document.getElementById("revers-duration").textContent = formatTime(dur);
-
-      if (isInteractiveMode && roomRef) {
-        teamsData.forEach(function(t) {
-          roomRef.child("teams/" + t.id + "/readyToPlay").set(false);
-        });
-
-        roomRef.update({
-          status: "idle",
-          revealedTrack: "",
-          timerState: { active: false, value: 0 },
-          buzzer: { locked: false, pressedBy: null, pressedByName: null, passedBy: [] }
-        });
-
-        roomRef.child("audioSync").set({
-          trackSessionId: newTrackSessionId,
-          reversUrl: track.revers || "",
-          normalUrl: track.normal || "",
-          duration: dur,
-          currentTime: 0,
-          playAction: "prepare",
-          startAt: 0
-        });
-      }
-
-      toggleRevers();
-    }
-
-    audioRevers.onloadedmetadata = function() {
-      audioRevers.onloadedmetadata = null;
-      launchReversPlayback(audioRevers.duration || 0);
-    };
-
-    setTimeout(function() {
-      if (!hasStartedThisTrack && currentTrackName === name) {
-        launchReversPlayback(audioRevers.duration || 0);
-      }
-    }, 1200);
-  }
-  updateShuffleButtonState();
-  updateNextTrackButton();
-  saveState();
-}
     };
 
     var newTrackSessionId = "track_" + Date.now();
@@ -2875,34 +2808,35 @@ function toggleRevers() {
 function startSynchronizedPlayback() {
   var audio = document.getElementById("audio-revers");
   var icon = document.getElementById("revers-play-icon");
+  var serverStartAt = Date.now() + 250;
 
-  clearTeamHighlight();
-  audio.currentTime = 0;
+  if (isInteractiveMode && roomRef) {
+    clearTeamHighlight();
+    roomRef.update({
+      status: "playing",
+      revealedTrack: "",
+      timerState: { active: false, value: 0 }
+    });
 
-  // Запуск плеера ведущего в первую очередь
-  audio.play().then(function() {
-    icon.classList.replace("fa-play", "fa-pause");
-    showTrackPopup(currentTrackName);
-    updateReversProgress();
+    roomRef.child("audioSync").update({
+      playAction: streamAudioToPlayers ? "play_revers" : "play_silent",
+      startAt: serverStartAt,
+      duration: audio.duration || 0,
+      currentTime: 0
+    });
+  }
 
-    // Сигнал участникам отправляется только после фактического старта воспроизведения у ведущего
-    if (isInteractiveMode && roomRef) {
-      roomRef.update({
-        status: "playing",
-        revealedTrack: "",
-        timerState: { active: false, value: 0 }
-      });
-
-      roomRef.child("audioSync").update({
-        playAction: streamAudioToPlayers ? "play_revers" : "play_silent",
-        startAt: Date.now() + 100,
-        duration: audio.duration || 0,
-        currentTime: audio.currentTime || 0
-      });
-    }
-  }).catch(function(err) {
-    console.warn("Воспроизведение ведущего ожидает разрешения:", err);
-  });
+  var delayStart = Math.max(0, serverStartAt - Date.now());
+  setTimeout(function() {
+    audio.currentTime = 0;
+    audio.play().then(function() {
+      icon.classList.replace("fa-play", "fa-pause");
+      showTrackPopup(currentTrackName);
+      updateReversProgress();
+    }).catch(function(err) {
+      console.warn("Воспроизведение ведущего ожидает разрешения:", err);
+    });
+  }, delayStart);
 }
 
 function resumeSynchronizedPlayback() {
