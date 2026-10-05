@@ -2660,6 +2660,8 @@ function playTrack(name) {
 
   audioNormal.src = "";
   audioNormal.preload = "none";
+  document.getElementById("revers-current-time").textContent = "00:00";
+  document.getElementById("revers-duration").textContent = "00:00";
 
   currentTrackName = name;
   var track = files[name];
@@ -2674,21 +2676,85 @@ function playTrack(name) {
       hideTrackPopup();
     };
 
+    // Слушатель обновления длительности (исправляет нули 00:00)
+    audioRevers.ondurationchange = function() {
+      if (audioRevers.duration && !isNaN(audioRevers.duration) && isFinite(audioRevers.duration)) {
+        document.getElementById("revers-duration").textContent = formatTime(audioRevers.duration);
+        if (isInteractiveMode && roomRef) {
+          roomRef.child("audioSync").update({ duration: audioRevers.duration });
+        }
+      }
+    };
+
+    // Оригинал буферизуется только когда реверс стабильно играет
     audioRevers.onplaying = function() {
       audioRevers.onplaying = null;
       if (track.normal && currentTrackName === name) {
         audioNormal.src = track.normal;
         audioNormal.preload = "auto";
         audioNormal.load();
-        audioNormal.onloadedmetadata = function() {
-          document.getElementById("normal-duration").textContent = formatTime(audioNormal.duration);
+        audioNormal.ondurationchange = function() {
+          if (audioNormal.duration && !isNaN(audioNormal.duration) && isFinite(audioNormal.duration)) {
+            document.getElementById("normal-duration").textContent = formatTime(audioNormal.duration);
+          }
         };
       }
     };
 
     var newTrackSessionId = "track_" + Date.now();
-    var hasStartedThisTrack = false;
+    var hasPreparedThisTrack = false;
 
+    function prepareReversReady() {
+      if (hasPreparedThisTrack) return;
+      hasPreparedThisTrack = true;
+
+      var dur = (audioRevers.duration && !isNaN(audioRevers.duration) && isFinite(audioRevers.duration)) ? audioRevers.duration : 0;
+      if (dur > 0) {
+        document.getElementById("revers-duration").textContent = formatTime(dur);
+      }
+
+      if (isInteractiveMode && roomRef) {
+        teamsData.forEach(function(t) {
+          roomRef.child("teams/" + t.id + "/readyToPlay").set(false);
+        });
+
+        roomRef.update({
+          status: "idle",
+          revealedTrack: "",
+          timerState: { active: false, value: 0 },
+          buzzer: { locked: false, pressedBy: null, pressedByName: null, passedBy: [] }
+        });
+
+        // Отправляем участникам команду готовиться, но НЕ играть раньше ведущего
+        roomRef.child("audioSync").set({
+          trackSessionId: newTrackSessionId,
+          reversUrl: track.revers || "",
+          normalUrl: track.normal || "",
+          duration: dur,
+          currentTime: 0,
+          playAction: "prepare",
+          startAt: 0
+        });
+      }
+
+      toggleRevers();
+    }
+
+    audioRevers.oncanplay = function() {
+      audioRevers.oncanplay = null;
+      prepareReversReady();
+    };
+
+    setTimeout(function() {
+      if (!hasPreparedThisTrack && currentTrackName === name) {
+        prepareReversReady();
+      }
+    }, 1200);
+  }
+  updateShuffleButtonState();
+  updateNextTrackButton();
+  saveState();
+}
     function launchReversPlayback(dur) {
       if (hasStartedThisTrack) return;
       hasStartedThisTrack = true;
@@ -2809,37 +2875,35 @@ function toggleRevers() {
 function startSynchronizedPlayback() {
   var audio = document.getElementById("audio-revers");
   var icon = document.getElementById("revers-play-icon");
-  var serverStartAt = Date.now() + 250;
 
-  if (isInteractiveMode && roomRef) {
-    clearTeamHighlight();
-    roomRef.update({
-      status: "playing",
-      revealedTrack: "",
-      timerState: { active: false, value: 0 }
-    });
+  clearTeamHighlight();
+  audio.currentTime = 0;
 
-    roomRef.child("audioSync").update({
-      playAction: streamAudioToPlayers ? "play_revers" : "play_silent",
-      startAt: serverStartAt,
-      duration: audio.duration || 0,
-      currentTime: 0
-    });
-  }
+  // Запускаем плеер ведущего ПЕРВЫМ
+  audio.play().then(function() {
+    icon.classList.replace("fa-play", "fa-pause");
+    showTrackPopup(currentTrackName);
+    updateReversProgress();
 
-  var delayStart = Math.max(0, serverStartAt - Date.now());
-  setTimeout(function() {
-    audio.currentTime = 0;
-    audio.play().then(function() {
-      icon.classList.replace("fa-play", "fa-pause");
-      showTrackPopup(currentTrackName);
-      updateReversProgress();
-    }).catch(function(err) {
-      console.warn("Воспроизведение ведущего ожидает разрешения:", err);
-    });
-  }, delayStart);
+    // Теперь, когда ведущий ГАРАНТИРОВАННО начал звучать, подключаем телефоны команд
+    if (isInteractiveMode && roomRef) {
+      roomRef.update({
+        status: "playing",
+        revealedTrack: "",
+        timerState: { active: false, value: 0 }
+      });
+
+      roomRef.child("audioSync").update({
+        playAction: streamAudioToPlayers ? "play_revers" : "play_silent",
+        startAt: Date.now() + 80,
+        duration: audio.duration || 0,
+        currentTime: audio.currentTime || 0
+      });
+    }
+  }).catch(function(err) {
+    console.warn("Воспроизведение ведущего ожидает разрешения:", err);
+  });
 }
-
 function resumeSynchronizedPlayback() {
   var audio = document.getElementById("audio-revers");
   var icon = document.getElementById("revers-play-icon");
