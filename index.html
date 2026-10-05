@@ -2403,11 +2403,26 @@ async function startOriginalPlayback() {
   }
 }
 
+// === ИСПРАВЛЕНИЕ 1: Защита от NaN и Infinity ===
 function formatTime(seconds) {
-  seconds = Math.floor(seconds || 0);
+  if (!isFinite(seconds) || isNaN(seconds) || seconds < 0) {
+    return "00:00";
+  }
+  seconds = Math.floor(seconds);
   var mins = Math.floor(seconds / 60);
   var secs = seconds % 60;
   return String(mins).padStart(2, '0') + ":" + String(secs).padStart(2, '0');
+}
+
+// === ИСПРАВЛЕНИЕ 2: Новая надёжная функция обновления длительности ===
+function updateReversDurationDisplay() {
+  var a = document.getElementById("audio-revers");
+  var durEl = document.getElementById("revers-duration");
+  if (a && durEl && isFinite(a.duration) && a.duration > 0) {
+    durEl.textContent = formatTime(a.duration);
+    return true;
+  }
+  return false;
 }
 
 function updateFolderSection() {
@@ -2489,7 +2504,6 @@ function isTrackOrderValid(filesMap) {
   return valid;
 }
 
-// 1. Загрузка файлов с автоматическим перемешиванием треков во всех режимах
 async function loadFiles() {
   var loadBtn = document.getElementById("load-songs-btn");
   loadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Загрузка...';
@@ -2504,7 +2518,6 @@ async function loadFiles() {
       var rNames = Object.keys(rFiles);
       var fNames = Object.keys(fFiles);
       
-      // Объединяем треки и рандомизируем очередность
       var mergedNames = Array.from(new Set(rNames.concat(fNames))).sort(function() { return Math.random() - 0.5; });
       var mixedFiles = {};
       var newTrackOrder = {};
@@ -2525,7 +2538,6 @@ async function loadFiles() {
       selectedFolder = path;
       allFiles = await fetchFolderFiles(path);
 
-      // Автоматическое перемешивание загруженных треков
       var names = Object.keys(allFiles).sort(function() { return Math.random() - 0.5; });
       trackOrder = {};
       names.forEach(function(name, idx) {
@@ -2630,6 +2642,7 @@ function purgeAudioBuffer(audioEl) {
   }
 }
 
+// === ИСПРАВЛЕНИЕ 3: Множественные fallback'и для получения duration ===
 function playTrack(name) {
   hideBuzzerAlert();
   if (originalTimeout) {
@@ -2673,8 +2686,22 @@ function playTrack(name) {
       hideTrackPopup();
     };
 
+    audioRevers.onloadedmetadata = function() {
+      // Попытка 1: стандартное событие
+      if (!updateReversDurationDisplay()) {
+        // Попытка 2: если duration меняется с Infinity на число
+        audioRevers.ondurationchange = function() {
+          if (updateReversDurationDisplay()) {
+            audioRevers.ondurationchange = null;
+          }
+        };
+      }
+    };
+
     audioRevers.onplaying = function() {
-      audioRevers.onplaying = null;
+      // Попытка 3: при реальном старте воспроизведения
+      updateReversDurationDisplay();
+      
       if (track.normal && currentTrackName === name) {
         audioNormal.src = track.normal;
         audioNormal.preload = "auto";
@@ -2720,11 +2747,7 @@ function playTrack(name) {
       toggleRevers();
     }
 
-    audioRevers.onloadedmetadata = function() {
-      audioRevers.onloadedmetadata = null;
-      launchReversPlayback(audioRevers.duration || 0);
-    };
-
+    // Попытка 4: таймаут на случай, если события не сработали
     setTimeout(function() {
       if (!hasStartedThisTrack && currentTrackName === name) {
         launchReversPlayback(audioRevers.duration || 0);
@@ -3007,12 +3030,13 @@ async function toggleNormal() {
   }
 }
 
+// === ИСПРАВЛЕНИЕ 4: Безопасная работа с duration в прогресс-барах ===
 function updateReversProgress() {
   var a = document.getElementById("audio-revers");
   var fill = document.getElementById("revers-progress-fill");
   var currentTimeEl = document.getElementById("revers-current-time");
-  var duration = isNaN(a.duration) ? 0 : a.duration;
-  var progress = a.currentTime / duration;
+  var duration = (isFinite(a.duration) && a.duration > 0) ? a.duration : 0;
+  var progress = duration > 0 ? (a.currentTime / duration) : 0;
   fill.style.width = (progress * 100 || 0) + "%";
   currentTimeEl.textContent = formatTime(a.currentTime);
   if (!a.paused) requestAnimationFrame(updateReversProgress);
@@ -3022,8 +3046,8 @@ function updateNormalProgress() {
   var a = document.getElementById("audio-normal");
   var fill = document.getElementById("normal-progress-fill");
   var currentTimeEl = document.getElementById("normal-current-time");
-  var duration = isNaN(a.duration) ? 0 : a.duration;
-  var progress = a.currentTime / duration;
+  var duration = (isFinite(a.duration) && a.duration > 0) ? a.duration : 0;
+  var progress = duration > 0 ? (a.currentTime / duration) : 0;
   fill.style.width = (progress * 100 || 0) + "%";
   currentTimeEl.textContent = formatTime(a.currentTime);
   if (!a.paused) requestAnimationFrame(updateNormalProgress);
