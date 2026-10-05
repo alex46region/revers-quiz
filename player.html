@@ -203,7 +203,7 @@ body::after {
   box-shadow: 
     0 0 55px rgba(255, 0, 127, 0.7),
     0 0 110px rgba(255, 0, 127, 0.35),
-    inset 0 0 25px rgba(255, 0, 127, 0.4);
+    inset 0 0 25px rgba(0, 255, 127, 0.4);
   text-shadow: 0 0 24px var(--neon-magenta);
 }
 
@@ -1027,16 +1027,19 @@ body::after {
 <audio id="player-sound-ring" preload="auto" playsinline style="display:none;"></audio>
 <audio id="player-sound-game-over" preload="auto" playsinline style="display:none;"></audio>
 
+<!-- Неоновый бейдж визуального таймера для участников -->
 <div class="player-countdown-badge" id="player-timer-badge">
   <i class="fas fa-stopwatch"></i>
   <span id="player-timer-badge-num">10</span>
 </div>
 
+<!-- Всплывающий бейдж счёта -->
 <div class="score-delta-overlay" id="player-score-delta-popup">
   <div class="score-delta-badge plus" id="player-score-delta-badge">+1</div>
   <div class="score-delta-subtext">Баллы обновлены!</div>
 </div>
 
+<!-- 1. Экран логина команды -->
 <div class="login-wrap" id="login-view">
   <div class="brand-icon"><i class="fas fa-bolt"></i></div>
   <h2>REVERS QUIZ</h2>
@@ -1053,6 +1056,7 @@ body::after {
   <div class="error-banner" id="login-error"></div>
 </div>
 
+<!-- 2. Игровой экран участника -->
 <div id="game-view">
   <div class="top-action-bar">
     <div class="scoreboard-arena" id="scoreboard-wrap"></div>
@@ -1110,6 +1114,7 @@ body::after {
   </div>
 </div>
 
+<!-- 3. Экран завершения игры -->
 <div id="game-over-view">
   <div class="trophy-icon"><i class="fas fa-trophy"></i></div>
   <div class="game-over-title">Итоги игры</div>
@@ -1122,6 +1127,7 @@ body::after {
   </div>
 </div>
 
+<!-- 4. Модальное окно чата участника -->
 <div id="player-chat-modal">
   <div class="player-chat-card">
     <div class="player-chat-head">
@@ -1533,15 +1539,16 @@ function listenToAudioStream() {
 
       var targetDelay = Math.max(0, (sync.startAt || Date.now()) - Date.now());
       var duration = sync.duration || currentTrackDuration || 0;
+      var curPos = sync.currentTime || 0;
 
       setTimeout(function() {
         if (isStreamAudioAllowed) {
-          aRevers.currentTime = 0;
+          aRevers.currentTime = curPos;
           aRevers.play().catch(function() {});
         } else {
           aRevers.pause();
         }
-        startSyntheticTimer(0, duration);
+        startSyntheticTimer(curPos, duration);
       }, targetDelay);
 
     } else if (sync.playAction === "play_silent") {
@@ -1649,7 +1656,7 @@ function listenToGameState() {
       bufferSystemSound("player-sound-game-over", data.systemSounds.gameOver);
     }
 
-    // Мгновенное воспроизведение звуков вердикта ведущего в нахлёст
+    // Мгновенное воспроизведение звуков вердикта в нахлёст без задержки
     if (data.soundTrigger && data.soundTrigger.time > lastHandledSoundTime) {
       lastHandledSoundTime = data.soundTrigger.time;
       if (isStreamAudioAllowed) {
