@@ -226,12 +226,11 @@ body::after { content: ""; position: fixed; inset: 0; background: repeating-line
 </div>
 
 <div class="lottery-screen" id="lottery-screen-mosaic">
-<div class="lottery-title">🎨 Все номера выбраны!</div>
+<div class="lottery-title"> Все номера выбраны!</div>
 <div class="lottery-mosaic" id="lottery-mosaic-grid"></div>
 <div class="lottery-subtitle" style="margin-top:14px;">Запускаем рандомайзер...</div>
 </div>
 
-<!-- 🔧 ИСПРАВЛЕНИЕ 3: Заменён текст "Вихрь выбирает" на "Рандомайзер запущен" -->
 <div class="lottery-screen" id="lottery-screen-vortex">
 <div class="lottery-title">🎲 Рандомайзер запущен</div>
 <div class="lottery-vortex-container" id="lottery-vortex-container"></div>
@@ -376,7 +375,7 @@ gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
 osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.35);
 } catch(e) {}
 }
-var POPULAR_EMOJIS = ["👍","👏","🔥","🎉","😂","😎","🤩","","😮","🎵","","🎤","🎧","","⭐","💯","❤️","","🤐","🚀","💃"];
+var POPULAR_EMOJIS = ["👍","👏","🔥","🎉","😂","😎","🤩","","😮","🎶","🎤","🎧","🏆","⭐","","❤️","👋","","🚀","💃"];
 function initEmojiPicker(containerId, inputId) {
 var container = document.getElementById(containerId);
 if (!container) return;
@@ -615,10 +614,14 @@ if (!ls) return;
 var oldPhase = lotteryPhase;
 lotteryPhase = ls.phase || "idle";
 lotteryAllNumbers = ls.allNumbers || [];
+
+// 🔧 ИСПРАВЛЕНИЕ: Сброс при смене фазы
 if (oldPhase !== lotteryPhase) {
 lotteryMyChoice = null;
 lotterySelectedNumber = null;
 }
+
+// 🔧 ИСПРАВЛЕНИЕ: Проверка фазы ДО показа любого экрана
 if (lotteryPhase === "idle") {
 hideAllLotteryScreens();
 document.getElementById("game-view").style.display = "none";
@@ -634,6 +637,7 @@ showLotteryScreen("ready");
 } else if (lotteryPhase === "number_selection") {
 hideAllLotteryScreens();
 document.getElementById("game-view").style.display = "none";
+// 🔧 ИСПРАВЛЕНИЕ: Проверяем, выбрала ли команда номер
 if (ls.numberChoices && typeof ls.numberChoices[myTeamId] !== 'undefined') {
 lotteryMyChoice = ls.numberChoices[myTeamId];
 document.getElementById("lottery-my-chosen-number").textContent = lotteryMyChoice;
@@ -645,13 +649,15 @@ showLotteryScreen("selection");
 } else if (lotteryPhase === "revealing") {
 hideAllLotteryScreens();
 document.getElementById("game-view").style.display = "none";
+// 🔧 ИСПРАВЛЕНИЕ: Сразу показываем мозаику и запускаем вихрь
 renderLotteryMosaic(ls.numberChoices || {}, ls.allNumbers || []);
 showLotteryScreen("mosaic");
+// Уменьшаем задержку перед вихрем
 setTimeout(function() {
 if (lotteryPhase === "revealing") {
 runPlayerVortexAnimation(ls.numberChoices || {});
 }
-}, 2500);
+}, 1500);
 } else if (lotteryPhase === "playing") {
 if (vortexAnimationInterval) {
 clearInterval(vortexAnimationInterval);
