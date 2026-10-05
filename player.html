@@ -1538,16 +1538,15 @@ function listenToAudioStream() {
 
       var targetDelay = Math.max(0, (sync.startAt || Date.now()) - Date.now());
       var duration = sync.duration || currentTrackDuration || 0;
-      var curPos = sync.currentTime || 0;
 
       setTimeout(function() {
         if (isStreamAudioAllowed) {
-          aRevers.currentTime = curPos;
+          aRevers.currentTime = 0;
           aRevers.play().catch(function() {});
         } else {
           aRevers.pause();
         }
-        startSyntheticTimer(curPos, duration);
+        startSyntheticTimer(0, duration);
       }, targetDelay);
 
     } else if (sync.playAction === "play_silent") {
@@ -1946,13 +1945,14 @@ function sendPlayerChatMessage() {
   document.getElementById("player-emoji-popover").style.display = "none";
 }
 
-// Полная очистка буферов плееров при показе экрана завершения игры
+// 2. ИСПРАВЛЕНО: Полная очистка буферов плееров при показе экрана завершения игры
 function showGameOverScreen(leaderboard) {
   if (gameOverTimer) return;
 
   var aRevers = document.getElementById("player-audio-revers");
   var aNormal = document.getElementById("player-audio-normal");
 
+  // Жёстко глушим и сбрасываем треки оригинала и реверса, чтобы они не играли поверх победного звука
   if (aRevers) {
     aRevers.pause();
     aRevers.currentTime = 0;
