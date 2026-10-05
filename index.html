@@ -3221,18 +3221,18 @@ function endQuiz() {
 }
 
 function toggleInteractiveSettingsVisibility() {
-  var modeSel = document.getElementById("interactive-mode-toggle");
+  var modeSel = document.getElementById("game-mode-selector") || document.getElementById("interactive-mode-toggle");
   var subSettings = document.getElementById("interactive-sub-settings");
   if (modeSel && subSettings) {
-    subSettings.style.display = (modeSel.value === "true") ? "flex" : "none";
+    var isEnabled = (modeSel.value === "true" || modeSel.value === "interactive" || modeSel.value === "numbers");
+    subSettings.style.display = isEnabled ? "flex" : "none";
   }
 }
-
 function openSettings() {
   var tIn = document.getElementById("timer-input");
   var dIn = document.getElementById("original-delay-input");
   var mIn = document.getElementById("mix-mode");
-  var modeSel = document.getElementById("interactive-mode-toggle");
+  var modeSel = document.getElementById("game-mode-selector") || document.getElementById("interactive-mode-toggle");
   var streamSel = document.getElementById("stream-audio-toggle");
   var chatModeSel = document.getElementById("chat-mode-toggle");
   var scoreSel = document.getElementById("show-score-toggle");
@@ -3243,13 +3243,21 @@ function openSettings() {
   if (tIn) tIn.value = timerDuration;
   if (dIn) dIn.value = originalDelay;
   if (mIn) mIn.value = mixMode ? "mixed" : "normal";
-  if (modeSel) modeSel.value = isInteractiveMode ? "true" : "false";
+  if (modeSel) {
+    if (modeSel.id === "game-mode-selector") {
+      modeSel.value = typeof gameMode !== 'undefined' ? gameMode : (isInteractiveMode ? "interactive" : "offline");
+    } else {
+      modeSel.value = isInteractiveMode ? "true" : "false";
+    }
+  }
   if (streamSel) streamSel.value = streamAudioToPlayers ? "true" : "false";
   if (chatModeSel) chatModeSel.value = chatMode;
   if (scoreSel) scoreSel.value = showScoreToPlayers ? "true" : "false";
   if (opponentScoreSel) opponentScoreSel.value = showOpponentScore ? "true" : "false";
   
-  toggleInteractiveSettingsVisibility();
+  if (typeof toggleInteractiveSettingsVisibility === "function") {
+    toggleInteractiveSettingsVisibility();
+  }
 
   if (statusEl) {
     var currentVer = localStorage.getItem('app_version') || '11';
@@ -3259,7 +3267,6 @@ function openSettings() {
     sMod.classList.add("active");
   }
 }
-
 function closeSettings() {
   var sMod = document.getElementById("settings-modal");
   if (sMod) {
