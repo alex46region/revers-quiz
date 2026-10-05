@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
 <meta name="theme-color" content="#05060a" />
 <meta name="referrer" content="no-referrer" />
-<title> Revers Викторина: Neon Stage</title>
+<title>🎧 Revers Викторина: Neon Stage</title>
 <link rel="manifest" href="manifest.json">
 <script>
 if ('serviceWorker' in navigator) {
@@ -204,12 +204,12 @@ button:active { transform: scale(0.98); }
 <div id="score-notification" class="score-notification"></div>
 <div id="action-notification" class="action-notification"></div>
 <div class="buzzer-wave-overlay" id="buzzer-wave-popup">
-<div class="wave-hand-halo"><span class="wave-hand-emoji">👋</span></div>
+<div class="wave-hand-halo"><span class="wave-hand-emoji"></span></div>
 <div class="wave-team-badge" id="buzzer-wave-team">Команда</div>
 </div>
 
 <div id="lottery-vortex-overlay">
-<div class="vortex-title" id="vortex-title"> Рандомайзер выбирает...</div>
+<div class="vortex-title" id="vortex-title">🎲 Рандомайзер выбирает...</div>
 <div class="vortex-stage" id="vortex-stage"></div>
 <div class="vortex-result-title" id="vortex-result-title" style="display:none;"></div>
 </div>
@@ -262,12 +262,12 @@ button:active { transform: scale(0.98); }
 </div>
 
 <div id="lottery-phase-start" class="lottery-panel" style="display:none;">
-    <div class="lottery-panel-title"><i class="fas fa-rocket"></i> Этап 2: Готовность команд</div>
-    <div class="lottery-teams-status" id="lottery-ready-status"></div>
-    <button class="lottery-btn start-game" id="lottery-start-game-btn" onclick="startLotteryGame()" disabled style="margin-top:14px;">
-        <i class="fas fa-play"></i> Начать игру
-    </button>
-    <div style="font-size:0.85em; color:var(--text-dim); text-align:center;">Кнопка активируется, когда все команды готовы</div>
+<div class="lottery-panel-title"><i class="fas fa-rocket"></i> Этап 2: Готовность команд</div>
+<div class="lottery-teams-status" id="lottery-ready-status-2"></div>
+<button class="lottery-btn start-game" id="lottery-start-game-btn" onclick="startLotteryGame()" disabled style="margin-top:14px;">
+<i class="fas fa-play"></i> Начать игру
+</button>
+<div style="font-size:0.85em; color:var(--text-dim); text-align:center;">Кнопка активируется, когда все команды готовы</div>
 </div>
 
 <div id="lottery-phase-choices" class="lottery-panel" style="display:none;">
@@ -302,8 +302,8 @@ button:active { transform: scale(0.98); }
 <h2 class="section-title"><i class="fas fa-folder"></i> Категория</h2>
 <select id="folder-select" onchange="saveState()">
 <option value="">-- Выберите категорию --</option>
-<option value="/Зарубежные"> Зарубежные</option>
-<option value="/Русские">🇷🇺 Русские</option>
+<option value="/Зарубежные">🎵 Зарубежные</option>
+<option value="/Русские">🇷 Русские</option>
 </select>
 </div>
 <div class="section">
@@ -374,7 +374,7 @@ button:active { transform: scale(0.98); }
 <button class="quick-reply-btn correct" onclick="sendQuickReply('✅ Абсолютно верно!')">✅ Верно!</button>
 <button class="quick-reply-btn wrong" onclick="sendQuickReply('❌ Неверно!')">❌ Неверно!</button>
 <button class="quick-reply-btn" onclick="sendQuickReply(' Почти... Вспоминайте!')"> Близко...</button>
-<button class="quick-reply-btn" onclick="sendQuickReply(' В точку!')">🔥 В точку!</button>
+<button class="quick-reply-btn" onclick="sendQuickReply('🔥 В точку!')">🔥 В точку!</button>
 </div>
 <div class="emoji-popover" id="host-emoji-popover"></div>
 <div class="host-chat-footer">
@@ -404,7 +404,7 @@ button:active { transform: scale(0.98); }
 <div class="settings-group-title"><i class="fas fa-gamepad"></i> Режим игры и сеть</div>
 <div class="settings-field">
 <select id="game-mode-toggle" onchange="toggleInteractiveSettingsVisibility()">
-<option value="offline">️ Обычный режим (оффлайн табло)</option>
+<option value="offline">🕹️ Обычный режим (оффлайн табло)</option>
 <option value="interactive">🌐 Интерактивный (онлайн для команд)</option>
 <option value="lottery">🎰 Треки-лотерея (выбор номеров)</option>
 </select>
@@ -416,13 +416,13 @@ button:active { transform: scale(0.98); }
 <label for="stream-audio-toggle">Трансляция звука на телефоны</label>
 <select id="stream-audio-toggle">
 <option value="false">❌ Выкл (звук у ведущего)</option>
-<option value="true"> Вкл (звук у всех)</option>
+<option value="true">🔊 Вкл (звук у всех)</option>
 </select>
 </div>
 <div class="settings-field row">
 <label for="chat-mode-toggle">Режим чата участников</label>
 <select id="chat-mode-toggle">
-<option value="disabled" selected>🚫 Выключен (команды рядом)</option>
+<option value="disabled" selected> Выключен (команды рядом)</option>
 <option value="restricted">🔒 Ограниченный (по кнопке)</option>
 <option value="free">💬 Свободный (всегда доступен)</option>
 </select>
@@ -543,7 +543,7 @@ gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
 osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.35);
 } catch(e) {}
 }
-var POPULAR_EMOJIS = ["👍","👏","🔥","🎉","😂","","🤩","🤔","😮","🎶","🎤","🎧","🏆","⭐","💯","❤️","👋","🤐","🚀","💃"];
+var POPULAR_EMOJIS = ["","👏","🔥","","😂","😎","🤩","🤔","😮","🎵","","🎤","🎧","","⭐","💯","❤","","🤐","🚀","💃"];
 function initEmojiPicker(containerId, inputId) {
 var container = document.getElementById(containerId);
 if (!container) return;
@@ -557,7 +557,7 @@ container.appendChild(s);
 function toggleHostEmojiPopover() { var p = document.getElementById("host-emoji-popover"); p.style.display = p.style.display === "grid" ? "none" : "grid"; }
 function copyPlayerLink() {
 var link = "https://clck.ru/3WBWUq";
-if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(link).then(function() { showActionNotification("📋 Ссылка скопирована!"); }).catch(function() { fallbackCopyText(link); }); }
+if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(link).then(function() { showActionNotification(" Ссылка скопирована!"); }).catch(function() { fallbackCopyText(link); }); }
 else { fallbackCopyText(link); }
 }
 function fallbackCopyText(text) {
@@ -651,12 +651,10 @@ var phase = lotteryState.phase || "idle";
 if (phase === "idle") {
 phaseReady.style.display = "block";
 } else if (phase === "ready_check") {
-    phaseStart.style.display = "block";
-    var onlineTeams = teamsData.filter(function(t) { return t.online !== false; });
-    renderLotteryReadyStatus(onlineTeams);
-    var allReady = onlineTeams.length > 0 && onlineTeams.every(function(t) { return lotteryState.readyTeams && lotteryState.readyTeams[t.id] === true; });
-    document.getElementById("lottery-start-game-btn").disabled = !allReady;
-}
+phaseStart.style.display = "block";
+renderLotteryReadyStatus(onlineTeams);
+var allReady = onlineTeams.length > 0 && onlineTeams.every(function(t) { return lotteryState.readyTeams && lotteryState.readyTeams[t.id] === true; });
+document.getElementById("lottery-start-game-btn").disabled = !allReady;
 } else if (phase === "number_selection") {
 phaseChoices.style.display = "block";
 renderLotteryChoicesStatus(onlineTeams);
@@ -667,7 +665,7 @@ phaseResult.style.display = "block";
 if (lotteryState.selectedNumber) {
 document.getElementById("lottery-result-number").textContent = "№" + lotteryState.selectedNumber;
 var trackName = Object.keys(files).find(function(n) { return trackOrder[n] === lotteryState.selectedNumber; });
-document.getElementById("lottery-result-track-name").textContent = trackName ? (" " + trackName) : "";
+document.getElementById("lottery-result-track-name").textContent = trackName ? ("🎵 " + trackName) : "";
 }
 var remainingCount = Object.keys(trackOrder).filter(function(n) { return !playedTracks.has(n); }).length;
 var nextRoundBtn = document.getElementById("lottery-next-round-btn");
@@ -683,49 +681,20 @@ remainingLabel.textContent = "Осталось несыгранных треко
 }
 
 function renderLotteryReadyStatus(onlineTeams) {
-    var container = document.getElementById("lottery-ready-status");
-    if (!container) return;
-    container.innerHTML = "";
-    
-    if (onlineTeams.length === 0) {
-        container.innerHTML = '<div style="color:var(--text-dim); text-align:center; padding:10px;">Нет подключённых команд</div>';
-        return;
-    }
-    
-    var readyTeams = lotteryState.readyTeams || {};
-    
-    onlineTeams.forEach(function(t) {
-        var row = document.createElement("div");
-        var isReady = readyTeams[t.id] === true;
-        
-        row.className = "lottery-team-status-row" + (isReady ? " is-ready" : " is-waiting");
-        row.style.display = "flex";
-        row.style.alignItems = "center";
-        row.style.justifyContent = "space-between";
-        row.style.padding = "12px 16px";
-        row.style.marginBottom = "8px";
-        row.style.borderRadius = "10px";
-        row.style.transition = "all 0.3s ease";
-        
-        if (isReady) {
-            row.style.borderColor = "var(--neon-lime)";
-            row.style.background = "rgba(0, 255, 102, 0.08)";
-        } else {
-            row.style.borderColor = "var(--border-subtle)";
-            row.style.background = "rgba(255, 255, 255, 0.02)";
-        }
-        
-        row.innerHTML = 
-            '<div style="display:flex; align-items:center; gap:10px;">' +
-                '<i class="fas fa-' + (isReady ? 'check-circle' : 'clock') + '" style="color:' + (isReady ? 'var(--neon-lime)' : 'var(--text-dim)') + '; font-size:1.2em;"></i>' +
-                '<span style="font-weight:700; font-size:0.95em;">' + t.name + '</span>' +
-            '</div>' +
-            '<div style="font-family:\'Ubuntu Mono\',monospace; font-size:0.85em; font-weight:700; color:' + (isReady ? 'var(--neon-lime)' : 'var(--text-dim)') + ';">' +
-                (isReady ? '✓ Готов!' : '⏳ Ожидание...') +
-            '</div>';
-        
-        container.appendChild(row);
-    });
+var container = document.getElementById("lottery-ready-status-2");
+if (!container) return;
+container.innerHTML = "";
+var readyTeams = lotteryState.readyTeams || {};
+onlineTeams.forEach(function(t) {
+var row = document.createElement("div");
+var isReady = readyTeams[t.id] === true;
+row.className = "lottery-team-status-row" + (isReady ? " is-ready" : " is-waiting");
+row.innerHTML = '<div class="lottery-team-name">' + t.name + '</div>' +
+'<div class="lottery-team-indicator ' + (isReady ? "confirmed" : "waiting") + '">' +
+(isReady ? '<i class="fas fa-check-circle"></i> Готов!' : '<i class="fas fa-clock"></i> Ожидание...') +
+'</div>';
+container.appendChild(row);
+});
 }
 
 function renderLotteryChoicesStatus(onlineTeams) {
@@ -802,7 +771,7 @@ if (!roomRef) return;
 var choices = lotteryState.numberChoices || {};
 var chosenNumbers = Object.keys(choices).map(function(k) { return choices[k]; });
 if (chosenNumbers.length === 0) {
-showActionNotification(" Нет выборов команд!");
+showActionNotification("❌ Нет выборов команд!");
 return;
 }
 roomRef.child("lotteryState").update({ phase: "revealing" });
@@ -888,63 +857,54 @@ roomRef.child("status").set("idle");
 }
 
 function startNewLotteryRound() {
-    if (!roomRef) return;
-    
-    // 🔧 Останавливаем все аудио и таймер
-    stopAllSounds();
-    
-    // 🔧 Отправляем команду остановки аудио игрокам
-    if (isInteractiveMode && roomRef) {
-        roomRef.child("audioSync").set({
-            trackSessionId: "",
-            reversUrl: "",
-            normalUrl: "",
-            duration: 0,
-            currentTime: 0,
-            playAction: "stop",
-            startAt: 0
-        });
-        roomRef.child("status").set("idle");
-        roomRef.child("revealedTrack").set("");
-    }
-    
-    var availableNumbers = [];
-    Object.keys(trackOrder).forEach(function(name) {
-        if (!playedTracks.has(name)) {
-            availableNumbers.push(trackOrder[name]);
-        }
-    });
-    availableNumbers.sort(function(a, b) { return a - b; });
-    
-    if (availableNumbers.length === 0) {
-        showActionNotification("❌ Все треки сыграны!");
-        return;
-    }
-    
-    if (availableNumbers.length === 1) {
-        var trackName = Object.keys(files).find(function(n) { return trackOrder[n] === availableNumbers[0]; });
-        if (trackName) {
-            roomRef.child("lotteryState").update({
-                phase: "playing",
-                selectedNumber: availableNumbers[0],
-                allNumbers: availableNumbers,
-                numberChoices: {}
-            });
-            preloadTrackToPlayer(trackName);
-            showActionNotification("🎯 Остался один трек — сразу в бой!");
-        }
-        return;
-    }
-    
-    roomRef.child("lotteryState").update({
-        phase: "number_selection",
-        numberChoices: {},
-        selectedNumber: null,
-        allNumbers: availableNumbers
-    });
-    
-    resetBuzzer();
-    showActionNotification("🎲 Новый раунд! Доступно треков: " + availableNumbers.length);
+if (!roomRef) return;
+stopAllSounds();
+if (isInteractiveMode && roomRef) {
+roomRef.child("audioSync").set({
+trackSessionId: "",
+reversUrl: "",
+normalUrl: "",
+duration: 0,
+currentTime: 0,
+playAction: "stop",
+startAt: 0
+});
+roomRef.child("status").set("idle");
+roomRef.child("revealedTrack").set("");
+}
+var availableNumbers = [];
+Object.keys(trackOrder).forEach(function(name) {
+if (!playedTracks.has(name)) {
+availableNumbers.push(trackOrder[name]);
+}
+});
+availableNumbers.sort(function(a, b) { return a - b; });
+if (availableNumbers.length === 0) {
+showActionNotification("❌ Все треки сыграны!");
+return;
+}
+if (availableNumbers.length === 1) {
+var trackName = Object.keys(files).find(function(n) { return trackOrder[n] === availableNumbers[0]; });
+if (trackName) {
+roomRef.child("lotteryState").update({
+phase: "playing",
+selectedNumber: availableNumbers[0],
+allNumbers: availableNumbers,
+numberChoices: {}
+});
+preloadTrackToPlayer(trackName);
+showActionNotification("🎯 Остался один трек — сразу в бой!");
+}
+return;
+}
+roomRef.child("lotteryState").update({
+phase: "number_selection",
+numberChoices: {},
+selectedNumber: null,
+allNumbers: availableNumbers
+});
+resetBuzzer();
+showActionNotification("🎲 Новый раунд! Доступно треков: " + availableNumbers.length);
 }
 
 function runHostVortexAnimation(numbers, onComplete) {
@@ -1072,7 +1032,7 @@ group.className = "score-team-group" + (activeTeamId === t.id ? " active" : "");
 if (isOffline) { group.style.opacity = "0.65"; group.style.borderColor = "rgba(255, 0, 85, 0.3)"; }
 group.id = "score-card-" + t.id;
 group.onclick = function() { manualActivateTeam(t.id); };
-var labelPrefix = isOffline ? "️ " : "";
+var labelPrefix = isOffline ? "⚠️ " : "";
 var labelSuffix = isOffline ? " (не в сети)" : "";
 group.innerHTML =
 '<div class="score-team-header">' +
@@ -1142,7 +1102,7 @@ var msg = snapshot.val();
 if (!msg) return;
 var row = document.createElement("div");
 row.className = "chat-msg-row" + (msg.isHost ? " host-author" : "") + (msg.isSystem ? " system-event" : "");
-if (msg.isSystem) { row.innerHTML = '<div class="body">🔔 ' + msg.text + '</div>'; }
+if (msg.isSystem) { row.innerHTML = '<div class="body"> ' + msg.text + '</div>'; }
 else { row.innerHTML = '<div class="author">' + msg.author + '</div><div class="bubble">' + msg.text + '</div>'; }
 msgContainer.appendChild(row); msgContainer.scrollTop = msgContainer.scrollHeight;
 if (!hostChatOpen && !msg.isHost && chatMode !== "disabled") {
@@ -1658,7 +1618,7 @@ if (originalTimeout) { clearTimeout(originalTimeout); originalTimeout = null; }
 stopTimer(); hideBuzzerAlert(); hideTrackPopup();
 if (r && !r.paused) { r.pause(); var rIcon = document.getElementById("revers-play-icon"); if (rIcon) rIcon.classList.replace("fa-pause", "fa-play"); }
 var trackObj = files[currentTrackName];
-if (!trackObj || !trackObj.normal) { showActionNotification("️ Оригинал трека не найден"); return; }
+if (!trackObj || !trackObj.normal) { showActionNotification("⚠️ Оригинал трека не найден"); return; }
 if (isInteractiveMode && roomRef) { roomRef.update({ status: "reveal", revealedTrack: currentTrackName || "", buzzer: { locked: true, pressedBy: null, passedBy: [] } }); }
 var success = await playNormalWithAutoRecovery(a, trackObj.normal, currentTrackName);
 if (success && isInteractiveMode && roomRef && streamAudioToPlayers) { roomRef.child("audioSync").update({ playAction: "play_normal", currentTime: 0, startAt: Date.now() + 150 }); }
