@@ -2300,11 +2300,12 @@ function playSound(type) {
   if (url && audio) {
     audio.src = url;
     audio.currentTime = 0;
-    audio.play().catch(function() {});
+    audio.play().catch(function(e) { console.warn(e); });
   } else {
     showActionNotification(type === 'winner' ? '🎉 Правильно!' : '😢 Мимо!');
   }
 
+  // МГНОВЕННАЯ трансляция звука эффекта на телефоны участников (в ту же секунду!)
   if (isInteractiveMode && roomRef) {
     roomRef.update({
       status: "reveal",
@@ -2313,8 +2314,9 @@ function playSound(type) {
     });
 
     if (streamAudioToPlayers) {
-      roomRef.child("audioSync").update({
-        systemTrigger: { type: type, time: Date.now() }
+      roomRef.child("soundTrigger").set({
+        type: type,
+        time: Date.now()
       });
     }
   }
@@ -2330,7 +2332,6 @@ function playSound(type) {
     originalTimeout = null;
   }, delayMs);
 }
-
 async function playNormalWithAutoRecovery(audioEl, normalUrl, trackName) {
   var normalIcon = document.getElementById("normal-play-icon");
 
