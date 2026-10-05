@@ -203,7 +203,7 @@ body::after {
   box-shadow: 
     0 0 55px rgba(255, 0, 127, 0.7),
     0 0 110px rgba(255, 0, 127, 0.35),
-    inset 0 0 25px rgba(0, 255, 127, 0.4);
+    inset 0 0 25px rgba(255, 0, 127, 0.4);
   text-shadow: 0 0 24px var(--neon-magenta);
 }
 
@@ -1027,19 +1027,16 @@ body::after {
 <audio id="player-sound-ring" preload="auto" playsinline style="display:none;"></audio>
 <audio id="player-sound-game-over" preload="auto" playsinline style="display:none;"></audio>
 
-<!-- Неоновый бейдж визуального таймера для участников -->
 <div class="player-countdown-badge" id="player-timer-badge">
   <i class="fas fa-stopwatch"></i>
   <span id="player-timer-badge-num">10</span>
 </div>
 
-<!-- Всплывающий бейдж счёта -->
 <div class="score-delta-overlay" id="player-score-delta-popup">
   <div class="score-delta-badge plus" id="player-score-delta-badge">+1</div>
   <div class="score-delta-subtext">Баллы обновлены!</div>
 </div>
 
-<!-- 1. Экран логина команды -->
 <div class="login-wrap" id="login-view">
   <div class="brand-icon"><i class="fas fa-bolt"></i></div>
   <h2>REVERS QUIZ</h2>
@@ -1056,7 +1053,6 @@ body::after {
   <div class="error-banner" id="login-error"></div>
 </div>
 
-<!-- 2. Игровой экран участника -->
 <div id="game-view">
   <div class="top-action-bar">
     <div class="scoreboard-arena" id="scoreboard-wrap"></div>
@@ -1114,7 +1110,6 @@ body::after {
   </div>
 </div>
 
-<!-- 3. Экран завершения игры -->
 <div id="game-over-view">
   <div class="trophy-icon"><i class="fas fa-trophy"></i></div>
   <div class="game-over-title">Итоги игры</div>
@@ -1127,7 +1122,6 @@ body::after {
   </div>
 </div>
 
-<!-- 4. Модальное окно чата участника -->
 <div id="player-chat-modal">
   <div class="player-chat-card">
     <div class="player-chat-head">
@@ -1184,6 +1178,7 @@ var isChatOpen = false;
 var unreadChatCount = 0;
 var lastSeenScoreTimestamp = 0;
 var lastHandledSystemSoundTime = 0;
+var lastHandledSoundTime = 0;
 
 var wakeLockObj = null;
 
@@ -1654,6 +1649,18 @@ function listenToGameState() {
       bufferSystemSound("player-sound-game-over", data.systemSounds.gameOver);
     }
 
+    // Мгновенное воспроизведение звуков вердикта ведущего в нахлёст
+    if (data.soundTrigger && data.soundTrigger.time > lastHandledSoundTime) {
+      lastHandledSoundTime = data.soundTrigger.time;
+      if (isStreamAudioAllowed) {
+        var soundEl = document.getElementById(data.soundTrigger.type === 'winner' ? 'player-sound-winner' : 'player-sound-lost');
+        if (soundEl && soundEl.src) {
+          soundEl.currentTime = 0;
+          soundEl.play().catch(function(e) { console.warn("Ошибка звука эффекта:", e); });
+        }
+      }
+    }
+
     var timerBadge = document.getElementById("player-timer-badge");
     var timerNum = document.getElementById("player-timer-badge-num");
     var timerState = data.timerState || {};
@@ -1945,14 +1952,12 @@ function sendPlayerChatMessage() {
   document.getElementById("player-emoji-popover").style.display = "none";
 }
 
-// 2. ИСПРАВЛЕНО: Полная очистка буферов плееров при показе экрана завершения игры
 function showGameOverScreen(leaderboard) {
   if (gameOverTimer) return;
 
   var aRevers = document.getElementById("player-audio-revers");
   var aNormal = document.getElementById("player-audio-normal");
 
-  // Жёстко глушим и сбрасываем треки оригинала и реверса, чтобы они не играли поверх победного звука
   if (aRevers) {
     aRevers.pause();
     aRevers.currentTime = 0;
