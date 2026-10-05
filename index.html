@@ -203,8 +203,12 @@ button:active { transform: scale(0.98); }
 <div id="track-name-popup"></div>
 <div id="score-notification" class="score-notification"></div>
 <div id="action-notification" class="action-notification"></div>
+
+<!-- 🔧 ИСПРАВЛЕНИЕ 2: Вернули ладонь 👋 -->
 <div class="buzzer-wave-overlay" id="buzzer-wave-popup">
-<div class="wave-hand-halo"><span class="wave-hand-emoji"></span></div>
+<div class="wave-hand-halo">
+<span class="wave-hand-emoji">👋</span>
+</div>
 <div class="wave-team-badge" id="buzzer-wave-team">Команда</div>
 </div>
 
@@ -302,8 +306,8 @@ button:active { transform: scale(0.98); }
 <h2 class="section-title"><i class="fas fa-folder"></i> Категория</h2>
 <select id="folder-select" onchange="saveState()">
 <option value="">-- Выберите категорию --</option>
-<option value="/Зарубежные">🎵 Зарубежные</option>
-<option value="/Русские">🇷 Русские</option>
+<option value="/Зарубежные"> Зарубежные</option>
+<option value="/Русские">🇷🇺 Русские</option>
 </select>
 </div>
 <div class="section">
@@ -373,7 +377,7 @@ button:active { transform: scale(0.98); }
 <div class="host-quick-replies">
 <button class="quick-reply-btn correct" onclick="sendQuickReply('✅ Абсолютно верно!')">✅ Верно!</button>
 <button class="quick-reply-btn wrong" onclick="sendQuickReply('❌ Неверно!')">❌ Неверно!</button>
-<button class="quick-reply-btn" onclick="sendQuickReply(' Почти... Вспоминайте!')"> Близко...</button>
+<button class="quick-reply-btn" onclick="sendQuickReply('⏳ Почти... Вспоминайте!')">⏳ Близко...</button>
 <button class="quick-reply-btn" onclick="sendQuickReply('🔥 В точку!')">🔥 В точку!</button>
 </div>
 <div class="emoji-popover" id="host-emoji-popover"></div>
@@ -422,7 +426,7 @@ button:active { transform: scale(0.98); }
 <div class="settings-field row">
 <label for="chat-mode-toggle">Режим чата участников</label>
 <select id="chat-mode-toggle">
-<option value="disabled" selected> Выключен (команды рядом)</option>
+<option value="disabled" selected>🚫 Выключен (команды рядом)</option>
 <option value="restricted">🔒 Ограниченный (по кнопке)</option>
 <option value="free">💬 Свободный (всегда доступен)</option>
 </select>
@@ -431,14 +435,14 @@ button:active { transform: scale(0.98); }
 <label for="show-score-toggle">Показ своих очков игрокам</label>
 <select id="show-score-toggle">
 <option value="true">✅ Показывать</option>
-<option value="false">🚫 Скрывать</option>
+<option value="false"> Скрывать</option>
 </select>
 </div>
 <div class="settings-field row">
 <label for="show-opponent-score-toggle">Показ очков соперников</label>
 <select id="show-opponent-score-toggle">
 <option value="true">✅ Показывать</option>
-<option value="false">🚫 Скрывать</option>
+<option value="false"> Скрывать</option>
 </select>
 </div>
 </div>
@@ -543,7 +547,7 @@ gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
 osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.35);
 } catch(e) {}
 }
-var POPULAR_EMOJIS = ["","👏","🔥","","😂","😎","🤩","🤔","😮","🎵","","🎤","🎧","","⭐","💯","❤","","🤐","🚀","💃"];
+var POPULAR_EMOJIS = ["👍","👏","🔥","🎉","😂","","🤩","🤔","","🎵","🎶","","🎧","🏆","⭐","💯","❤","👋","🤐","🚀","💃"];
 function initEmojiPicker(containerId, inputId) {
 var container = document.getElementById(containerId);
 if (!container) return;
@@ -557,12 +561,12 @@ container.appendChild(s);
 function toggleHostEmojiPopover() { var p = document.getElementById("host-emoji-popover"); p.style.display = p.style.display === "grid" ? "none" : "grid"; }
 function copyPlayerLink() {
 var link = "https://clck.ru/3WBWUq";
-if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(link).then(function() { showActionNotification(" Ссылка скопирована!"); }).catch(function() { fallbackCopyText(link); }); }
+if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(link).then(function() { showActionNotification("📋 Ссылка скопирована!"); }).catch(function() { fallbackCopyText(link); }); }
 else { fallbackCopyText(link); }
 }
 function fallbackCopyText(text) {
 var textArea = document.createElement("textarea"); textArea.value = text; textArea.style.position = "fixed"; document.body.appendChild(textArea); textArea.focus(); textArea.select();
-try { document.execCommand('copy'); showActionNotification(" Ссылка скопирована!"); } catch (err) { alert("Ссылка: " + text); }
+try { document.execCommand('copy'); showActionNotification("📋 Ссылка скопирована!"); } catch (err) { alert("Ссылка: " + text); }
 document.body.removeChild(textArea);
 }
 function openQrModal() { var modal = document.getElementById("qr-modal"); if (modal) modal.classList.add("active"); }
@@ -579,6 +583,23 @@ if (isInteractiveMode && roomRef) {
 roomRef.child("buzzer").set({ locked: false, pressedBy: null, pressedByName: null, passedBy: [] });
 }
 }
+
+// 🔧 ИСПРАВЛЕНИЕ 1: Полная остановка всех звуков
+function forceStopAllSounds() {
+if (originalTimeout) {
+clearTimeout(originalTimeout);
+originalTimeout = null;
+}
+["audio-revers", "audio-normal", "audio-winner", "audio-lost", "audio-ring", "audio-start", "audio-final", "audio-game-over"].forEach(function(id) {
+var el = document.getElementById(id);
+if (el) {
+try { el.pause(); } catch(e) {}
+try { el.currentTime = 0; } catch(e) {}
+}
+});
+stopTimer();
+}
+
 function initHostRoom() {
 if (!isInteractiveMode) return;
 if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
@@ -786,7 +807,7 @@ var trackName = Object.keys(files).find(function(n) { return trackOrder[n] === s
 if (trackName) {
 setTimeout(function() {
 preloadTrackToPlayer(trackName);
-showActionNotification(" Трек №" + selectedNumber + " заряжен. Нажмите ▶️ Play!");
+showActionNotification("🎯 Трек №" + selectedNumber + " заряжен. Нажмите ▶️ Play!");
 }, 800);
 }
 });
@@ -856,9 +877,14 @@ roomRef.child("status").set("idle");
 }
 }
 
+// 🔧 ИСПРАВЛЕНИЕ 1: Полная остановка звуков при новом раунде
 function startNewLotteryRound() {
 if (!roomRef) return;
-stopAllSounds();
+
+// Жёстко останавливаем ВСЕ звуки у ведущего
+forceStopAllSounds();
+
+// Отправляем команду остановки всем игрокам
 if (isInteractiveMode && roomRef) {
 roomRef.child("audioSync").set({
 trackSessionId: "",
@@ -872,6 +898,7 @@ startAt: 0
 roomRef.child("status").set("idle");
 roomRef.child("revealedTrack").set("");
 }
+
 var availableNumbers = [];
 Object.keys(trackOrder).forEach(function(name) {
 if (!playedTracks.has(name)) {
@@ -879,10 +906,12 @@ availableNumbers.push(trackOrder[name]);
 }
 });
 availableNumbers.sort(function(a, b) { return a - b; });
+
 if (availableNumbers.length === 0) {
 showActionNotification("❌ Все треки сыграны!");
 return;
 }
+
 if (availableNumbers.length === 1) {
 var trackName = Object.keys(files).find(function(n) { return trackOrder[n] === availableNumbers[0]; });
 if (trackName) {
@@ -897,12 +926,14 @@ showActionNotification("🎯 Остался один трек — сразу в 
 }
 return;
 }
+
 roomRef.child("lotteryState").update({
 phase: "number_selection",
 numberChoices: {},
 selectedNumber: null,
 allNumbers: availableNumbers
 });
+
 resetBuzzer();
 showActionNotification("🎲 Новый раунд! Доступно треков: " + availableNumbers.length);
 }
@@ -1102,7 +1133,7 @@ var msg = snapshot.val();
 if (!msg) return;
 var row = document.createElement("div");
 row.className = "chat-msg-row" + (msg.isHost ? " host-author" : "") + (msg.isSystem ? " system-event" : "");
-if (msg.isSystem) { row.innerHTML = '<div class="body"> ' + msg.text + '</div>'; }
+if (msg.isSystem) { row.innerHTML = '<div class="body">🔔 ' + msg.text + '</div>'; }
 else { row.innerHTML = '<div class="author">' + msg.author + '</div><div class="bubble">' + msg.text + '</div>'; }
 msgContainer.appendChild(row); msgContainer.scrollTop = msgContainer.scrollHeight;
 if (!hostChatOpen && !msg.isHost && chatMode !== "disabled") {
@@ -1683,7 +1714,7 @@ updateNextTrackButton();
 }
 function endQuiz() {
 localStorage.removeItem('reversQuiz');
-stopAllSounds();
+forceStopAllSounds();
 var aGameOver = document.getElementById("audio-game-over");
 if (aGameOver && soundUrls.gameOver) { aGameOver.currentTime = 0; aGameOver.play().catch(function() {}); }
 purgeAudioBuffer(document.getElementById("audio-revers"));
@@ -1778,7 +1809,7 @@ roomRef.update({ showScore: showScoreToPlayers, showOpponentScore: showOpponentS
 saveState();
 updateHostChatButtonVisibility();
 if (needReload) { location.reload(); }
-else { updateFolderSection(); applyGameModeUI(); updateLotteryUI(); showActionNotification('⚙️ Настройки сохранены'); }
+else { updateFolderSection(); applyGameModeUI(); updateLotteryUI(); showActionNotification('️ Настройки сохранены'); }
 } catch (err) { console.error("Ошибка при сохранении настроек:", err); }
 finally { closeSettings(); }
 }
