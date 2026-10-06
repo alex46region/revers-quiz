@@ -300,21 +300,16 @@ var lastSeenScoreTimestamp = 0;
 var lastHandledSystemSoundTime = 0;
 var wakeLockObj = null;
 var currentTrackIsJoker = false;
-// 🔧 НОВОЕ: Фиксируем показ звёздочки для текущего трека (чтобы не мигала)
-var currentTrackShowStar = null;
 
 async function enableScreenWakeLock() {
 try {
 if ('wakeLock' in navigator) {
 wakeLockObj = await navigator.wakeLock.request('screen');
 wakeLockObj.addEventListener('release', function() { wakeLockObj = null; });
-console.log("Wake Lock активирован");
 }
 } catch(err) { console.warn("Wake Lock не поддерживается или отклонён:", err); }
 }
-document.addEventListener('visibilitychange', async function() {
-if (document.visibilityState === 'visible' && currentRoom) { await enableScreenWakeLock(); }
-});
+document.addEventListener('visibilitychange', async function() { if (document.visibilityState === 'visible' && currentRoom) { await enableScreenWakeLock(); } });
 document.addEventListener('touchstart', function() { if (!wakeLockObj && currentRoom) enableScreenWakeLock(); }, { passive: true });
 function formatScoreDisplay(val) { var num = parseFloat(val); if (isNaN(num)) num = 0; var formatted = Number.isInteger(num) ? num.toString() : num.toFixed(1); return formatted.replace('.', ','); }
 
@@ -351,7 +346,7 @@ gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
 osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.35);
 } catch(e) {}
 }
-var POPULAR_EMOJIS = ["👍","👏","","🎉","😂","😎","🤩","🤔","😮","🎵","🎶","","🎧","🏆","⭐","💯","❤️","👋","","🚀","💃"];
+var POPULAR_EMOJIS = ["👍","👏","🔥","🎉","😂","😎","","🤔","😮","","🎶","🎤","","🏆","⭐","💯","❤️","👋","🤐","","💃"];
 function initEmojiPicker(containerId, inputId) {
 var container = document.getElementById(containerId);
 if (!container) return;
@@ -455,8 +450,6 @@ localStorage.setItem("rq_saved_team_id", myTeamId);
 localStorage.setItem("rq_saved_team_name", myTeamName);
 document.getElementById("login-view").style.display = "none";
 document.getElementById("game-view").style.display = "flex";
-// 🔧 ИСПРАВЛЕНИЕ 2: Активно запрашиваем Wake Lock при входе в комнату
-enableScreenWakeLock();
 initEmojiPicker("player-emoji-popover", "player-chat-input");
 listenToGameState();
 listenToAudioStream();
@@ -510,7 +503,6 @@ tick();
 }
 function stopSyntheticTimer() { timerRunning = false; if (progressAnimFrame) cancelAnimationFrame(progressAnimFrame); }
 
-// 🔧 ИСПРАВЛЕНИЕ 1: Обновление визуала джокера с фиксацией состояния
 function updateJokerVisuals(isJoker) {
 currentTrackIsJoker = (isJoker === true);
 var timerBar = document.getElementById("player-timer-bar");
@@ -553,24 +545,21 @@ setTimeout(function() { showJokerScoreDelta(); }, 1500);
 if (!hasWaitedForNewTrack) {
 if (sync.trackSessionId === joinedTrackSessionId) { return; } else { hasWaitedForNewTrack = true; }
 }
-// 🔧 ИСПРАВЛЕНИЕ 1: При смене трека сбрасываем фиксированное состояние звёздочки
 if (sync.trackSessionId && sync.trackSessionId !== joinedTrackSessionId) {
 joinedTrackSessionId = sync.trackSessionId;
 currentTrackDuration = 0;
-currentTrackShowStar = null; // Сброс фиксированного решения
 updateProgressDisplay(0, 0);
 hasWaitedForNewTrack = true;
 updateJokerVisuals(false);
 }
-//  ИСПРАВЛЕНИЕ 1: Фиксируем решение по звёздочке ОДИН РАЗ на трек
-if (typeof sync.isJoker !== 'undefined' && currentTrackShowStar === null) {
+// ЧТЕНИЕ ФЛАГА isJoker С ЛОЖНЫМИ ПОДСКАЗКАМИ
+if (typeof sync.isJoker !== 'undefined') {
 var realJoker = (sync.isJoker === true);
-if (realJoker) {
-currentTrackShowStar = true; // настоящий джокер — всегда звезда
-} else {
-currentTrackShowStar = (Math.random() < 0.35); // ложная подсказка 35%
+var showStar = realJoker;
+if (!realJoker) {
+showStar = (Math.random() < 0.35);
 }
-updateJokerVisuals(currentTrackShowStar);
+updateJokerVisuals(showStar);
 }
 if (sync.duration && isFinite(sync.duration) && sync.duration > 0) {
 currentTrackDuration = sync.duration;
@@ -642,7 +631,6 @@ setTimeout(function() { if (isStreamAudioAllowed) { aNormal.currentTime = 0; aNo
 aRevers.pause(); aRevers.currentTime = 0; aNormal.pause(); aNormal.currentTime = 0;
 stopSyntheticTimer(); updateProgressDisplay(0, currentTrackDuration);
 updateJokerVisuals(false);
-currentTrackShowStar = null; // Сброс при остановке
 }
 });
 }
