@@ -77,6 +77,7 @@ button:active { transform: scale(0.98); }
 #save-teams-btn, #load-songs-btn { width: 100%; padding: 15px; font-size: 15px; text-transform: uppercase; letter-spacing: 1px; }
 #save-teams-btn { background: var(--neon-cyan); color: #000; box-shadow: 0 4px 20px rgba(0, 229, 255, 0.35); margin-top: 10px; }
 #load-songs-btn { background: linear-gradient(135deg, var(--neon-purple), var(--neon-pink)); color: #fff; box-shadow: 0 4px 20px rgba(255, 0, 85, 0.35); }
+#load-songs-btn:disabled { opacity: 0.45; cursor: not-allowed; box-shadow: none; }
 #shuffle-btn { width: 100%; padding: 14px; background: transparent; border: 1px solid var(--border-subtle); color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; font-size: 14px; }
 .score-controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; margin-top: 6px; }
 .score-team-group { background: var(--bg-deep); border: 1px solid var(--border-subtle); border-radius: 16px; padding: 16px 12px; cursor: pointer; transition: all 0.25s ease; }
@@ -171,8 +172,6 @@ button:active { transform: scale(0.98); }
 .btn-emoji-toggle { background: transparent; border: 1px solid var(--border-subtle); color: var(--neon-yellow); font-size: 1.1em; width: 40px; height: 40px; border-radius: 10px; cursor: pointer; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; }
 .host-chat-footer input { flex: 1; min-width: 0; padding: 8px 12px; font-size: 13px; margin: 0; border-radius: 10px; }
 .host-chat-footer button.btn-send { background: var(--neon-cyan); color: #000; width: 40px; height: 40px; border-radius: 10px; font-size: 13px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; }
-
-/* === СТИЛИ ДЛЯ РЕЖИМА "ТРЕКИ-ЛОТЕРЕЯ" === */
 #lottery-control-section { display: none; }
 .lottery-panel { background: linear-gradient(135deg, rgba(112, 0, 255, 0.12) 0%, rgba(255, 0, 85, 0.08) 100%); border: 1.5px solid var(--neon-purple); border-radius: 18px; padding: 18px; margin-bottom: 14px; }
 .lottery-panel-title { font-family: 'Syne', sans-serif; font-size: 1em; font-weight: 800; color: var(--neon-yellow); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
@@ -194,7 +193,6 @@ button:active { transform: scale(0.98); }
 .lottery-team-indicator.waiting { color: var(--text-dim); }
 .lottery-team-indicator.confirmed { color: var(--neon-cyan); }
 .lottery-team-indicator.chosen { color: var(--neon-yellow); }
-
 #lottery-vortex-overlay { position: fixed; inset: 0; background: rgba(5, 6, 10, 0.95); backdrop-filter: blur(10px); z-index: 6000; display: none; align-items: center; justify-content: center; flex-direction: column; }
 #lottery-vortex-overlay.active { display: flex; }
 .vortex-stage { position: relative; width: min(500px, 85vw); height: min(500px, 85vw); display: flex; align-items: center; justify-content: center; }
@@ -203,14 +201,12 @@ button:active { transform: scale(0.98); }
 @keyframes selectedPulse { 0% { transform: scale(1); } 100% { transform: scale(1.08); } }
 .vortex-title { font-family: 'Syne', sans-serif; font-size: 1.5em; font-weight: 800; color: var(--neon-cyan); text-transform: uppercase; letter-spacing: 3px; margin-bottom: 20px; text-shadow: 0 0 20px rgba(0, 229, 255, 0.5); }
 .vortex-result-title { font-family: 'Syne', sans-serif; font-size: 1.3em; font-weight: 800; color: var(--neon-yellow); text-transform: uppercase; letter-spacing: 2px; margin-top: 30px; text-shadow: 0 0 20px rgba(255, 234, 0, 0.6); }
-
-/* === АНИМАЦИЯ ДЖОКЕРА === */
 #joker-overlay { position: fixed; inset: 0; background: rgba(5, 6, 10, 0.92); backdrop-filter: blur(12px); z-index: 8000; display: none; align-items: center; justify-content: center; flex-direction: column; gap: 20px; }
 #joker-overlay.active { display: flex; animation: jokerFadeIn 0.4s ease; }
 @keyframes jokerFadeIn { from { opacity: 0; } to { opacity: 1; } }
 .joker-card { font-size: clamp(6em, 20vw, 10em); animation: jokerCardSpin 1.5s cubic-bezier(0.34, 1.56, 0.64, 1); filter: drop-shadow(0 0 40px rgba(255, 215, 0, 0.9)); }
 @keyframes jokerCardSpin { 0% { transform: rotateY(0deg) scale(0.3); opacity: 0; } 50% { transform: rotateY(720deg) scale(1.3); opacity: 1; } 100% { transform: rotateY(720deg) scale(1); opacity: 1; } }
-.joker-title { font-family: 'Syne', sans-serif; font-size: clamp(1.8em, 6vw, 3em); font-weight: 900; text-transform: uppercase; letter-spacing: 4px; background: linear-gradient(135deg, var(--neon-gold), #ff8c00, var(--neon-gold)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-shadow: 0 0 40px rgba(255, 215, 0, 0.6); animation: jokerTitlePulse 0.8s infinite alternate; }
+.joker-title { font-family: 'Syne', sans-serif; font-size: clamp(1.8em, 6vw, 3em); font-weight: 900; text-transform: uppercase; letter-spacing: 4px; background: linear-gradient(135deg, var(--neon-gold), #ff8c00, var(--neon-gold)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; animation: jokerTitlePulse 0.8s infinite alternate; }
 @keyframes jokerTitlePulse { 0% { transform: scale(1); filter: brightness(1); } 100% { transform: scale(1.08); filter: brightness(1.3); } }
 .joker-multiplier { font-family: 'Ubuntu Mono', monospace; font-size: clamp(2em, 8vw, 3.5em); font-weight: 900; color: var(--neon-gold); text-shadow: 0 0 30px rgba(255, 215, 0, 0.9), 0 0 60px rgba(255, 140, 0, 0.6); animation: multiplierBounce 0.6s infinite alternate; }
 @keyframes multiplierBounce { 0% { transform: translateY(0) scale(1); } 100% { transform: translateY(-10px) scale(1.1); } }
@@ -223,26 +219,21 @@ button:active { transform: scale(0.98); }
 <div id="track-name-popup"></div>
 <div id="score-notification" class="score-notification"></div>
 <div id="action-notification" class="action-notification"></div>
-
 <div class="buzzer-wave-overlay" id="buzzer-wave-popup">
 <div class="wave-hand-halo"><span class="wave-hand-emoji">👋</span></div>
 <div class="wave-team-badge" id="buzzer-wave-team">Команда</div>
 </div>
-
 <div id="lottery-vortex-overlay">
-<div class="vortex-title" id="vortex-title"> Рандомайзер выбирает...</div>
+<div class="vortex-title" id="vortex-title">🎲 Рандомайзер выбирает...</div>
 <div class="vortex-stage" id="vortex-stage"></div>
 <div class="vortex-result-title" id="vortex-result-title" style="display:none;"></div>
 </div>
-
-<!-- ОВЕРЛЕЙ АНИМАЦИИ ДЖОКЕРА -->
 <div id="joker-overlay">
 <div class="joker-card">🃏</div>
 <div class="joker-title">Секретный джокер!</div>
 <div class="joker-multiplier">×3 ОЧКА</div>
 <div class="joker-team-name" id="joker-team-name"></div>
 </div>
-
 <div class="container">
 <div class="header">
 <h1><i class="fas fa-bolt"></i> Revers Quiz</h1>
@@ -263,12 +254,8 @@ button:active { transform: scale(0.98); }
 <div class="online-link-area">
 <span style="font-size:0.8em; color:var(--text-dim);">Быстрая ссылка:</span>
 <div class="link-actions">
-<div class="copy-link-btn" onclick="copyPlayerLink()" title="Нажмите, чтобы скопировать">
-<i class="fas fa-copy"></i> https://clck.ru/3WBWUq
-</div>
-<button class="qr-trigger-btn" onclick="openQrModal()">
-<i class="fas fa-qrcode"></i> QR
-</button>
+<div class="copy-link-btn" onclick="copyPlayerLink()" title="Нажмите, чтобы скопировать"><i class="fas fa-copy"></i> https://clck.ru/3WBWUq</div>
+<button class="qr-trigger-btn" onclick="openQrModal()"><i class="fas fa-qrcode"></i> QR</button>
 </div>
 </div>
 </div>
@@ -277,50 +264,35 @@ button:active { transform: scale(0.98); }
 <div style="color:var(--text-dim); font-size:0.9em;">Ожидание подключения участников...</div>
 </div>
 </div>
-
-<!-- СЕКЦИЯ УПРАВЛЕНИЯ ЛОТЕРЕЕЙ -->
 <div class="section" id="lottery-control-section">
 <h2 class="section-title"><i class="fas fa-dice"></i> Треки-лотерея</h2>
-
 <div id="lottery-phase-ready" class="lottery-panel">
 <div class="lottery-panel-title"><i class="fas fa-clipboard-check"></i> Этап 1: Опрос готовности</div>
-<button class="lottery-btn ready-check" onclick="startLotteryReadyCheck()">
-<i class="fas fa-bullhorn"></i> Опросить готовность команд
-</button>
+<button class="lottery-btn ready-check" onclick="startLotteryReadyCheck()"><i class="fas fa-bullhorn"></i> Опросить готовность команд</button>
 <div class="lottery-teams-status" id="lottery-ready-status"></div>
 </div>
-
 <div id="lottery-phase-start" class="lottery-panel" style="display:none;">
 <div class="lottery-panel-title"><i class="fas fa-rocket"></i> Этап 2: Готовность команд</div>
 <div class="lottery-teams-status" id="lottery-ready-status-2"></div>
-<button class="lottery-btn start-game" id="lottery-start-game-btn" onclick="startLotteryGame()" disabled style="margin-top:14px;">
-<i class="fas fa-play"></i> Начать игру
-</button>
+<button class="lottery-btn start-game" id="lottery-start-game-btn" onclick="startLotteryGame()" disabled style="margin-top:14px;"><i class="fas fa-play"></i> Начать игру</button>
 <div style="font-size:0.85em; color:var(--text-dim); text-align:center;">Кнопка активируется, когда все команды готовы</div>
 </div>
-
 <div id="lottery-phase-choices" class="lottery-panel" style="display:none;">
 <div class="lottery-panel-title"><i class="fas fa-list-ol"></i> Выборы команд (видно только вам)</div>
 <div class="lottery-teams-status" id="lottery-choices-status"></div>
-<button class="lottery-btn randomizer" id="lottery-randomizer-btn" onclick="launchLotteryRandomizer()" disabled style="margin-top:14px;">
-<i class="fas fa-dice"></i> Запустить рандомайзер
-</button>
+<button class="lottery-btn randomizer" id="lottery-randomizer-btn" onclick="launchLotteryRandomizer()" disabled style="margin-top:14px;"><i class="fas fa-dice"></i> Запустить рандомайзер</button>
 <div style="font-size:0.85em; color:var(--text-dim); text-align:center;">Активируется, когда все команды выберут номер</div>
 </div>
-
 <div id="lottery-phase-result" class="lottery-panel" style="display:none;">
 <div class="lottery-panel-title"><i class="fas fa-trophy"></i> Выбранный трек</div>
 <div style="text-align:center; padding:20px;">
 <div style="font-family:'Ubuntu Mono',monospace; font-size:4em; font-weight:900; color:var(--neon-yellow); text-shadow:0 0 30px rgba(255,234,0,0.8);" id="lottery-result-number">—</div>
 <div style="font-size:0.9em; color:var(--text-dim); margin-top:8px;" id="lottery-result-track-name"></div>
 </div>
-<button class="lottery-btn ready-check" id="lottery-next-round-btn" onclick="startNewLotteryRound()" style="background: linear-gradient(135deg, var(--neon-purple), var(--neon-pink)); margin-top:10px;">
-<i class="fas fa-redo"></i> Новый раунд выбора
-</button>
+<button class="lottery-btn ready-check" id="lottery-next-round-btn" onclick="startNewLotteryRound()" style="background: linear-gradient(135deg, var(--neon-purple), var(--neon-pink)); margin-top:10px;"><i class="fas fa-redo"></i> Новый раунд выбора</button>
 <div style="font-size:0.8em; color:var(--text-dim); text-align:center; margin-top:6px;" id="lottery-remaining-count"></div>
 </div>
 </div>
-
 <div class="section" id="local-teams-section">
 <h2 class="section-title"><i class="fas fa-users"></i> Команды игры</h2>
 <div class="teams-input-list" id="teams-input-container"></div>
@@ -403,7 +375,7 @@ button:active { transform: scale(0.98); }
 <div class="host-quick-replies">
 <button class="quick-reply-btn correct" onclick="sendQuickReply('✅ Абсолютно верно!')">✅ Верно!</button>
 <button class="quick-reply-btn wrong" onclick="sendQuickReply('❌ Неверно!')">❌ Неверно!</button>
-<button class="quick-reply-btn" onclick="sendQuickReply(' Почти... Вспоминайте!')"> Близко...</button>
+<button class="quick-reply-btn" onclick="sendQuickReply('⏳ Почти... Вспоминайте!')">⏳ Близко...</button>
 <button class="quick-reply-btn" onclick="sendQuickReply('🔥 В точку!')">🔥 В точку!</button>
 </div>
 <div class="emoji-popover" id="host-emoji-popover"></div>
@@ -434,7 +406,7 @@ button:active { transform: scale(0.98); }
 <div class="settings-group-title"><i class="fas fa-gamepad"></i> Режим игры и сеть</div>
 <div class="settings-field">
 <select id="game-mode-toggle" onchange="toggleInteractiveSettingsVisibility()">
-<option value="offline">️ Обычный режим (оффлайн табло)</option>
+<option value="offline">🕹️ Обычный режим (оффлайн табло)</option>
 <option value="interactive">🌐 Интерактивный (онлайн для команд)</option>
 <option value="lottery">🎰 Треки-лотерея (выбор номеров)</option>
 </select>
@@ -452,7 +424,7 @@ button:active { transform: scale(0.98); }
 <div class="settings-field row">
 <label for="chat-mode-toggle">Режим чата участников</label>
 <select id="chat-mode-toggle">
-<option value="disabled" selected> Выключен (команды рядом)</option>
+<option value="disabled" selected>🚫 Выключен (команды рядом)</option>
 <option value="restricted">🔒 Ограниченный (по кнопке)</option>
 <option value="free">💬 Свободный (всегда доступен)</option>
 </select>
@@ -472,7 +444,6 @@ button:active { transform: scale(0.98); }
 </select>
 </div>
 </div>
-<!-- НАСТРОЙКИ ДЖОКЕРА -->
 <div class="settings-group">
 <div class="settings-group-title"><i class="fas fa-star"></i> Секретный джокер</div>
 <div class="settings-field row">
@@ -527,7 +498,6 @@ button:active { transform: scale(0.98); }
 <div style="font-family:'Ubuntu Mono',monospace; font-size:1.1em; color:var(--neon-yellow); font-weight:700;">https://clck.ru/3WBWUq</div>
 </div>
 </div>
-
 <script>
 var firebaseConfig = {
 apiKey: "AIzaSyC9sh7uazv-WbudsO7TYap4-wENjkLD3K4",
@@ -576,7 +546,7 @@ var trackOrder = {};
 var soundUrls = { winner: null, lost: null, ring: null, start: null, final: null, gameOver: null };
 var lotteryState = { phase: "idle", readyTeams: {}, numberChoices: {}, selectedNumber: null, allNumbers: [] };
 var currentTrackIsJoker = false;
-
+var gameSessionStarted = false;
 function ensureAudioPlayer(id) {
 var a = document.getElementById(id);
 if (!a) { a = document.createElement("audio"); a.id = id; a.style.display = "none"; a.setAttribute("playsinline", "true"); document.body.appendChild(a); }
@@ -602,19 +572,17 @@ var notes = [523.25, 659.25, 783.99, 1046.50];
 notes.forEach(function(freq, i) {
 var osc = ctx.createOscillator();
 var gain = ctx.createGain();
-osc.connect(gain);
-gain.connect(ctx.destination);
+osc.connect(gain); gain.connect(ctx.destination);
 osc.type = "triangle";
 osc.frequency.setValueAtTime(freq, ctx.currentTime + i * 0.1);
 gain.gain.setValueAtTime(0, ctx.currentTime + i * 0.1);
 gain.gain.linearRampToValueAtTime(0.2, ctx.currentTime + i * 0.1 + 0.05);
 gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.1 + 0.5);
-osc.start(ctx.currentTime + i * 0.1);
-osc.stop(ctx.currentTime + i * 0.1 + 0.5);
+osc.start(ctx.currentTime + i * 0.1); osc.stop(ctx.currentTime + i * 0.1 + 0.5);
 });
 } catch(e) {}
 }
-var POPULAR_EMOJIS = ["👍","","🔥","🎉","😂","😎","🤩","🤔","😮","🎵","🎶","","🎧","🏆","⭐","💯","❤","👋","","🚀","💃"];
+var POPULAR_EMOJIS = ["👍","","🔥","","😂","😎","🤩","🤔","😮","🎵","🎶","🎤","🎧","🏆","⭐","💯","❤️","👋","","🚀","💃"];
 function initEmojiPicker(containerId, inputId) {
 var container = document.getElementById(containerId);
 if (!container) return;
@@ -658,7 +626,6 @@ if (el) { try { el.pause(); } catch(e) {} try { el.currentTime = 0; } catch(e) {
 });
 stopTimer();
 }
-
 function showJokerAnimation(teamName) {
 var overlay = document.getElementById("joker-overlay");
 var teamNameEl = document.getElementById("joker-team-name");
@@ -682,7 +649,27 @@ var remaining = overlay.querySelectorAll(".joker-confetti");
 remaining.forEach(function(c) { if (c.parentNode) c.parentNode.removeChild(c); });
 }, 3500);
 }
-
+/* === БЛОКИРОВКА ЗАГРУЗКИ/ПЕРЕМЕШИВАНИЯ ПОСЛЕ СТАРТА ЛОТЕРЕИ === */
+function lockTrackControls() {
+if (gameSessionStarted) { applyLockUI(); return; }
+gameSessionStarted = true;
+applyLockUI();
+saveState();
+}
+function applyLockUI() {
+var loadBtn = document.getElementById("load-songs-btn");
+var shuffleBtn = document.getElementById("shuffle-btn");
+if (loadBtn) {
+loadBtn.disabled = true;
+loadBtn.innerHTML = '<i class="fas fa-lock"></i> Игра начата (загрузка заблокирована)';
+}
+if (shuffleBtn) {
+shuffleBtn.disabled = true;
+shuffleBtn.style.opacity = 0.4;
+shuffleBtn.style.cursor = "not-allowed";
+shuffleBtn.textContent = '🔒 Перемешивание заблокировано';
+}
+}
 function initHostRoom() {
 if (!isInteractiveMode) return;
 if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
@@ -696,7 +683,7 @@ status: "idle", showScore: showScoreToPlayers, showOpponentScore: showOpponentSc
 streamAudio: streamAudioToPlayers, chatMode: chatMode, gameMode: gameMode,
 buzzer: { locked: true, pressedBy: null, passedBy: [] }, revealedTrack: "",
 systemSounds: soundUrls, timerState: { active: false, value: 0 },
-audioSync: { trackSessionId: "", reversUrl: "", normalUrl: "", duration: 0, currentTime: 0, playAction: "stop", startAt: 0, isJoker: false },
+audioSync: { trackSessionId: "", reversUrl: "", normalUrl: "", duration: 0, currentTime: 0, playAction: "stop", startAt: 0, isJoker: false, jokerEnabled: jokerEnabled },
 lotteryState: { phase: "idle", readyTeams: {}, numberChoices: {}, selectedNumber: null, allNumbers: [] }
 });
 teamsData = [];
@@ -705,7 +692,6 @@ renderScoreboardGrid();
 updateHostChatButtonVisibility();
 initEmojiPicker("host-emoji-popover", "host-chat-input");
 listenToChatMessages();
-
 roomRef.child("teams").on("value", function(snapshot) {
 var rawTeams = snapshot.val() || {};
 var cloudKeys = Object.keys(rawTeams);
@@ -718,30 +704,19 @@ renderHostTeamsList();
 renderScoreboardGrid();
 updateLotteryUI();
 });
-
 roomRef.child("buzzer").on("value", function(snapshot) {
 var buzzer = snapshot.val();
 if (buzzer && buzzer.locked && buzzer.pressedByName) { handleBuzzerTriggered(buzzer.pressedBy, buzzer.pressedByName); }
 });
-
 roomRef.child("lotteryState").on("value", function(snapshot) {
 var ls = snapshot.val();
-if (ls) {
-lotteryState = ls;
-updateLotteryUI();
-}
+if (ls) { lotteryState = ls; updateLotteryUI(); }
 });
 }
-
 function updateLotteryUI() {
 var section = document.getElementById("lottery-control-section");
 if (!section) return;
-if (isLotteryMode && Object.keys(files).length > 0) {
-section.style.display = "block";
-} else {
-section.style.display = "none";
-return;
-}
+if (isLotteryMode && Object.keys(files).length > 0) { section.style.display = "block"; } else { section.style.display = "none"; return; }
 var phaseReady = document.getElementById("lottery-phase-ready");
 var phaseStart = document.getElementById("lottery-phase-start");
 var phaseChoices = document.getElementById("lottery-phase-choices");
@@ -774,16 +749,10 @@ document.getElementById("lottery-result-track-name").textContent = trackName ? (
 var remainingCount = Object.keys(trackOrder).filter(function(n) { return !playedTracks.has(n); }).length;
 var nextRoundBtn = document.getElementById("lottery-next-round-btn");
 var remainingLabel = document.getElementById("lottery-remaining-count");
-if (nextRoundBtn) {
-nextRoundBtn.style.display = remainingCount > 1 ? "block" : "none";
-nextRoundBtn.disabled = remainingCount <= 1;
-}
-if (remainingLabel) {
-remainingLabel.textContent = "Осталось несыгранных треков: " + remainingCount;
+if (nextRoundBtn) { nextRoundBtn.style.display = remainingCount > 1 ? "block" : "none"; nextRoundBtn.disabled = remainingCount <= 1; }
+if (remainingLabel) { remainingLabel.textContent = "Осталось несыгранных треков: " + remainingCount; }
 }
 }
-}
-
 function renderLotteryReadyStatus(onlineTeams) {
 var container = document.getElementById("lottery-ready-status-2");
 if (!container) return;
@@ -793,14 +762,10 @@ onlineTeams.forEach(function(t) {
 var row = document.createElement("div");
 var isReady = readyTeams[t.id] === true;
 row.className = "lottery-team-status-row" + (isReady ? " is-ready" : " is-waiting");
-row.innerHTML = '<div class="lottery-team-name">' + t.name + '</div>' +
-'<div class="lottery-team-indicator ' + (isReady ? "confirmed" : "waiting") + '">' +
-(isReady ? '<i class="fas fa-check-circle"></i> Готов!' : '<i class="fas fa-clock"></i> Ожидание...') +
-'</div>';
+row.innerHTML = '<div class="lottery-team-name">' + t.name + '</div><div class="lottery-team-indicator ' + (isReady ? "confirmed" : "waiting") + '">' + (isReady ? '<i class="fas fa-check-circle"></i> Готов!' : '<i class="fas fa-clock"></i> Ожидание...') + '</div>';
 container.appendChild(row);
 });
 }
-
 function renderLotteryChoicesStatus(onlineTeams) {
 var container = document.getElementById("lottery-choices-status");
 if (!container) return;
@@ -810,80 +775,45 @@ var row = document.createElement("div");
 var choice = lotteryState.numberChoices ? lotteryState.numberChoices[t.id] : null;
 var hasChoice = typeof choice !== 'undefined' && choice !== null;
 row.className = "lottery-team-status-row" + (hasChoice ? " has-choice" : "");
-row.innerHTML = '<div class="lottery-team-name">' + t.name + '</div>' +
-'<div class="lottery-team-indicator ' + (hasChoice ? "chosen" : "waiting") + '">' +
-(hasChoice ? '<i class="fas fa-hashtag"></i> №' + choice : '<i class="fas fa-hourglass-half"></i> Выбирает...') +
-'</div>';
+row.innerHTML = '<div class="lottery-team-name">' + t.name + '</div><div class="lottery-team-indicator ' + (hasChoice ? "chosen" : "waiting") + '">' + (hasChoice ? '<i class="fas fa-hashtag"></i> №' + choice : '<i class="fas fa-hourglass-half"></i> Выбирает...') + '</div>';
 container.appendChild(row);
 });
 }
-
 function startLotteryReadyCheck() {
-if (!roomRef || teamsData.length === 0) {
-showActionNotification("❌ Сначала дождитесь подключения команд!");
-return;
-}
+if (!roomRef || teamsData.length === 0) { showActionNotification("❌ Сначала дождитесь подключения команд!"); return; }
 var onlineTeams = teamsData.filter(function(t) { return t.online !== false; });
-if (onlineTeams.length === 0) {
-showActionNotification("❌ Нет команд в сети!");
-return;
-}
+if (onlineTeams.length === 0) { showActionNotification("❌ Нет команд в сети!"); return; }
 var readyTeams = {};
 onlineTeams.forEach(function(t) { readyTeams[t.id] = false; });
-roomRef.child("lotteryState").set({
-phase: "ready_check",
-readyTeams: readyTeams,
-numberChoices: {},
-selectedNumber: null,
-allNumbers: []
-});
+roomRef.child("lotteryState").set({ phase: "ready_check", readyTeams: readyTeams, numberChoices: {}, selectedNumber: null, allNumbers: [] });
 showActionNotification("📢 Опрос готовности запущен!");
 }
-
 function startLotteryGame() {
 if (!roomRef) return;
 var allNumbers = Object.keys(trackOrder).map(function(n) { return trackOrder[n]; }).sort(function(a, b) { return a - b; });
-if (allNumbers.length === 0) {
-showActionNotification("❌ Сначала загрузите треки!");
-return;
-}
+if (allNumbers.length === 0) { showActionNotification("❌ Сначала загрузите треки!"); return; }
+/* Блокируем загрузку/перемешивание: выбор номеров отправлен участникам */
+lockTrackControls();
 if (allNumbers.length === 1) {
 var trackName = Object.keys(files).find(function(n) { return trackOrder[n] === allNumbers[0]; });
 if (trackName) {
-roomRef.child("lotteryState").update({
-phase: "playing",
-numberChoices: {},
-selectedNumber: allNumbers[0],
-allNumbers: allNumbers
-});
+roomRef.child("lotteryState").update({ phase: "playing", numberChoices: {}, selectedNumber: allNumbers[0], allNumbers: allNumbers });
 preloadTrackToPlayer(trackName);
 showActionNotification("🎯 Всего один трек — сразу в бой!");
 }
 return;
 }
-roomRef.child("lotteryState").update({
-phase: "number_selection",
-numberChoices: {},
-selectedNumber: null,
-allNumbers: allNumbers
-});
+roomRef.child("lotteryState").update({ phase: "number_selection", numberChoices: {}, selectedNumber: null, allNumbers: allNumbers });
 showActionNotification("🎮 Игра началась! Команды выбирают номера.");
 }
-
 function launchLotteryRandomizer() {
 if (!roomRef) return;
 var choices = lotteryState.numberChoices || {};
 var chosenNumbers = Object.keys(choices).map(function(k) { return choices[k]; });
-if (chosenNumbers.length === 0) {
-showActionNotification("❌ Нет выборов команд!");
-return;
-}
+if (chosenNumbers.length === 0) { showActionNotification("❌ Нет выборов команд!"); return; }
 roomRef.child("lotteryState").update({ phase: "revealing" });
 runHostVortexAnimation(chosenNumbers, function(selectedNumber) {
-roomRef.child("lotteryState").update({
-phase: "playing",
-selectedNumber: selectedNumber
-});
+roomRef.child("lotteryState").update({ phase: "playing", selectedNumber: selectedNumber });
 resetBuzzer();
 if (roomRef) { roomRef.child("status").set("idle"); }
 var trackName = Object.keys(files).find(function(n) { return trackOrder[n] === selectedNumber; });
@@ -895,7 +825,6 @@ showActionNotification("🎯 Трек №" + selectedNumber + " заряжен. 
 }
 });
 }
-
 function preloadTrackToPlayer(trackName) {
 var audioRevers = ensureAudioPlayer("audio-revers");
 var audioNormal = ensureAudioPlayer("audio-normal");
@@ -907,16 +836,11 @@ audioNormal.pause();
 audioNormal.currentTime = 0;
 audioNormal.src = "";
 currentTrackName = trackName;
-
-// ОПРЕДЕЛЕНИЕ ДЖОКЕРА
 currentTrackIsJoker = false;
 if (jokerEnabled) {
 currentTrackIsJoker = Math.random() < jokerChance;
-if (currentTrackIsJoker) {
-console.log("🃏 ДЖОКЕР активирован для трека:", trackName);
+if (currentTrackIsJoker) { console.log("🃏 ДЖОКЕР активирован для трека:", trackName); }
 }
-}
-
 audioRevers.src = track.revers;
 audioRevers.preload = "auto";
 audioRevers.load();
@@ -946,21 +870,16 @@ duration: dur,
 currentTime: 0,
 playAction: "prepare",
 startAt: 0,
-isJoker: currentTrackIsJoker
+isJoker: currentTrackIsJoker,
+jokerEnabled: jokerEnabled
 });
 }
 };
-
-// ВИЗУАЛЬНЫЙ ИНДИКАТОР ДЖОКЕРА
 var playerContainer = document.getElementById("revers-player-container");
 if (playerContainer) {
-if (currentTrackIsJoker) {
-playerContainer.classList.add("joker-active");
-} else {
-playerContainer.classList.remove("joker-active");
+if (currentTrackIsJoker) { playerContainer.classList.add("joker-active"); }
+else { playerContainer.classList.remove("joker-active"); }
 }
-}
-
 document.querySelectorAll('[data-song]').forEach(function(btn) {
 if (btn.getAttribute('data-song') === trackName) {
 btn.style.outline = '2px solid var(--neon-yellow)';
@@ -981,7 +900,6 @@ if (isInteractiveMode && roomRef) {
 roomRef.child("status").set("idle");
 }
 }
-
 function startNewLotteryRound() {
 if (!roomRef) return;
 forceStopAllSounds();
@@ -994,46 +912,31 @@ duration: 0,
 currentTime: 0,
 playAction: "stop",
 startAt: 0,
-isJoker: false
+isJoker: false,
+jokerEnabled: jokerEnabled
 });
 roomRef.child("status").set("idle");
 roomRef.child("revealedTrack").set("");
 }
 var availableNumbers = [];
 Object.keys(trackOrder).forEach(function(name) {
-if (!playedTracks.has(name)) {
-availableNumbers.push(trackOrder[name]);
-}
+if (!playedTracks.has(name)) { availableNumbers.push(trackOrder[name]); }
 });
 availableNumbers.sort(function(a, b) { return a - b; });
-if (availableNumbers.length === 0) {
-showActionNotification("❌ Все треки сыграны!");
-return;
-}
+if (availableNumbers.length === 0) { showActionNotification("❌ Все треки сыграны!"); return; }
 if (availableNumbers.length === 1) {
 var trackName = Object.keys(files).find(function(n) { return trackOrder[n] === availableNumbers[0]; });
 if (trackName) {
-roomRef.child("lotteryState").update({
-phase: "playing",
-selectedNumber: availableNumbers[0],
-allNumbers: availableNumbers,
-numberChoices: {}
-});
+roomRef.child("lotteryState").update({ phase: "playing", selectedNumber: availableNumbers[0], allNumbers: availableNumbers, numberChoices: {} });
 preloadTrackToPlayer(trackName);
-showActionNotification(" Остался один трек — сразу в бой!");
+showActionNotification("🎯 Остался один трек — сразу в бой!");
 }
 return;
 }
-roomRef.child("lotteryState").update({
-phase: "number_selection",
-numberChoices: {},
-selectedNumber: null,
-allNumbers: availableNumbers
-});
+roomRef.child("lotteryState").update({ phase: "number_selection", numberChoices: {}, selectedNumber: null, allNumbers: availableNumbers });
 resetBuzzer();
-showActionNotification(" Новый раунд! Доступно треков: " + availableNumbers.length);
+showActionNotification("🎲 Новый раунд! Доступно треков: " + availableNumbers.length);
 }
-
 function runHostVortexAnimation(numbers, onComplete) {
 var overlay = document.getElementById("lottery-vortex-overlay");
 var stage = document.getElementById("vortex-stage");
@@ -1091,7 +994,6 @@ if (onComplete) onComplete(selectedNumber);
 }, 2500);
 }, 3000);
 }
-
 function renderHostTeamsList() {
 var container = document.getElementById("host-teams-container");
 if (!container) return;
@@ -1248,7 +1150,7 @@ input.value = ""; document.getElementById("host-emoji-popover").style.display = 
 }
 function sendQuickReply(replyText) {
 if (!roomRef) return;
-roomRef.child("chat").push({ author: "️ Ведущий", text: replyText, isHost: true, time: Date.now() });
+roomRef.child("chat").push({ author: "🎙️ Ведущий", text: replyText, isHost: true, time: Date.now() });
 }
 async function manualCheckAppUpdate() {
 var statusEl = document.getElementById("manual-update-status");
@@ -1302,6 +1204,7 @@ onlineSec.style.display = "none";
 localSec.style.display = "block";
 sub.textContent = "Угадай трек наоборот";
 }
+if (gameSessionStarted) { applyLockUI(); }
 }
 function restoreSession() {
 var saved = localStorage.getItem('reversQuiz');
@@ -1319,6 +1222,7 @@ streamAudioToPlayers = data.streamAudioToPlayers === true;
 chatMode = data.chatMode || "disabled";
 jokerEnabled = data.jokerEnabled !== false;
 jokerChance = typeof data.jokerChance !== 'undefined' ? data.jokerChance : 0.2;
+gameSessionStarted = data.gameSessionStarted === true;
 if (Array.isArray(data.teamsData) && data.teamsData.length >= 2) { teamsData = data.teamsData; }
 playedTracks = new Set(data.playedTracks || []);
 selectedFolder = data.selectedFolder || "";
@@ -1352,6 +1256,7 @@ gameMode: gameMode, isInteractiveMode: isInteractiveMode,
 showScoreToPlayers: showScoreToPlayers, showOpponentScore: showOpponentScore,
 streamAudioToPlayers: streamAudioToPlayers, chatMode: chatMode,
 jokerEnabled: jokerEnabled, jokerChance: jokerChance,
+gameSessionStarted: gameSessionStarted,
 teamsData: teamsData, playedTracks: Array.from(playedTracks),
 selectedFolder: selectedFolder, timerDuration: timerDuration,
 originalDelay: originalDelay, mixMode: mixMode,
@@ -1379,7 +1284,6 @@ if (n.indexOf("game_over") !== -1 && n.endsWith(".mp3")) { soundUrls.gameOver = 
 if (isInteractiveMode && roomRef) { roomRef.child("systemSounds").set(soundUrls); }
 } catch (e) { console.error("Ошибка загрузки системных звуков:", e); }
 }
-
 function awardJokerPoints(teamId) {
 var team = teamsData.find(function(t) { return t.id === teamId; });
 if (!team) return;
@@ -1397,17 +1301,10 @@ a.play().catch(function() {});
 }
 showNotification('+3 ДЖОКЕР! (' + team.name + ')', true);
 if (isInteractiveMode && roomRef) {
-roomRef.child("teams/" + teamId).update({
-score: team.score,
-lastScoreDelta: jokerPoints,
-lastScoreChangeAt: Date.now()
-});
-roomRef.child("audioSync").update({
-systemTrigger: { type: "joker", time: Date.now() }
-});
+roomRef.child("teams/" + teamId).update({ score: team.score, lastScoreDelta: jokerPoints, lastScoreChangeAt: Date.now() });
+roomRef.child("audioSync").update({ systemTrigger: { type: "joker", time: Date.now() } });
 }
 }
-
 function playSound(type) {
 var url = type === 'winner' ? soundUrls.winner : soundUrls.lost;
 var audio = document.getElementById(type === 'winner' ? 'audio-winner' : 'audio-lost');
@@ -1417,8 +1314,6 @@ if (r) { r.pause(); var rIcon = document.getElementById("revers-play-icon"); if 
 stopTimer(); hideTrackPopup();
 if (url && audio) { audio.src = url; audio.currentTime = 0; audio.play().catch(function() {}); }
 else { showActionNotification(type === 'winner' ? '🎉 Правильно!' : '😢 Мимо!'); }
-
-// ОБРАБОТКА ДЖОКЕРА
 if (type === 'winner' && currentTrackIsJoker && activeTeamId) {
 var team = teamsData.find(function(t) { return t.id === activeTeamId; });
 if (team) {
@@ -1426,10 +1321,9 @@ awardJokerPoints(activeTeamId);
 showJokerAnimation(team.name);
 }
 }
-
 if (isInteractiveMode && roomRef) {
 roomRef.update({ status: "reveal", revealedTrack: currentTrackName || "", buzzer: { locked: true, pressedBy: null, passedBy: [] } });
-if (streamAudioToPlayers && type === 'winner') {
+if (streamAudioToPlayers) {
 roomRef.child("audioSync").update({ systemTrigger: { type: type, time: Date.now() } });
 }
 }
@@ -1437,7 +1331,6 @@ if (originalTimeout) { clearTimeout(originalTimeout); originalTimeout = null; }
 var delayMs = Math.max(0, originalDelay * 1000);
 originalTimeout = setTimeout(function() { startOriginalPlayback(); originalTimeout = null; }, delayMs);
 }
-
 async function playNormalWithAutoRecovery(audioEl, normalUrl, trackName) {
 var normalIcon = document.getElementById("normal-play-icon");
 try {
@@ -1530,15 +1423,11 @@ if (match) { filesMap[k].normal = filesMap[match].normal; }
 return filesMap;
 } catch (e) { console.error("Ошибка загрузки папки:", e); return {}; }
 }
-function isTrackOrderValid(filesMap) {
-var fileNames = new Set(Object.keys(filesMap));
-var orderNames = new Set(Object.keys(trackOrder));
-if (fileNames.size !== orderNames.size) return false;
-var valid = true;
-fileNames.forEach(function(name) { if (!orderNames.has(name)) valid = false; });
-return valid;
-}
 async function loadFiles() {
+if (gameSessionStarted) {
+showActionNotification("🔒 Игра уже начата — загрузка треков заблокирована.");
+return;
+}
 var loadBtn = document.getElementById("load-songs-btn");
 loadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Загрузка...';
 try {
@@ -1579,19 +1468,23 @@ showActionNotification('✅ Треки загружены и перемешан�
 console.error("КРИТИЧЕСКАЯ ОШИБКА ЗАГРУЗКИ:", e);
 alert("Ошибка загрузки.");
 }
+if (!gameSessionStarted) {
 loadBtn.innerHTML = '<i class="fas fa-cloud-download-alt"></i> Загрузить треки';
+}
 }
 function updateShuffleButtonState() {
 var shuffleBtn = document.getElementById("shuffle-btn");
 var hasStarted = lastPlayedTrack !== null;
+if (gameSessionStarted) return;
 if (shuffleBtn) {
 shuffleBtn.disabled = hasStarted;
 shuffleBtn.style.opacity = hasStarted ? 0.4 : 1;
 shuffleBtn.style.cursor = hasStarted ? "not-allowed" : "pointer";
-shuffleBtn.textContent = hasStarted ? '❌ Игра начата' : ' Перемешать треки';
+shuffleBtn.textContent = hasStarted ? '❌ Игра начата' : '🔄 Перемешать треки';
 }
 }
 function shuffleTracks() {
+if (gameSessionStarted) { showActionNotification('🔒 Перемешивание заблокировано: игра начата.'); return; }
 if (lastPlayedTrack !== null) { showActionNotification('❌ Нельзя перемешивать после начала!'); return; }
 var names = Object.keys(files);
 var shuffled = names.slice().sort(function() { return Math.random() - 0.5; });
@@ -1639,16 +1532,11 @@ purgeAudioBuffer(audioRevers); purgeAudioBuffer(audioNormal);
 audioNormal.src = ""; audioNormal.preload = "none";
 currentTrackName = name;
 var track = files[name];
-
-// ОПРЕДЕЛЕНИЕ ДЖОКЕРА
 currentTrackIsJoker = false;
 if (jokerEnabled && track && track.revers) {
 currentTrackIsJoker = Math.random() < jokerChance;
-if (currentTrackIsJoker) {
-console.log(" ДЖОКЕР активирован для трека:", name);
+if (currentTrackIsJoker) { console.log("🃏 ДЖОКЕР активирован для трека:", name); }
 }
-}
-
 if (track && track.revers) {
 audioRevers.src = track.revers; audioRevers.preload = "auto"; audioRevers.load();
 audioRevers.onended = function() { if (timerDuration > 0) startTimer(); hideTrackPopup(); };
@@ -1679,21 +1567,17 @@ buzzer: { locked: false, pressedBy: null, pressedByName: null, passedBy: [] }
 roomRef.child("audioSync").set({
 trackSessionId: newTrackSessionId, reversUrl: track.revers || "", normalUrl: track.normal || "",
 duration: dur, currentTime: 0, playAction: "prepare", startAt: 0,
-isJoker: currentTrackIsJoker
+isJoker: currentTrackIsJoker,
+jokerEnabled: jokerEnabled
 });
 }
 toggleRevers();
 }
 setTimeout(function() { if (!hasStartedThisTrack && currentTrackName === name) { launchReversPlayback(audioRevers.duration || 0); } }, 1200);
-
-// ВИЗУАЛЬНЫЙ ИНДИКАТОР ДЖОКЕРА
 var playerContainer = document.getElementById("revers-player-container");
 if (playerContainer) {
-if (currentTrackIsJoker) {
-playerContainer.classList.add("joker-active");
-} else {
-playerContainer.classList.remove("joker-active");
-}
+if (currentTrackIsJoker) { playerContainer.classList.add("joker-active"); }
+else { playerContainer.classList.remove("joker-active"); }
 }
 }
 updateShuffleButtonState(); updateNextTrackButton(); saveState();
@@ -1736,7 +1620,7 @@ var serverStartAt = Date.now() + 250;
 if (isInteractiveMode && roomRef) {
 clearTeamHighlight();
 roomRef.update({ status: "playing", revealedTrack: "", timerState: { active: false, value: 0 } });
-roomRef.child("audioSync").update({ playAction: streamAudioToPlayers ? "play_revers" : "play_silent", startAt: serverStartAt, duration: audio.duration || 0, currentTime: 0, isJoker: currentTrackIsJoker });
+roomRef.child("audioSync").update({ playAction: streamAudioToPlayers ? "play_revers" : "play_silent", startAt: serverStartAt, duration: audio.duration || 0, currentTime: 0, isJoker: currentTrackIsJoker, jokerEnabled: jokerEnabled });
 }
 var delayStart = Math.max(0, serverStartAt - Date.now());
 setTimeout(function() {
@@ -1750,7 +1634,7 @@ var icon = document.getElementById("revers-play-icon");
 var serverStartAt = Date.now() + 150;
 if (isInteractiveMode && roomRef) {
 roomRef.update({ status: "playing", timerState: { active: false, value: 0 } });
-roomRef.child("audioSync").update({ playAction: streamAudioToPlayers ? "resume_revers" : "resume_silent", currentTime: audio.currentTime, duration: audio.duration || 0, startAt: serverStartAt, isJoker: currentTrackIsJoker });
+roomRef.child("audioSync").update({ playAction: streamAudioToPlayers ? "resume_revers" : "resume_silent", currentTime: audio.currentTime, duration: audio.duration || 0, startAt: serverStartAt, isJoker: currentTrackIsJoker, jokerEnabled: jokerEnabled });
 }
 var delayStart = Math.max(0, serverStartAt - Date.now());
 setTimeout(function() {
@@ -1824,6 +1708,7 @@ if (i) i.classList.replace("fa-play", "fa-pause");
 if (isInteractiveMode && roomRef && streamAudioToPlayers) { roomRef.child("audioSync").update({ playAction: "pause" }); }
 }
 }
+/* === ИСПРАВЛЕНИЕ: корректный тернарный оператор прогресса === */
 function updateReversProgress() {
 var a = document.getElementById("audio-revers");
 var fill = document.getElementById("revers-progress-fill");
@@ -1890,7 +1775,7 @@ if (isInteractiveMode && roomRef) {
 roomRef.update({
 status: "game_over", revealedTrack: "",
 leaderboard: sortedTeams.map(function(t) { return { name: t.name, score: t.score }; }),
-audioSync: { trackSessionId: "", reversUrl: "", normalUrl: "", duration: 0, currentTime: 0, playAction: "stop", systemTrigger: { type: "gameOver", time: Date.now() }, startAt: 0, isJoker: false },
+audioSync: { trackSessionId: "", reversUrl: "", normalUrl: "", duration: 0, currentTime: 0, playAction: "stop", systemTrigger: { type: "gameOver", time: Date.now() }, startAt: 0, isJoker: false, jokerEnabled: jokerEnabled },
 lotteryState: { phase: "idle", readyTeams: {}, numberChoices: {}, selectedNumber: null, allNumbers: [] }
 });
 }
@@ -1978,6 +1863,7 @@ jokerEnabled = newJokerEnabled;
 jokerChance = newJokerChance;
 if (isInteractiveMode && roomRef) {
 roomRef.update({ showScore: showScoreToPlayers, showOpponentScore: showOpponentScore, streamAudio: streamAudioToPlayers, chatMode: chatMode, gameMode: gameMode, systemSounds: soundUrls });
+roomRef.child("audioSync").update({ jokerEnabled: jokerEnabled });
 }
 saveState();
 updateHostChatButtonVisibility();
