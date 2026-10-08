@@ -172,6 +172,22 @@ button:active { transform: scale(0.98); }
 .btn-emoji-toggle { background: transparent; border: 1px solid var(--border-subtle); color: var(--neon-yellow); font-size: 1.1em; width: 40px; height: 40px; border-radius: 10px; cursor: pointer; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; }
 .host-chat-footer input { flex: 1; min-width: 0; padding: 8px 12px; font-size: 13px; margin: 0; border-radius: 10px; }
 .host-chat-footer button.btn-send { background: var(--neon-cyan); color: #000; width: 40px; height: 40px; border-radius: 10px; font-size: 13px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; }
+
+/* СТИЛИ РЕЖИМА "ВАРИАНТЫ" У ВЕДУЩЕГО */
+#variants-control-section { display: none; }
+.variants-panel { background: linear-gradient(135deg, rgba(0, 229, 255, 0.08) 0%, rgba(112, 0, 255, 0.08) 100%); border: 1.5px solid var(--neon-cyan); border-radius: 18px; padding: 18px; margin-bottom: 14px; }
+.variants-panel-title { font-family: 'Syne', sans-serif; font-size: 1.05em; font-weight: 800; color: var(--neon-cyan); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; }
+.variants-grid-host { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+.variant-card-host { background: var(--bg-deep); border: 1.5px solid var(--border-subtle); border-radius: 12px; padding: 12px 14px; font-size: 0.95em; font-weight: 700; color: #fff; transition: all 0.25s ease; word-break: break-word; }
+.variant-card-host.selected { border-color: var(--neon-lime); background: rgba(0, 255, 102, 0.15); box-shadow: 0 0 20px rgba(0, 255, 102, 0.3); }
+.variant-card-host.locked { border-color: var(--neon-yellow); background: rgba(255, 234, 0, 0.2); box-shadow: 0 0 25px rgba(255, 234, 0, 0.5); }
+.variant-card-host.correct-reveal { border-color: var(--neon-lime); background: var(--neon-lime); color: #000; font-weight: 900; }
+.variants-btn-row { display: flex; gap: 10px; flex-wrap: wrap; }
+.variants-btn { flex: 1; min-width: 150px; padding: 14px; font-size: 14px; font-weight: 800; text-transform: uppercase; border-radius: 12px; cursor: pointer; }
+.variants-btn.ask { background: linear-gradient(135deg, var(--neon-yellow), #ff9500); color: #000; box-shadow: 0 4px 15px rgba(255, 234, 0, 0.3); }
+.variants-btn.lock { background: linear-gradient(135deg, var(--neon-lime), #00bb55); color: #000; box-shadow: 0 4px 15px rgba(0, 255, 102, 0.3); }
+.variants-btn:disabled { background: #252b3b; color: #556077; cursor: not-allowed; box-shadow: none; }
+
 #lottery-control-section { display: none; }
 .lottery-panel { background: linear-gradient(135deg, rgba(112, 0, 255, 0.12) 0%, rgba(255, 0, 85, 0.08) 100%); border: 1.5px solid var(--neon-purple); border-radius: 18px; padding: 18px; margin-bottom: 14px; }
 .lottery-panel-title { font-family: 'Syne', sans-serif; font-size: 1em; font-weight: 800; color: var(--neon-yellow); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
@@ -264,6 +280,22 @@ button:active { transform: scale(0.98); }
 <div style="color:var(--text-dim); font-size:0.9em;">Ожидание подключения участников...</div>
 </div>
 </div>
+
+<!-- БЛОК РЕЖИМА "ВАРИАНТЫ" У ВЕДУЩЕГО -->
+<div class="section" id="variants-control-section">
+<div class="variants-panel">
+<div class="variants-panel-title">
+<span><i class="fas fa-list-ul"></i> Режим «Варианты»</span>
+<span id="variants-answering-badge" style="font-size:0.8em; color:var(--neon-yellow);">Ожидание ответа...</span>
+</div>
+<div class="variants-grid-host" id="variants-host-grid"></div>
+<div class="variants-btn-row" id="variants-host-buttons" style="display:none;">
+<button class="variants-btn ask" id="btn-ask-sure" onclick="sendSureConfirmationRequest()"><i class="fas fa-question-circle"></i> Спросить: «Уверены?»</button>
+<button class="variants-btn lock" id="btn-lock-choice" onclick="lockVariantByHost()"><i class="fas fa-lock"></i> Зафиксировать ответ</button>
+</div>
+</div>
+</div>
+
 <div class="section" id="lottery-control-section">
 <h2 class="section-title"><i class="fas fa-dice"></i> Треки-лотерея</h2>
 <div id="lottery-phase-ready" class="lottery-panel">
@@ -304,7 +336,7 @@ button:active { transform: scale(0.98); }
 <select id="folder-select" onchange="saveState()">
 <option value="">-- Выберите категорию --</option>
 <option value="/Зарубежные">🎵 Зарубежные</option>
-<option value="/Русские">🇷 Русские</option>
+<option value="/Русские">🇷🇺 Русские</option>
 </select>
 </div>
 <div class="section">
@@ -409,6 +441,7 @@ button:active { transform: scale(0.98); }
 <option value="offline">🕹️ Обычный режим (оффлайн табло)</option>
 <option value="interactive">🌐 Интерактивный (онлайн для команд)</option>
 <option value="lottery">🎰 Треки-лотерея (выбор номеров)</option>
+<option value="variants">🎯 Режим «Варианты» (4 ответа)</option>
 </select>
 </div>
 </div>
@@ -515,6 +548,7 @@ var roomRef = null;
 var gameMode = "offline";
 var isInteractiveMode = false;
 var isLotteryMode = false;
+var isVariantsMode = false;
 var showScoreToPlayers = true;
 var showOpponentScore = true;
 var streamAudioToPlayers = false;
@@ -545,8 +579,10 @@ var lastPlayedTrack = null;
 var trackOrder = {};
 var soundUrls = { winner: null, lost: null, ring: null, start: null, final: null, gameOver: null };
 var lotteryState = { phase: "idle", readyTeams: {}, numberChoices: {}, selectedNumber: null, allNumbers: [] };
+var variantsState = { active: false, correctTrack: "", options: [], answeringTeam: null, answeringTeamName: "", selectedOption: null, isFinal: false, askConfirm: false, attemptsLeft: 2, isRevealed: false, isCorrect: false };
 var currentTrackIsJoker = false;
 var gameSessionStarted = false;
+
 function ensureAudioPlayer(id) {
 var a = document.getElementById(id);
 if (!a) { a = document.createElement("audio"); a.id = id; a.style.display = "none"; a.setAttribute("playsinline", "true"); document.body.appendChild(a); }
@@ -582,7 +618,7 @@ osc.start(ctx.currentTime + i * 0.1); osc.stop(ctx.currentTime + i * 0.1 + 0.5);
 });
 } catch(e) {}
 }
-var POPULAR_EMOJIS = ["👍","","🔥","","😂","😎","🤩","🤔","😮","🎵","🎶","🎤","🎧","🏆","⭐","💯","❤️","👋","","🚀","💃"];
+var POPULAR_EMOJIS = ["👍","👏","🔥","🎉","😂","😎","🤩","🤔","😮","🎵","🎶","🎤","🎧","🏆","⭐","💯","❤️","👋","🤐","🚀","💃"];
 function initEmojiPicker(containerId, inputId) {
 var container = document.getElementById(containerId);
 if (!container) return;
@@ -649,7 +685,6 @@ var remaining = overlay.querySelectorAll(".joker-confetti");
 remaining.forEach(function(c) { if (c.parentNode) c.parentNode.removeChild(c); });
 }, 3500);
 }
-/* === БЛОКИРОВКА ЗАГРУЗКИ/ПЕРЕМЕШИВАНИЯ ПОСЛЕ СТАРТА ЛОТЕРЕИ === */
 function lockTrackControls() {
 if (gameSessionStarted) { applyLockUI(); return; }
 gameSessionStarted = true;
@@ -684,7 +719,8 @@ streamAudio: streamAudioToPlayers, chatMode: chatMode, gameMode: gameMode,
 buzzer: { locked: true, pressedBy: null, passedBy: [] }, revealedTrack: "",
 systemSounds: soundUrls, timerState: { active: false, value: 0 },
 audioSync: { trackSessionId: "", reversUrl: "", normalUrl: "", duration: 0, currentTime: 0, playAction: "stop", startAt: 0, isJoker: false, jokerEnabled: jokerEnabled },
-lotteryState: { phase: "idle", readyTeams: {}, numberChoices: {}, selectedNumber: null, allNumbers: [] }
+lotteryState: { phase: "idle", readyTeams: {}, numberChoices: {}, selectedNumber: null, allNumbers: [] },
+variantsRound: { active: false, correctTrack: "", options: [], answeringTeam: null, answeringTeamName: "", selectedOption: null, isFinal: false, askConfirm: false, attemptsLeft: 2, isRevealed: false, isCorrect: false }
 });
 teamsData = [];
 renderHostTeamsList();
@@ -712,7 +748,229 @@ roomRef.child("lotteryState").on("value", function(snapshot) {
 var ls = snapshot.val();
 if (ls) { lotteryState = ls; updateLotteryUI(); }
 });
+roomRef.child("variantsRound").on("value", function(snapshot) {
+var vr = snapshot.val();
+if (vr) {
+variantsState = vr;
+updateVariantsHostUI();
 }
+});
+}
+
+/* === ПОДБОР ВАРИАНТОВ ЧЕРЕЗ ITUNES С РАЗНЫМИ ИСПОЛНИТЕЛЯМИ === */
+function fetchItunesJsonp(term, country, limit) {
+return new Promise(function(resolve) {
+var callbackName = 'itunes_cb_' + Math.floor(Math.random() * 1000000);
+var script = document.createElement('script');
+var timeout = setTimeout(function() {
+delete window[callbackName];
+if (script.parentNode) script.parentNode.removeChild(script);
+resolve(null);
+}, 3000);
+
+window[callbackName] = function(data) {
+clearTimeout(timeout);
+delete window[callbackName];
+if (script.parentNode) script.parentNode.removeChild(script);
+resolve(data);
+};
+
+script.src = "https://itunes.apple.com/search?term=" + encodeURIComponent(term) + "&media=music&entity=song&limit=" + (limit || 30) + "&country=" + (country || 'RU') + "&callback=" + callbackName;
+script.onerror = function() {
+clearTimeout(timeout);
+delete window[callbackName];
+if (script.parentNode) script.parentNode.removeChild(script);
+resolve(null);
+};
+document.body.appendChild(script);
+});
+}
+
+function cleanSongTitle(str) {
+if (!str) return "";
+return str.replace(/\s*[\(\[](remix|feat|ft|radio|edit|cover|version|mix|dj|prod).*?[\)\]]/gi, '').trim();
+}
+
+function extractArtistName(trackTitle) {
+if (!trackTitle) return "";
+if (trackTitle.indexOf(" - ") !== -1) return trackTitle.split(" - ")[0].trim();
+if (trackTitle.indexOf(" — ") !== -1) return trackTitle.split(" — ")[0].trim();
+return "";
+}
+
+async function fetchTrackVariants(trackName) {
+// 1. Правильный ответ берётся СТРОГО из самой игры в оригинальном виде
+var correctTitle = trackName.trim();
+var originalArtist = extractArtistName(correctTitle).toLowerCase();
+
+var isRussianTrack = /[а-яА-ЯёЁ]/.test(correctTitle) || (selectedFolder && selectedFolder.indexOf("Русские") !== -1);
+var countryCode = isRussianTrack ? 'RU' : 'US';
+
+// Список жанровых и тематических запросов для поиска ДРУГИХ исполнителей в том же стиле
+var russianQueries = ["Хиты 90-х", "Русский поп", "Русский рок", "Дискотека 2000", "Золотой граммофон", "Суперхит"];
+var foreignQueries = ["Pop Hits", "Rock Classics", "Dance Hits", "Billboard Top", "90s Pop", "2000s Hits"];
+
+var searchKeywords = isRussianTrack ? russianQueries : foreignQueries;
+searchKeywords.sort(function() { return Math.random() - 0.5; });
+var chosenQuery = searchKeywords[0];
+
+var distractors = [];
+var usedArtists = new Set();
+if (originalArtist) usedArtists.add(originalArtist);
+
+try {
+var itunesRes = await fetchItunesJsonp(chosenQuery, countryCode, 40);
+if (itunesRes && itunesRes.results && itunesRes.results.length > 0) {
+var candidates = itunesRes.results.sort(function() { return Math.random() - 0.5; });
+
+for (var i = 0; i < candidates.length; i++) {
+if (distractors.length >= 3) break;
+var item = candidates[i];
+var art = (item.artistName || "").trim();
+var trk = cleanSongTitle(item.trackName || "").trim();
+if (!art || !trk) continue;
+
+var candidateTitle = art + " — " + trk;
+var artLower = art.toLowerCase();
+
+// Проверяем: артист не должен совпадать с оригиналом или уже добавленными вариантами
+if (usedArtists.has(artLower)) continue;
+if (candidateTitle.toLowerCase() === correctTitle.toLowerCase()) continue;
+
+// Проверяем соответствие языку
+var hasCyr = /[а-яА-ЯёЁ]/.test(candidateTitle);
+if (isRussianTrack && !hasCyr) continue;
+if (!isRussianTrack && hasCyr) continue;
+
+usedArtists.add(artLower);
+distractors.push(candidateTitle);
+}
+}
+} catch(e) {
+console.warn("iTunes API поиск дистракторов завершился ошибкой:", e);
+}
+
+// Фоллбэк: если в iTunes найдено меньше 3 разных исполнителей, добираем из локальной библиотеки
+var allFileNames = Object.keys(files).sort(function() { return Math.random() - 0.5; });
+for (var j = 0; j < allFileNames.length; j++) {
+if (distractors.length >= 3) break;
+var localName = allFileNames[j].trim();
+var localArt = extractArtistName(localName).toLowerCase();
+
+if (localName.toLowerCase() === correctTitle.toLowerCase()) continue;
+if (localArt && usedArtists.has(localArt)) continue;
+
+var localHasCyr = /[а-яА-ЯёЁ]/.test(localName);
+if (isRussianTrack && !localHasCyr) continue;
+if (!isRussianTrack && localHasCyr) continue;
+
+if (localArt) usedArtists.add(localArt);
+distractors.push(localName);
+}
+
+// Защитный крайний добор
+for (var k = 0; k < allFileNames.length; k++) {
+if (distractors.length >= 3) break;
+var fn = allFileNames[k].trim();
+if (fn.toLowerCase() !== correctTitle.toLowerCase() && distractors.indexOf(fn) === -1) {
+distractors.push(fn);
+}
+}
+
+var finalOptions = [correctTitle].concat(distractors.slice(0, 3));
+finalOptions.sort(function() { return Math.random() - 0.5; });
+
+return {
+correct: correctTitle,
+options: finalOptions
+};
+}
+
+async function prepareVariantsForCurrentTrack(trackName) {
+if (!isVariantsMode || !roomRef) return;
+var vData = await fetchTrackVariants(trackName);
+
+variantsState = {
+active: false,
+correctTrack: vData.correct,
+options: vData.options,
+answeringTeam: null,
+answeringTeamName: "",
+selectedOption: null,
+isFinal: false,
+askConfirm: false,
+attemptsLeft: 2,
+isRevealed: false,
+isCorrect: false
+};
+
+roomRef.child("variantsRound").set(variantsState);
+renderHostVariantsGrid(vData.options, null, false);
+document.getElementById("variants-answering-badge").textContent = "Ожидание ответа...";
+document.getElementById("variants-host-buttons").style.display = "none";
+}
+
+function updateVariantsHostUI() {
+if (!isVariantsMode) return;
+var badge = document.getElementById("variants-answering-badge");
+var btnRow = document.getElementById("variants-host-buttons");
+var btnAsk = document.getElementById("btn-ask-sure");
+var btnLock = document.getElementById("btn-lock-choice");
+
+if (variantsState.active && variantsState.answeringTeamName) {
+badge.textContent = "Отвечает: " + variantsState.answeringTeamName;
+if (!variantsState.isFinal && !variantsState.isRevealed) {
+btnRow.style.display = "flex";
+btnAsk.disabled = !variantsState.selectedOption;
+btnLock.disabled = !variantsState.selectedOption;
+} else if (variantsState.isFinal && !variantsState.isRevealed) {
+btnRow.style.display = "none";
+badge.textContent = "🔒 Ответ " + variantsState.answeringTeamName + " зафиксирован!";
+} else if (variantsState.isRevealed) {
+btnRow.style.display = "none";
+badge.textContent = variantsState.isCorrect ? "🎉 ОТВЕТ ВЕРНЫЙ!" : "❌ ОТВЕТ НЕВЕРНЫЙ!";
+}
+} else {
+badge.textContent = "Ожидание нажатия кнопки...";
+btnRow.style.display = "none";
+}
+
+renderHostVariantsGrid(variantsState.options || [], variantsState.selectedOption, variantsState.isFinal);
+}
+
+function renderHostVariantsGrid(options, selected, isFinal) {
+var grid = document.getElementById("variants-host-grid");
+if (!grid) return;
+grid.innerHTML = "";
+
+options.forEach(function(opt) {
+var card = document.createElement("div");
+card.className = "variant-card-host";
+if (variantsState.isRevealed && opt.toLowerCase() === (variantsState.correctTrack || "").toLowerCase()) {
+card.className += " correct-reveal";
+card.innerHTML = "✅ " + opt;
+} else if (opt === selected) {
+card.className += isFinal ? " locked" : " selected";
+card.innerHTML = (isFinal ? "🔒 " : "👉 ") + opt;
+} else {
+card.textContent = opt;
+}
+grid.appendChild(card);
+});
+}
+
+function sendSureConfirmationRequest() {
+if (!roomRef || !variantsState.selectedOption) return;
+roomRef.child("variantsRound").update({ askConfirm: true });
+showActionNotification("❓ Запрос «Уверены?» отправлен команде!");
+}
+
+function lockVariantByHost() {
+if (!roomRef || !variantsState.selectedOption) return;
+roomRef.child("variantsRound").update({ isFinal: true, askConfirm: false });
+showActionNotification("🔒 Ответ зафиксирован ведущим!");
+}
+
 function updateLotteryUI() {
 var section = document.getElementById("lottery-control-section");
 if (!section) return;
@@ -792,7 +1050,6 @@ function startLotteryGame() {
 if (!roomRef) return;
 var allNumbers = Object.keys(trackOrder).map(function(n) { return trackOrder[n]; }).sort(function(a, b) { return a - b; });
 if (allNumbers.length === 0) { showActionNotification("❌ Сначала загрузите треки!"); return; }
-/* Блокируем загрузку/перемешивание: выбор номеров отправлен участникам */
 lockTrackControls();
 if (allNumbers.length === 1) {
 var trackName = Object.keys(files).find(function(n) { return trackOrder[n] === allNumbers[0]; });
@@ -1094,6 +1351,7 @@ setTimeout(function() { if (!popup.classList.contains("show")) popup.style.displ
 }, 2400);
 }
 function hideBuzzerAlert() { var popup = document.getElementById("buzzer-wave-popup"); if (popup) { popup.classList.remove("show"); popup.style.display = "none"; } }
+
 function handleBuzzerTriggered(teamId, teamName) {
 var r = document.getElementById("audio-revers");
 if (r && !r.paused) { r.pause(); document.getElementById("revers-play-icon").classList.replace("fa-pause", "fa-play"); }
@@ -1102,7 +1360,16 @@ if (isInteractiveMode && roomRef) { roomRef.child("audioSync").update({ playActi
 activateTeam(teamId);
 if (soundUrls.ring) { var a = document.getElementById("audio-ring"); a.src = soundUrls.ring; a.currentTime = 0; a.play().catch(function() {}); }
 showWaveHandPopup(teamName);
+
+if (isVariantsMode && roomRef) {
+roomRef.child("variantsRound").update({
+active: true,
+answeringTeam: teamId,
+answeringTeamName: teamName
+});
 }
+}
+
 function toggleHostChat() {
 if (chatMode === "disabled") return;
 var chatBox = document.getElementById("host-chat-box");
@@ -1195,15 +1462,21 @@ function applyGameModeUI() {
 var onlineSec = document.getElementById("host-online-section");
 var localSec = document.getElementById("local-teams-section");
 var sub = document.getElementById("game-subtitle");
+var varSec = document.getElementById("variants-control-section");
+
 if (isInteractiveMode) {
 onlineSec.style.display = "block";
 localSec.style.display = "none";
-sub.textContent = isLotteryMode ? "🎰 Режим Треки-лотерея" : "Интерактивный режим ведущего";
+if (isVariantsMode) { sub.textContent = "🎯 Режим «Варианты»"; }
+else if (isLotteryMode) { sub.textContent = "🎰 Режим Треки-лотерея"; }
+else { sub.textContent = "Интерактивный режим ведущего"; }
 } else {
 onlineSec.style.display = "none";
 localSec.style.display = "block";
 sub.textContent = "Угадай трек наоборот";
 }
+
+if (varSec) { varSec.style.display = isVariantsMode ? "block" : "none"; }
 if (gameSessionStarted) { applyLockUI(); }
 }
 function restoreSession() {
@@ -1216,6 +1489,7 @@ else if (data.isInteractiveMode === true) { gameMode = "interactive"; }
 else { gameMode = "offline"; }
 isInteractiveMode = (gameMode !== "offline");
 isLotteryMode = (gameMode === "lottery");
+isVariantsMode = (gameMode === "variants");
 showScoreToPlayers = data.showScoreToPlayers !== false;
 showOpponentScore = data.showOpponentScore !== false;
 streamAudioToPlayers = data.streamAudioToPlayers === true;
@@ -1321,6 +1595,16 @@ awardJokerPoints(activeTeamId);
 showJokerAnimation(team.name);
 }
 }
+
+if (isVariantsMode && roomRef) {
+var isAnswerCorrect = (type === 'winner');
+roomRef.child("variantsRound").update({
+isRevealed: true,
+isCorrect: isAnswerCorrect,
+isFinal: true
+});
+}
+
 if (isInteractiveMode && roomRef) {
 roomRef.update({ status: "reveal", revealedTrack: currentTrackName || "", buzzer: { locked: true, pressedBy: null, passedBy: [] } });
 if (streamAudioToPlayers) {
@@ -1517,6 +1801,7 @@ container.appendChild(btn);
 updateNextTrackButton();
 }
 function purgeAudioBuffer(audioEl) { if (audioEl) { audioEl.pause(); audioEl.currentTime = 0; } }
+
 function playTrack(name) {
 hideBuzzerAlert();
 if (originalTimeout) { clearTimeout(originalTimeout); originalTimeout = null; }
@@ -1530,6 +1815,9 @@ var audioRevers = ensureAudioPlayer("audio-revers");
 var audioNormal = ensureAudioPlayer("audio-normal");
 purgeAudioBuffer(audioRevers); purgeAudioBuffer(audioNormal);
 audioNormal.src = ""; audioNormal.preload = "none";
+document.getElementById("revers-current-time").textContent = "00:00";
+document.getElementById("revers-duration").textContent = "00:00";
+
 currentTrackName = name;
 var track = files[name];
 currentTrackIsJoker = false;
@@ -1537,23 +1825,39 @@ if (jokerEnabled && track && track.revers) {
 currentTrackIsJoker = Math.random() < jokerChance;
 if (currentTrackIsJoker) { console.log("🃏 ДЖОКЕР активирован для трека:", name); }
 }
+
+if (isVariantsMode) {
+prepareVariantsForCurrentTrack(name);
+}
+
 if (track && track.revers) {
 audioRevers.src = track.revers; audioRevers.preload = "auto"; audioRevers.load();
 audioRevers.onended = function() { if (timerDuration > 0) startTimer(); hideTrackPopup(); };
-audioRevers.onloadedmetadata = function() {
-if (!updateReversDurationDisplay()) {
-audioRevers.ondurationchange = function() { if (updateReversDurationDisplay()) { audioRevers.ondurationchange = null; } };
+
+audioRevers.ondurationchange = function() {
+if (audioRevers.duration && !isNaN(audioRevers.duration) && isFinite(audioRevers.duration)) {
+document.getElementById("revers-duration").textContent = formatTime(audioRevers.duration);
+if (isInteractiveMode && roomRef) {
+roomRef.child("audioSync").update({ duration: audioRevers.duration });
+}
 }
 };
+
 audioRevers.onplaying = function() {
 updateReversDurationDisplay();
 if (track.normal && currentTrackName === name) {
 audioNormal.src = track.normal; audioNormal.preload = "auto"; audioNormal.load();
-audioNormal.onloadedmetadata = function() { document.getElementById("normal-duration").textContent = formatTime(audioNormal.duration); };
+audioNormal.ondurationchange = function() {
+if (audioNormal.duration && !isNaN(audioNormal.duration) && isFinite(audioNormal.duration)) {
+document.getElementById("normal-duration").textContent = formatTime(audioNormal.duration);
 }
 };
+}
+};
+
 var newTrackSessionId = "track_" + Date.now();
 var hasStartedThisTrack = false;
+
 function launchReversPlayback(dur) {
 if (hasStartedThisTrack) return;
 hasStartedThisTrack = true;
@@ -1561,7 +1865,7 @@ document.getElementById("revers-duration").textContent = formatTime(dur);
 if (isInteractiveMode && roomRef) {
 teamsData.forEach(function(t) { roomRef.child("teams/" + t.id + "/readyToPlay").set(false); });
 roomRef.update({
-status: "playing", revealedTrack: "", timerState: { active: false, value: 0 },
+status: "idle", revealedTrack: "", timerState: { active: false, value: 0 },
 buzzer: { locked: false, pressedBy: null, pressedByName: null, passedBy: [] }
 });
 roomRef.child("audioSync").set({
@@ -1573,7 +1877,15 @@ jokerEnabled: jokerEnabled
 }
 toggleRevers();
 }
+
+audioRevers.oncanplay = function() {
+audioRevers.oncanplay = null;
+var dur = (isFinite(audioRevers.duration) && audioRevers.duration > 0) ? audioRevers.duration : 0;
+launchReversPlayback(dur);
+};
+
 setTimeout(function() { if (!hasStartedThisTrack && currentTrackName === name) { launchReversPlayback(audioRevers.duration || 0); } }, 1200);
+
 var playerContainer = document.getElementById("revers-player-container");
 if (playerContainer) {
 if (currentTrackIsJoker) { playerContainer.classList.add("joker-active"); }
@@ -1582,6 +1894,7 @@ else { playerContainer.classList.remove("joker-active"); }
 }
 updateShuffleButtonState(); updateNextTrackButton(); saveState();
 }
+
 function playNextTrack() {
 var allNames = Object.keys(files).sort(function(a, b) { return (trackOrder[a] || 0) - (trackOrder[b] || 0); });
 var unplayed = allNames.filter(function(name) { return !playedTracks.has(name); });
@@ -1613,21 +1926,33 @@ if (isInteractiveMode && roomRef) { roomRef.child("audioSync").update({ playActi
 }
 updateShuffleButtonState(); updateNextTrackButton();
 }
+
 function startSynchronizedPlayback() {
 var audio = document.getElementById("audio-revers");
 var icon = document.getElementById("revers-play-icon");
-var serverStartAt = Date.now() + 250;
-if (isInteractiveMode && roomRef) {
+
 clearTeamHighlight();
-roomRef.update({ status: "playing", revealedTrack: "", timerState: { active: false, value: 0 } });
-roomRef.child("audioSync").update({ playAction: streamAudioToPlayers ? "play_revers" : "play_silent", startAt: serverStartAt, duration: audio.duration || 0, currentTime: 0, isJoker: currentTrackIsJoker, jokerEnabled: jokerEnabled });
-}
-var delayStart = Math.max(0, serverStartAt - Date.now());
-setTimeout(function() {
 audio.currentTime = 0;
-audio.play().then(function() { icon.classList.replace("fa-play", "fa-pause"); showTrackPopup(currentTrackName); updateReversProgress(); }).catch(function(err) { console.warn("Воспроизведение ведущего ожидает разрешения:", err); });
-}, delayStart);
+
+audio.play().then(function() {
+icon.classList.replace("fa-play", "fa-pause");
+showTrackPopup(currentTrackName);
+updateReversProgress();
+
+if (isInteractiveMode && roomRef) {
+roomRef.update({ status: "playing", revealedTrack: "", timerState: { active: false, value: 0 } });
+roomRef.child("audioSync").update({
+playAction: streamAudioToPlayers ? "play_revers" : "play_silent",
+startAt: Date.now() + 100,
+duration: audio.duration || 0,
+currentTime: 0,
+isJoker: currentTrackIsJoker,
+jokerEnabled: jokerEnabled
+});
 }
+}).catch(function(err) { console.warn("Воспроизведение ведущего ожидает разрешения:", err); });
+}
+
 function resumeSynchronizedPlayback() {
 var audio = document.getElementById("audio-revers");
 var icon = document.getElementById("revers-play-icon");
@@ -1708,7 +2033,6 @@ if (i) i.classList.replace("fa-play", "fa-pause");
 if (isInteractiveMode && roomRef && streamAudioToPlayers) { roomRef.child("audioSync").update({ playAction: "pause" }); }
 }
 }
-/* === ИСПРАВЛЕНИЕ: корректный тернарный оператор прогресса === */
 function updateReversProgress() {
 var a = document.getElementById("audio-revers");
 var fill = document.getElementById("revers-progress-fill");
@@ -1776,7 +2100,8 @@ roomRef.update({
 status: "game_over", revealedTrack: "",
 leaderboard: sortedTeams.map(function(t) { return { name: t.name, score: t.score }; }),
 audioSync: { trackSessionId: "", reversUrl: "", normalUrl: "", duration: 0, currentTime: 0, playAction: "stop", systemTrigger: { type: "gameOver", time: Date.now() }, startAt: 0, isJoker: false, jokerEnabled: jokerEnabled },
-lotteryState: { phase: "idle", readyTeams: {}, numberChoices: {}, selectedNumber: null, allNumbers: [] }
+lotteryState: { phase: "idle", readyTeams: {}, numberChoices: {}, selectedNumber: null, allNumbers: [] },
+variantsRound: { active: false, correctTrack: "", options: [], answeringTeam: null, answeringTeamName: "", selectedOption: null, isFinal: false, askConfirm: false, attemptsLeft: 2, isRevealed: false, isCorrect: false }
 });
 }
 localStorage.removeItem("host_room_pin");
@@ -1852,6 +2177,7 @@ var needReload = (newGameMode !== gameMode);
 gameMode = newGameMode;
 isInteractiveMode = (gameMode !== "offline");
 isLotteryMode = (gameMode === "lottery");
+isVariantsMode = (gameMode === "variants");
 timerDuration = valTimer;
 originalDelay = valDelay;
 mixMode = mode === "mixed";
