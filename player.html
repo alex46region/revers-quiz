@@ -43,6 +43,13 @@ window.location.reload(true);
 * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Rajdhani', sans-serif; -webkit-tap-highlight-color: transparent; user-select: none; }
 body { background-color: #080318; background-image: radial-gradient(ellipse at 50% 0%, rgba(157, 0, 255, 0.35) 0%, transparent 60%), radial-gradient(circle at 10% 90%, rgba(255, 0, 127, 0.25) 0%, transparent 50%), radial-gradient(circle at 90% 90%, rgba(0, 243, 255, 0.2) 0%, transparent 50%), linear-gradient(to bottom, transparent 65%, rgba(0, 243, 255, 0.08) 100%), repeating-linear-gradient(0deg, transparent, transparent 38px, rgba(255, 0, 127, 0.08) 39px, rgba(255, 0, 127, 0.08) 40px), repeating-linear-gradient(90deg, transparent, transparent 38px, rgba(0, 243, 255, 0.08) 39px, rgba(0, 243, 255, 0.08) 40px); background-size: 100% 100%, 100% 100%, 100% 100%, 32px 32px, 32px 32px; color: #fff; min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; padding: 12px 14px calc(14px + env(safe-area-inset-bottom)); overflow: hidden; position: relative; }
 body::after { content: ""; position: fixed; inset: 0; background: repeating-linear-gradient(rgba(0,0,0,0) 0px, rgba(0,0,0,0) 2px, rgba(0,0,0,0.18) 3px); pointer-events: none; z-index: 9999; }
+
+.mode-header-badge {
+text-align: center; font-family: 'Orbitron', monospace; font-size: 0.75em; font-weight: 800;
+letter-spacing: 2px; text-transform: uppercase; color: var(--neon-cyan); margin-bottom: 6px;
+text-shadow: 0 0 10px rgba(0, 243, 255, 0.5); opacity: 0.85;
+}
+
 .player-countdown-badge { position: absolute; top: 14px; left: 50%; transform: translateX(-50%) scale(0.8); font-family: 'Orbitron', monospace; font-size: 1.3em; font-weight: 900; color: var(--neon-cyan); background: rgba(8, 4, 24, 0.9); border: 2px solid var(--neon-cyan); padding: 6px 18px; border-radius: 20px; box-shadow: 0 0 25px rgba(0, 243, 255, 0.5); display: none; align-items: center; gap: 8px; z-index: 2500; pointer-events: none; transition: all 0.25s ease; }
 .player-countdown-badge.show { display: flex; transform: translateX(-50%) scale(1); }
 .player-countdown-badge.urgent { color: var(--neon-magenta); border-color: var(--neon-magenta); box-shadow: 0 0 35px rgba(255, 0, 127, 0.8); animation: pulseUrgent 0.6s infinite alternate; }
@@ -125,6 +132,140 @@ body::after { content: ""; position: fixed; inset: 0; background: repeating-line
 .pass-turn-btn:active { background: var(--neon-yellow); color: #000; }
 .hud-footer { background: var(--card-bg); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 18px; padding: 12px; text-align: center; font-size: 0.95em; font-weight: 600; color: #9d93c4; }
 .hud-footer strong { color: #fff; }
+
+/* СТИЛИ И АНИМАЦИИ ДЛЯ РЕЖИМА "ВАРИАНТЫ" */
+#variants-player-overlay {
+position: fixed; inset: 0; background: rgba(8, 3, 24, 0.94);
+backdrop-filter: blur(16px); z-index: 5500; display: none;
+flex-direction: column; align-items: center; justify-content: center;
+padding: 16px; animation: modalEnter 0.35s ease;
+}
+.variants-player-container {
+width: 100%; max-width: 420px; display: flex; flex-direction: column; gap: 14px;
+text-align: center;
+}
+.variants-player-header {
+font-family: 'Orbitron', sans-serif; font-size: 1.3em; font-weight: 900;
+color: var(--neon-cyan); text-transform: uppercase; letter-spacing: 2px;
+text-shadow: 0 0 20px rgba(0, 243, 255, 0.6);
+}
+.variants-turn-status {
+font-size: 0.95em; font-weight: 700; color: var(--neon-yellow);
+margin-bottom: 6px;
+}
+.variant-btn-player {
+width: 100%; padding: 16px 14px;
+background: rgba(16, 10, 38, 0.85); border: 2px solid var(--border-neon);
+border-radius: 16px; color: #fff; font-family: 'Rajdhani', sans-serif;
+font-size: 1.15em; font-weight: 700; cursor: pointer;
+transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+box-shadow: 0 4px 15px rgba(0,0,0,0.5); word-break: break-word;
+}
+.variant-btn-player:active:not(:disabled) { transform: scale(0.97); }
+.variant-btn-player.selected {
+border-color: var(--neon-green);
+background: linear-gradient(135deg, rgba(0, 255, 102, 0.35) 0%, rgba(0, 243, 255, 0.2) 100%);
+box-shadow: 0 0 30px rgba(0, 255, 102, 0.8), inset 0 0 15px rgba(0, 255, 102, 0.5);
+animation: variantGreenGlow 1.2s infinite alternate;
+color: #fff;
+}
+@keyframes variantGreenGlow {
+0% { box-shadow: 0 0 20px rgba(0, 255, 102, 0.6); transform: scale(0.99); }
+100% { box-shadow: 0 0 40px rgba(0, 255, 102, 1), 0 0 60px rgba(0, 243, 255, 0.5); transform: scale(1.02); }
+}
+.variant-btn-player.locked {
+border-color: var(--neon-green); background: var(--neon-green);
+color: #000; font-weight: 900; animation: none;
+box-shadow: 0 0 35px var(--neon-green);
+}
+.variant-btn-player.spectator {
+opacity: 0.65; cursor: not-allowed; border-color: rgba(255, 255, 255, 0.15);
+}
+.variant-btn-player.revealed-correct {
+border-color: var(--neon-green) !important; background: var(--neon-green) !important;
+color: #000 !important; font-weight: 900 !important;
+box-shadow: 0 0 45px var(--neon-green) !important;
+animation: pulseTurn 0.6s infinite alternate !important;
+}
+.variant-btn-player.revealed-wrong {
+border-color: var(--neon-magenta) !important; background: rgba(255, 0, 127, 0.35) !important;
+color: #fff !important; text-decoration: line-through; opacity: 0.65;
+}
+
+/* ОВЕРЛЕИ АНИМАЦИИ ПУНКТА 11 (ПОБЕДА / ПОРАЖЕНИЕ) */
+#variant-result-overlay {
+position: fixed; inset: 0; z-index: 7000; display: none;
+flex-direction: column; align-items: center; justify-content: center;
+backdrop-filter: blur(14px); text-align: center; padding: 20px;
+}
+#variant-result-overlay.correct-win {
+display: flex; background: rgba(8, 28, 16, 0.95);
+animation: resultWinAppear 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+#variant-result-overlay.wrong-loss {
+display: flex; background: rgba(30, 6, 20, 0.95);
+animation: resultLossAppear 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+@keyframes resultWinAppear {
+0% { opacity: 0; transform: scale(0.6); }
+100% { opacity: 1; transform: scale(1); }
+}
+@keyframes resultLossAppear {
+0% { opacity: 0; transform: scale(1.3); }
+25% { transform: rotate(-6deg); }
+50% { transform: rotate(6deg); }
+75% { transform: rotate(-3deg); }
+100% { opacity: 1; transform: scale(1) rotate(0deg); }
+}
+.result-banner-icon { font-size: clamp(4.5em, 16vw, 7em); margin-bottom: 10px; }
+.result-banner-title {
+font-family: 'Orbitron', sans-serif; font-size: clamp(2em, 8vw, 3.2em);
+font-weight: 900; letter-spacing: 2px; text-transform: uppercase;
+}
+.result-banner-title.win {
+color: var(--neon-green); text-shadow: 0 0 35px var(--neon-green), 0 0 70px var(--neon-cyan);
+}
+.result-banner-title.loss {
+color: var(--neon-magenta); text-shadow: 0 0 35px var(--neon-magenta);
+}
+.result-banner-sub {
+font-family: 'Rajdhani', sans-serif; font-size: 1.2em; font-weight: 700;
+color: #fff; margin-top: 8px; max-width: 90vw;
+}
+
+#confirm-choice-modal {
+position: fixed; inset: 0; background: rgba(0, 0, 0, 0.88);
+backdrop-filter: blur(10px); z-index: 6000; display: none;
+align-items: center; justify-content: center; padding: 16px;
+}
+.confirm-choice-card {
+background: #140b2e; border: 2.5px solid var(--neon-yellow);
+border-radius: 24px; padding: 26px 20px; width: 100%; max-width: 330px;
+text-align: center; box-shadow: 0 0 45px rgba(255, 230, 0, 0.5);
+animation: modalEnter 0.25s ease;
+}
+.confirm-choice-title {
+font-family: 'Orbitron', sans-serif; font-size: 1.35em; font-weight: 900;
+color: var(--neon-yellow); margin-bottom: 8px; letter-spacing: 1px;
+}
+.confirm-choice-sub {
+font-size: 0.95em; color: #b7aedb; font-weight: 600; margin-bottom: 20px;
+}
+.confirm-btn-row { display: flex; gap: 12px; }
+.confirm-btn {
+flex: 1; padding: 15px; border-radius: 14px; font-family: 'Orbitron', sans-serif;
+font-size: 15px; font-weight: 900; border: none; cursor: pointer;
+text-transform: uppercase;
+}
+.confirm-btn.yes {
+background: linear-gradient(135deg, var(--neon-green), #00bb55); color: #000;
+box-shadow: 0 0 25px rgba(0, 255, 102, 0.5);
+}
+.confirm-btn.no {
+background: linear-gradient(135deg, var(--neon-magenta), #b8005b); color: #fff;
+box-shadow: 0 0 25px rgba(255, 0, 127, 0.5);
+}
+
 #game-over-view { display: none; flex-direction: column; margin: auto; width: 100%; max-width: 400px; background: var(--card-bg); backdrop-filter: blur(28px); border: 2px solid var(--neon-yellow); box-shadow: 0 0 60px rgba(255, 230, 0, 0.3); border-radius: 30px; padding: 30px 22px; text-align: center; animation: modalEnter 0.4s ease; }
 .trophy-icon { font-size: 3.2em; color: var(--neon-yellow); filter: drop-shadow(0 0 20px var(--neon-yellow)); margin-bottom: 12px; }
 .game-over-title { font-family: 'Orbitron', sans-serif; font-size: 1.9em; font-weight: 900; letter-spacing: 1px; margin-bottom: 4px; }
@@ -155,7 +296,8 @@ body::after { content: ""; position: fixed; inset: 0; background: repeating-line
 .player-chat-input-bar input { flex: 1; min-width: 0; padding: 12px 16px; border-radius: 14px; background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(0, 243, 255, 0.25); color: #fff; font-size: 16px; outline: none; }
 .player-chat-input-bar input:focus { border-color: var(--neon-cyan); }
 .player-chat-input-bar button.btn-send-player { background: linear-gradient(135deg, var(--neon-cyan), #0077ff); color: #050212; border: none; width: 44px; height: 44px; border-radius: 14px; font-size: 15px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 0 15px rgba(0, 243, 255, 0.4); }
-/* === ЭКРАНЫ ЛОТЕРЕИ === */
+
+/* ЭКРАНЫ ЛОТЕРЕИ */
 .lottery-screen { display: none; flex-direction: column; flex: 1; max-width: 480px; width: 100%; margin: 0 auto; justify-content: center; align-items: center; gap: 20px; padding: 20px 10px; }
 .lottery-screen.active { display: flex; }
 .lottery-title { font-family: 'Orbitron', sans-serif; font-size: clamp(1.3em, 5vw, 1.8em); font-weight: 900; text-align: center; text-transform: uppercase; letter-spacing: 2px; color: var(--neon-cyan); text-shadow: 0 0 20px rgba(0, 243, 255, 0.6); }
@@ -178,7 +320,8 @@ body::after { content: ""; position: fixed; inset: 0; background: repeating-line
 .lottery-vortex-number.final-selected { width: 120px; height: 120px; font-size: 2.5em; background: linear-gradient(135deg, var(--neon-yellow), var(--neon-pink)); box-shadow: 0 0 50px rgba(255, 234, 0, 0.9), 0 0 100px rgba(255, 0, 85, 0.5); animation: selectedPulse 0.8s infinite alternate; z-index: 10; left: 50% !important; top: 50% !important; transform: translate(-50%, -50%); }
 .lottery-result-display { font-family: 'Orbitron', sans-serif; font-size: clamp(2.5em, 10vw, 4em); font-weight: 900; color: var(--neon-yellow); text-shadow: 0 0 30px rgba(255, 234, 0, 0.8); text-align: center; animation: resultAppear 0.6s ease backwards; }
 @keyframes resultAppear { from { opacity: 0; transform: scale(0.3); } to { opacity: 1; transform: scale(1); } }
-/* === АНИМАЦИЯ ДЖОКЕРА === */
+
+/* АНИМАЦИЯ ДЖОКЕРА */
 #joker-overlay { position: fixed; inset: 0; background: rgba(5, 6, 10, 0.95); backdrop-filter: blur(15px); z-index: 9000; display: none; align-items: center; justify-content: center; flex-direction: column; gap: 20px; }
 #joker-overlay.active { display: flex; animation: jokerFadeIn 0.4s ease; }
 @keyframes jokerFadeIn { from { opacity: 0; } to { opacity: 1; } }
@@ -199,6 +342,7 @@ body::after { content: ""; position: fixed; inset: 0; background: repeating-line
 <audio id="player-sound-lost" preload="auto" playsinline style="display:none;"></audio>
 <audio id="player-sound-ring" preload="auto" playsinline style="display:none;"></audio>
 <audio id="player-sound-game-over" preload="auto" playsinline style="display:none;"></audio>
+
 <div class="player-countdown-badge" id="player-timer-badge">
 <i class="fas fa-stopwatch"></i>
 <span id="player-timer-badge-num">10</span>
@@ -212,6 +356,38 @@ body::after { content: ""; position: fixed; inset: 0; background: repeating-line
 <div class="joker-title">Секретный джокер!</div>
 <div class="joker-multiplier">×3 ОЧКА</div>
 </div>
+
+<!-- ОВЕРЛЕЙ РЕЗУЛЬТАТА РАУНДА "ВАРИАНТЫ" (ПУНКТ 11 ТЗ) -->
+<div id="variant-result-overlay">
+<div class="result-banner-icon" id="result-banner-icon">🎉</div>
+<div class="result-banner-title" id="result-banner-title">ВЕРНО!</div>
+<div class="result-banner-sub" id="result-banner-sub">Вы угадали трек!</div>
+</div>
+
+<!-- ОВЕРЛЕЙ РЕЖИМА "ВАРИАНТЫ" -->
+<div id="variants-player-overlay">
+<div class="variants-player-container">
+<div class="variants-player-header">🎯 ВЫБЕРИТЕ ВАРИАНТ</div>
+<div class="variants-turn-status" id="variants-turn-status">Ожидание...</div>
+<div id="variants-buttons-grid" style="display:grid; grid-template-columns:1fr; gap:12px;"></div>
+<button class="pass-turn-btn" id="variants-pass-turn-btn" onclick="passTurn()" style="display:none; margin:10px auto 0;">
+<i class="fas fa-forward"></i> Пас / Пропустить ход
+</button>
+</div>
+</div>
+
+<!-- МОДАЛЬНОЕ ОКНО "ВЫ УВЕРЕНЫ?" -->
+<div id="confirm-choice-modal">
+<div class="confirm-choice-card">
+<div class="confirm-choice-title">ВЫ УВЕРЕНЫ?</div>
+<div class="confirm-choice-sub">Зафиксировать выбранный вариант окончательно?</div>
+<div class="confirm-btn-row">
+<button class="confirm-btn yes" onclick="submitChoiceConfirmation(true)">ДА</button>
+<button class="confirm-btn no" onclick="submitChoiceConfirmation(false)">НЕТ</button>
+</div>
+</div>
+</div>
+
 <!-- ЭКРАНЫ ЛОТЕРЕИ -->
 <div class="lottery-screen" id="lottery-screen-idle">
 <div class="lottery-title">🎰 Треки-лотерея</div>
@@ -248,6 +424,7 @@ body::after { content: ""; position: fixed; inset: 0; background: repeating-line
 <div class="lottery-result-display" id="lottery-result-display">№—</div>
 <div class="lottery-subtitle">Сейчас начнётся игра...</div>
 </div>
+
 <div class="login-wrap" id="login-view">
 <div class="brand-icon"><i class="fas fa-bolt"></i></div>
 <h2>REVERS QUIZ</h2>
@@ -257,7 +434,9 @@ body::after { content: ""; position: fixed; inset: 0; background: repeating-line
 <button class="btn-join" onclick="joinGame()">Войти в игру</button>
 <div class="error-banner" id="login-error"></div>
 </div>
+
 <div id="game-view">
+<div id="mode-header-badge" class="mode-header-badge" style="display:none;"></div>
 <div class="top-action-bar">
 <div class="scoreboard-arena" id="scoreboard-wrap"></div>
 <button class="player-chat-trigger-btn" id="player-chat-toggle-btn" onclick="togglePlayerChat()" title="Открыть чат"><i class="fas fa-comments"></i><span class="player-chat-unread-badge" id="player-chat-unread">0</span></button>
@@ -286,6 +465,7 @@ body::after { content: ""; position: fixed; inset: 0; background: repeating-line
 </div>
 <div class="hud-footer" id="hud-footer">Ожидаем запуск раунда ведущим...</div>
 </div>
+
 <div id="game-over-view">
 <div class="trophy-icon"><i class="fas fa-trophy"></i></div>
 <div class="game-over-title">Итоги игры</div>
@@ -293,6 +473,7 @@ body::after { content: ""; position: fixed; inset: 0; background: repeating-line
 <div class="final-leaderboard" id="final-leaderboard-list"></div>
 <div class="countdown-box">Возврат к вводу PIN через: <span id="reset-seconds">10</span> сек.</div>
 </div>
+
 <div id="player-chat-modal">
 <div class="player-chat-card">
 <div class="player-chat-head">
@@ -308,6 +489,7 @@ body::after { content: ""; position: fixed; inset: 0; background: repeating-line
 </div>
 </div>
 </div>
+
 <script>
 var firebaseConfig = {
 apiKey: "AIzaSyC9sh7uazv-WbudsO7TYap4-wENjkLD3K4",
@@ -343,6 +525,7 @@ var unreadChatCount = 0;
 var lastSeenScoreTimestamp = 0;
 var lastHandledSystemSoundTime = 0;
 var wakeLockObj = null;
+
 /* ЛОТЕРЕЯ */
 var isLotteryMode = false;
 var lotteryPhase = "idle";
@@ -350,8 +533,15 @@ var lotteryAllNumbers = [];
 var lotteryMyChoice = null;
 var lotterySelectedNumber = null;
 var vortexAnimationInterval = null;
+
+/* РЕЖИМ ВАРИАНТЫ */
+var isVariantsMode = false;
+var variantsData = null;
+var hasShownRevealAnimation = false;
+
 /* ДЖОКЕР */
 var currentTrackShowStar = null;
+
 async function enableScreenWakeLock() {
 try {
 if ('wakeLock' in navigator) {
@@ -394,7 +584,7 @@ gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
 osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.35);
 } catch(e) {}
 }
-var POPULAR_EMOJIS = ["👍","👏","🔥","🎉","😂","😎","","🤔","😮","🎵","🎶","🎤","🎧","🏆","⭐","💯","❤️","👋","","🚀","💃"];
+var POPULAR_EMOJIS = ["👍","👏","🔥","🎉","😂","😎","🤩","🤔","😮","🎵","🎶","🎤","🎧","🏆","⭐","💯","❤️","👋","🤐","🚀","💃"];
 function initEmojiPicker(containerId, inputId) {
 var container = document.getElementById(containerId);
 if (!container) return;
@@ -479,6 +669,21 @@ roomRef.once("value").then(function(snapshot) {
 if (!snapshot.exists()) { showError("❌ Комната с PIN " + pin + " не найдена. Проверьте код у ведущего!"); return; }
 var currentData = snapshot.val();
 isLotteryMode = (currentData.gameMode === "lottery");
+isVariantsMode = (currentData.gameMode === "variants");
+
+var modeBadge = document.getElementById("mode-header-badge");
+if (modeBadge) {
+if (isVariantsMode) {
+modeBadge.textContent = "🎯 Режим «Варианты»";
+modeBadge.style.display = "block";
+} else if (isLotteryMode) {
+modeBadge.textContent = "🎰 Режим «Треки-лотерея»";
+modeBadge.style.display = "block";
+} else {
+modeBadge.style.display = "none";
+}
+}
+
 if (currentData && currentData.audioSync && currentData.audioSync.trackSessionId) {
 joinedTrackSessionId = currentData.audioSync.trackSessionId;
 hasWaitedForNewTrack = false;
@@ -521,6 +726,7 @@ listenToGameState();
 listenToAudioStream();
 listenToPlayerChat();
 if (isLotteryMode) { listenToLotteryState(); }
+if (isVariantsMode) { listenToVariantsState(); }
 }).catch(function(e) { showError("Ошибка подключения: " + e.message); });
 }
 window.addEventListener("DOMContentLoaded", function() {
@@ -595,11 +801,19 @@ if (sync.trackSessionId && sync.trackSessionId !== joinedTrackSessionId) {
 joinedTrackSessionId = sync.trackSessionId;
 currentTrackDuration = 0;
 currentTrackShowStar = null;
+hasShownRevealAnimation = false;
 updateProgressDisplay(0, 0);
 hasWaitedForNewTrack = true;
 updateJokerVisuals(false);
+
+var vOverlay = document.getElementById("variants-player-overlay");
+if (vOverlay) vOverlay.style.display = "none";
+var cModal = document.getElementById("confirm-choice-modal");
+if (cModal) cModal.style.display = "none";
+var rOverlay = document.getElementById("variant-result-overlay");
+if (rOverlay) { rOverlay.className = ""; rOverlay.style.display = "none"; }
 }
-/* Звезда: решение ОДИН раз на трек; только если джокер включён у ведущего */
+
 if (typeof sync.isJoker !== 'undefined' && currentTrackShowStar === null) {
 var jokerOn = (sync.jokerEnabled === true);
 if (!jokerOn) {
@@ -680,7 +894,153 @@ updateJokerVisuals(false);
 }
 });
 }
-/* === ЛОТЕРЕЯ === */
+
+/* === ЛОГИКА РЕЖИМА "ВАРИАНТЫ" (КЛИЕНТ) === */
+function listenToVariantsState() {
+var vRef = db.ref("rooms/" + currentRoom + "/variantsRound");
+vRef.on("value", function(snapshot) {
+var vr = snapshot.val();
+variantsData = vr;
+var overlay = document.getElementById("variants-player-overlay");
+var confirmModal = document.getElementById("confirm-choice-modal");
+
+if (!vr || !vr.active) {
+if (overlay) overlay.style.display = "none";
+if (confirmModal) confirmModal.style.display = "none";
+return;
+}
+
+overlay.style.display = "flex";
+var isMyTurn = (vr.answeringTeam === myTeamId);
+var statusTitle = document.getElementById("variants-turn-status");
+var passBtn = document.getElementById("variants-pass-turn-btn");
+
+if (isMyTurn) {
+statusTitle.textContent = "👉 ВАШ ХОД! Выберите вариант ответа:";
+statusTitle.style.color = "var(--neon-lime)";
+if (passBtn) passBtn.style.display = (!vr.isFinal && !vr.isRevealed) ? "block" : "none";
+} else {
+statusTitle.textContent = "👀 Отвечает: " + (vr.answeringTeamName || "Соперник") + " (Вы зритель)";
+statusTitle.style.color = "var(--neon-yellow)";
+if (passBtn) passBtn.style.display = "none";
+}
+
+if (isMyTurn && vr.askConfirm && !vr.isFinal && !vr.isRevealed) {
+confirmModal.style.display = "flex";
+} else {
+confirmModal.style.display = "none";
+}
+
+renderPlayerVariantsGrid(vr.options || [], vr.selectedOption, isMyTurn, vr.isFinal, vr.attemptsLeft || 2, vr.isRevealed, vr.correctTrack);
+
+// АНИМАЦИЯ ПУНКТА 11: Раскрытие правильного/неправильного ответа
+if (vr.isRevealed && !hasShownRevealAnimation) {
+hasShownRevealAnimation = true;
+triggerVariantRoundAnimation(isMyTurn, vr.isCorrect, vr.correctTrack);
+}
+});
+}
+
+function renderPlayerVariantsGrid(options, selectedOption, isMyTurn, isFinal, attemptsLeft, isRevealed, correctTrack) {
+var grid = document.getElementById("variants-buttons-grid");
+if (!grid) return;
+grid.innerHTML = "";
+
+options.forEach(function(opt) {
+var btn = document.createElement("button");
+btn.className = "variant-btn-player";
+btn.textContent = opt;
+
+var isSelected = (selectedOption && opt.toLowerCase() === selectedOption.toLowerCase());
+if (isSelected) {
+btn.className += isFinal ? " locked" : " selected";
+}
+
+if (isRevealed) {
+btn.disabled = true;
+if (correctTrack && opt.toLowerCase() === correctTrack.toLowerCase()) {
+btn.className += " revealed-correct";
+btn.innerHTML = "✅ " + opt;
+} else if (isSelected) {
+btn.className += " revealed-wrong";
+btn.innerHTML = "❌ " + opt;
+}
+} else if (!isMyTurn || isFinal || attemptsLeft <= 0) {
+btn.disabled = true;
+if (!isMyTurn) btn.className += " spectator";
+} else {
+btn.onclick = function() {
+handleVariantChoiceClick(opt, attemptsLeft);
+};
+}
+
+grid.appendChild(btn);
+});
+}
+
+function handleVariantChoiceClick(option, attemptsLeft) {
+if (!currentRoom || !myTeamId) return;
+if (navigator.vibrate) navigator.vibrate([35]);
+
+var newAttempts = attemptsLeft - 1;
+var willLock = (newAttempts <= 0);
+
+db.ref("rooms/" + currentRoom + "/variantsRound").update({
+selectedOption: option,
+attemptsLeft: newAttempts,
+isFinal: willLock,
+askConfirm: false
+});
+}
+
+function submitChoiceConfirmation(isConfirmed) {
+var modal = document.getElementById("confirm-choice-modal");
+if (modal) modal.style.display = "none";
+if (!currentRoom) return;
+
+if (isConfirmed) {
+db.ref("rooms/" + currentRoom + "/variantsRound").update({
+isFinal: true,
+askConfirm: false
+});
+} else {
+db.ref("rooms/" + currentRoom + "/variantsRound").update({
+askConfirm: false,
+attemptsLeft: 1
+});
+}
+}
+
+function triggerVariantRoundAnimation(isMyTurn, isCorrect, correctTrack) {
+var resOverlay = document.getElementById("variant-result-overlay");
+var icon = document.getElementById("result-banner-icon");
+var title = document.getElementById("result-banner-title");
+var sub = document.getElementById("result-banner-sub");
+if (!resOverlay) return;
+
+if (isCorrect) {
+resOverlay.className = "correct-win";
+icon.textContent = "🏆";
+title.className = "result-banner-title win";
+title.textContent = isMyTurn ? "В ТОЧКУ! ПОБЕДА!" : "КОМАНДА УГАДАЛА!";
+sub.textContent = "Правильный трек: " + correctTrack;
+if (isMyTurn && navigator.vibrate) navigator.vibrate([100, 50, 150, 50, 250]);
+} else {
+resOverlay.className = "wrong-loss";
+icon.textContent = "💥";
+title.className = "result-banner-title loss";
+title.textContent = isMyTurn ? "МИМО! НЕВЕРНО!" : "ОШИБКА КОМАНДЫ!";
+sub.textContent = "Правильный ответ был: " + correctTrack;
+if (isMyTurn && navigator.vibrate) navigator.vibrate([250, 80, 250]);
+}
+
+setTimeout(function() {
+resOverlay.className = "";
+resOverlay.style.display = "none";
+}, 3600);
+}
+
+/* === ЛОГИКА ЛОТЕРЕИ === */
 function listenToLotteryState() {
 var lotteryRef = db.ref("rooms/" + currentRoom + "/lotteryState");
 lotteryRef.on("value", function(snapshot) {
@@ -821,6 +1181,7 @@ item.el.style.top = y + "px";
 });
 }, 30);
 }
+
 function listenToGameState() {
 var roomRef = db.ref("rooms/" + currentRoom);
 roomRef.on("value", function(snapshot) {
@@ -858,8 +1219,9 @@ var aN = document.getElementById("player-audio-normal");
 if (aR && !aR.paused) aR.pause();
 if (aN && !aN.paused) aN.pause();
 }
-/* ЛОТЕРЕЯ: не трогаем игровой экран, пока лотерея не в фазе playing */
+
 if (isLotteryMode && lotteryPhase !== "playing") { return; }
+
 var buzzerBtn = document.getElementById("buzzer-btn");
 var passBtn = document.getElementById("pass-btn");
 var hudFooter = document.getElementById("hud-footer");
@@ -933,11 +1295,21 @@ hudFooter.innerHTML = "Слушай внимательно и нажимай б�
 if (buzzer.pressedBy === myTeamId) {
 buzzerBtn.disabled = true; buzzerBtn.className = "buzzer-3d-btn winner-turn";
 buzzerBtn.innerHTML = '<i class="fas fa-microphone"></i><span>ОТВЕТ!</span>';
+
+if (!isVariantsMode) {
 passBtn.style.display = "inline-flex";
-if (roomChatMode !== "disabled") {
+} else {
+passBtn.style.display = "none";
+}
+
+if (isVariantsMode) {
+hudFooter.innerHTML = "🎯 <strong style='color:var(--neon-green)'>Вы нажали первым! Выберите вариант на экране:</strong>";
+} else if (roomChatMode !== "disabled") {
 hudFooter.innerHTML = "🏆 <strong style='color:var(--neon-cyan)'>Вы успели первым! Напишите ответ в чат:</strong>";
 if (!isChatOpen) { openPlayerChat(); }
-} else { hudFooter.innerHTML = "🏆 <strong style='color:var(--neon-cyan)'>Вы успели первым! Называйте трек ведущему!</strong>"; }
+} else {
+hudFooter.innerHTML = "🏆 <strong style='color:var(--neon-cyan)'>Вы успели первым! Называйте трек ведущему!</strong>";
+}
 } else {
 passBtn.style.display = "none";
 buzzerBtn.disabled = true; buzzerBtn.className = "buzzer-3d-btn";
@@ -953,6 +1325,10 @@ buzzerBtn.innerHTML = '<i class="fas fa-music"></i><span>ОТВЕТ</span>';
 roundStatusPill.className = "status-pill";
 roundStatusPill.innerHTML = '<i class="fas fa-check-circle"></i> <span>Раунд завершён</span>';
 hudFooter.innerHTML = "Звучит оригинальная версия трека.";
+
+var cModal = document.getElementById("confirm-choice-modal");
+if (cModal) cModal.style.display = "none";
+
 if (data.revealedTrack) { trackTitleText.textContent = data.revealedTrack; trackBox.classList.add("active-reveal"); }
 } else {
 passBtn.style.display = "none";
@@ -1039,6 +1415,11 @@ if (aNormal) { aNormal.pause(); aNormal.currentTime = 0; aNormal.removeAttribute
 stopSyntheticTimer();
 closePlayerChat();
 hideAllLotteryScreens();
+var vOverlay = document.getElementById("variants-player-overlay");
+if (vOverlay) vOverlay.style.display = "none";
+var rOverlay = document.getElementById("variant-result-overlay");
+if (rOverlay) { rOverlay.className = ""; rOverlay.style.display = "none"; }
+
 localStorage.removeItem("rq_saved_pin");
 localStorage.removeItem("rq_saved_team_id");
 localStorage.removeItem("rq_saved_team_name");
@@ -1069,6 +1450,7 @@ if (secSpan) secSpan.textContent = timeLeft;
 if (timeLeft <= 0) { clearInterval(gameOverTimer); gameOverTimer = null; window.location.reload(); }
 }, 1000);
 }
+
 function pressBuzzer() {
 if (!currentRoom || !myTeamId) return;
 if (navigator.vibrate) navigator.vibrate([40]);
@@ -1080,11 +1462,21 @@ var passed = buzzer.passedBy || [];
 if (passed.indexOf(myTeamId) !== -1) return;
 return { locked: true, pressedBy: myTeamId, pressedByName: myTeamName, passedBy: passed, time: Date.now() };
 }, function(error, committed) {
-if (committed && roomChatMode !== "disabled") {
+if (committed) {
+if (roomChatMode !== "disabled") {
 db.ref("rooms/" + currentRoom + "/chat").push({ author: "Система", text: "⚡ " + myTeamName + " жмёт кнопку и отвечает!", isSystem: true, time: Date.now() });
+}
+if (isVariantsMode) {
+db.ref("rooms/" + currentRoom + "/variantsRound").update({
+active: true,
+answeringTeam: myTeamId,
+answeringTeamName: myTeamName
+});
+}
 }
 });
 }
+
 function passTurn() {
 if (!currentRoom || !myTeamId) return;
 if (navigator.vibrate) navigator.vibrate([20, 30, 20]);
@@ -1095,8 +1487,23 @@ var passed = buzzer.passedBy || [];
 if (passed.indexOf(myTeamId) === -1) { passed.push(myTeamId); }
 return { locked: false, pressedBy: null, pressedByName: null, passedBy: passed, time: Date.now() };
 }, function(error, committed) {
-if (committed && roomChatMode !== "disabled") {
+if (committed) {
+if (roomChatMode !== "disabled") {
 db.ref("rooms/" + currentRoom + "/chat").push({ author: "Система", text: "⏩ " + myTeamName + " пасует ход!", isSystem: true, time: Date.now() });
+}
+if (isVariantsMode) {
+db.ref("rooms/" + currentRoom + "/variantsRound").update({
+active: false,
+answeringTeam: null,
+answeringTeamName: "",
+selectedOption: null,
+isFinal: false,
+askConfirm: false,
+attemptsLeft: 2
+});
+var overlay = document.getElementById("variants-player-overlay");
+if (overlay) overlay.style.display = "none";
+}
 }
 });
 }
