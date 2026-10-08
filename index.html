@@ -299,7 +299,7 @@ button:active { transform: scale(0.98); }
 <div class="section" id="lottery-control-section">
 <h2 class="section-title"><i class="fas fa-dice"></i> Треки-лотерея</h2>
 <div id="lottery-phase-ready" class="lottery-panel">
-<div class="lottery-panel-title"><i class="fas fa-clipboard-check"></i> Этап 1: Опрос готовности</div>
+<div class="lottery-phase-ready-title"><i class="fas fa-clipboard-check"></i> Этап 1: Опрос готовности</div>
 <button class="lottery-btn ready-check" onclick="startLotteryReadyCheck()"><i class="fas fa-bullhorn"></i> Опросить готовность команд</button>
 <div class="lottery-teams-status" id="lottery-ready-status"></div>
 </div>
@@ -583,6 +583,9 @@ var variantsState = { active: false, correctTrack: "", options: [], answeringTea
 var currentTrackIsJoker = false;
 var gameSessionStarted = false;
 
+// LAST.FM API CONFIGURATION
+var LASTFM_API_KEY = "260c156d8fa38243bd33e6ebcf81a901";
+
 function ensureAudioPlayer(id) {
 var a = document.getElementById(id);
 if (!a) { a = document.createElement("audio"); a.id = id; a.style.display = "none"; a.setAttribute("playsinline", "true"); document.body.appendChild(a); }
@@ -757,35 +760,7 @@ updateVariantsHostUI();
 });
 }
 
-/* === ПОДБОР ВАРИАНТОВ ЧЕРЕЗ ITUNES С РАЗНЫМИ ИСПОЛНИТЕЛЯМИ === */
-function fetchItunesJsonp(term, country, limit) {
-return new Promise(function(resolve) {
-var callbackName = 'itunes_cb_' + Math.floor(Math.random() * 1000000);
-var script = document.createElement('script');
-var timeout = setTimeout(function() {
-delete window[callbackName];
-if (script.parentNode) script.parentNode.removeChild(script);
-resolve(null);
-}, 3000);
-
-window[callbackName] = function(data) {
-clearTimeout(timeout);
-delete window[callbackName];
-if (script.parentNode) script.parentNode.removeChild(script);
-resolve(data);
-};
-
-script.src = "https://itunes.apple.com/search?term=" + encodeURIComponent(term) + "&media=music&entity=song&limit=" + (limit || 30) + "&country=" + (country || 'RU') + "&callback=" + callbackName;
-script.onerror = function() {
-clearTimeout(timeout);
-delete window[callbackName];
-if (script.parentNode) script.parentNode.removeChild(script);
-resolve(null);
-};
-document.body.appendChild(script);
-});
-}
-
+/* === ПОДБОР ВАРИАНТОВ ЧЕРЕЗ LAST.FM API (РАЗНЫЕ АРТИСТЫ) === */
 function cleanSongTitle(str) {
 if (!str) return "";
 return str.replace(/\s*[\(\[](remix|feat|ft|radio|edit|cover|version|mix|dj|prod).*?[\)\]]/gi, '').trim();
@@ -798,59 +773,80 @@ if (trackTitle.indexOf(" — ") !== -1) return trackTitle.split(" — ")[0].trim
 return "";
 }
 
+async function fetchLastFmSimilar(artist) {
+try {
+var url = "https://ws.audioscrobbler.com/2.0/?method=artist.getsimilar&artist=" + encodeURIComponent(artist) + "&api_key=" + LASTFM_API_KEY + "&format=json&limit=20";
+var res = await fetch(url);
+if (!res.ok) return [];
+var data = await res.json();
+if (data && data.similarartists && Array.isArray(data.similarartists.artist)) {
+return data.similarartists.artist.map(function(a) { return a.name; });
+}
+} catch(e) {
+console.warn("Last.fm getsimilar error:", e);
+}
+return [];
+}
+
+async function fetchLastFmTopTrack(artist) {
+try {
+var url = "https://ws.audioscrobbler.com/2.0/?method=artist.gettoptracks&artist=" + encodeURIComponent(artist) + "&api_key=" + LASTFM_API_KEY + "&format=json&limit=5";
+var res = await fetch(url);
+if (!res.ok) return null;
+var data = await res.json();
+if (data && data.toptracks && Array.isArray(data.toptracks.track) && data.toptracks.track.length > 0) {
+var randomTrack = data.toptracks.track[Math.floor(Math.random() * Math.min(3, data.toptracks.track.length))];
+return cleanSongTitle(randomTrack.name);
+}
+} catch(e) {
+console.warn("Last.fm gettoptracks error:", e);
+}
+return null;
+}
+
 async function fetchTrackVariants(trackName) {
-// 1. Правильный ответ берётся СТРОГО из самой игры в оригинальном виде
+// 1. Правильный ответ СТРОГО из самой игры без изменений
 var correctTitle = trackName.trim();
-var originalArtist = extractArtistName(correctTitle).toLowerCase();
+var originalArtist = extractArtistName(correctTitle);
 
 var isRussianTrack = /[а-яА-ЯёЁ]/.test(correctTitle) || (selectedFolder && selectedFolder.indexOf("Русские") !== -1);
-var countryCode = isRussianTrack ? 'RU' : 'US';
-
-// Список жанровых и тематических запросов для поиска ДРУГИХ исполнителей в том же стиле
-var russianQueries = ["Хиты 90-х", "Русский поп", "Русский рок", "Дискотека 2000", "Золотой граммофон", "Суперхит"];
-var foreignQueries = ["Pop Hits", "Rock Classics", "Dance Hits", "Billboard Top", "90s Pop", "2000s Hits"];
-
-var searchKeywords = isRussianTrack ? russianQueries : foreignQueries;
-searchKeywords.sort(function() { return Math.random() - 0.5; });
-var chosenQuery = searchKeywords[0];
 
 var distractors = [];
 var usedArtists = new Set();
-if (originalArtist) usedArtists.add(originalArtist);
+if (originalArtist) usedArtists.add(originalArtist.toLowerCase());
 
-try {
-var itunesRes = await fetchItunesJsonp(chosenQuery, countryCode, 40);
-if (itunesRes && itunesRes.results && itunesRes.results.length > 0) {
-var candidates = itunesRes.results.sort(function() { return Math.random() - 0.5; });
+// 2. Запрос похожих исполнителей в Last.fm
+if (originalArtist) {
+var similarArtists = await fetchLastFmSimilar(originalArtist);
 
-for (var i = 0; i < candidates.length; i++) {
-if (distractors.length >= 3) break;
-var item = candidates[i];
-var art = (item.artistName || "").trim();
-var trk = cleanSongTitle(item.trackName || "").trim();
-if (!art || !trk) continue;
-
-var candidateTitle = art + " — " + trk;
+// Фильтруем похожих артистов по языку и уникальности
+similarArtists = similarArtists.filter(function(art) {
+if (!art) return false;
 var artLower = art.toLowerCase();
+if (usedArtists.has(artLower)) return false;
+var hasCyr = /[а-яА-ЯёЁ]/.test(art);
+if (isRussianTrack && !hasCyr) return false;
+if (!isRussianTrack && hasCyr) return false;
+return true;
+});
 
-// Проверяем: артист не должен совпадать с оригиналом или уже добавленными вариантами
-if (usedArtists.has(artLower)) continue;
-if (candidateTitle.toLowerCase() === correctTitle.toLowerCase()) continue;
+similarArtists.sort(function() { return Math.random() - 0.5; });
 
-// Проверяем соответствие языку
-var hasCyr = /[а-яА-ЯёЁ]/.test(candidateTitle);
-if (isRussianTrack && !hasCyr) continue;
-if (!isRussianTrack && hasCyr) continue;
-
-usedArtists.add(artLower);
-distractors.push(candidateTitle);
+for (var i = 0; i < similarArtists.length; i++) {
+if (distractors.length >= 3) break;
+var simArt = similarArtists[i];
+var topSong = await fetchLastFmTopTrack(simArt);
+if (topSong) {
+var optionCandidate = simArt + " — " + topSong;
+if (optionCandidate.toLowerCase() !== correctTitle.toLowerCase()) {
+usedArtists.add(simArt.toLowerCase());
+distractors.push(optionCandidate);
 }
 }
-} catch(e) {
-console.warn("iTunes API поиск дистракторов завершился ошибкой:", e);
+}
 }
 
-// Фоллбэк: если в iTunes найдено меньше 3 разных исполнителей, добираем из локальной библиотеки
+// 3. Защитный фоллбэк: если Last.fm вернул мало данных, добираем треки из локального списка игры
 var allFileNames = Object.keys(files).sort(function() { return Math.random() - 0.5; });
 for (var j = 0; j < allFileNames.length; j++) {
 if (distractors.length >= 3) break;
@@ -868,7 +864,7 @@ if (localArt) usedArtists.add(localArt);
 distractors.push(localName);
 }
 
-// Защитный крайний добор
+// Крайний добор
 for (var k = 0; k < allFileNames.length; k++) {
 if (distractors.length >= 3) break;
 var fn = allFileNames[k].trim();
