@@ -15,7 +15,7 @@ navigator.serviceWorker.register('sw.js').catch(function(e) { console.warn(e); }
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Syne:wght@700;800&family=Ubuntu+Mono:wght@700&display=swap" rel="stylesheet">
-<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <style>
@@ -35,8 +35,8 @@ navigator.serviceWorker.register('sw.js').catch(function(e) { console.warn(e); }
 --border-glow: rgba(0, 229, 255, 0.4);
 }
 * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Space Grotesk', sans-serif; -webkit-tap-highlight-color: transparent; }
-body { background-color: var(--bg-deep); background-image: radial-gradient(ellipse at 50% 0%, rgba(112, 0, 255, 0.25) 0%, transparent 60%), radial-gradient(circle at 100% 100%, rgba(255, 0, 85, 0.15) 0%, transparent 40%), radial-gradient(circle at 0% 100%, rgba(0, 229, 255, 0.15) 0%, transparent 40%); background-attachment: fixed; color: var(--text-pure); min-height: 100vh; padding: 16px 8px 80px; }
-.container { max-width: 900px; margin: 0 auto; background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: 24px; box-shadow: 0 25px 60px -10px rgba(0, 0, 0, 0.9), 0 0 1px 1px var(--border-subtle); overflow: hidden; position: relative; }
+body { background-color: var(--bg-deep); background-image: radial-gradient(ellipse at 50% 0%, rgba(112, 0, 255, 0.25) 0%, transparent 60%), radial-gradient(circle at 100% 100%, rgba(255, 0, 85, 0.15) 0%, transparent 40%), radial-gradient(circle at 0% 100%, rgba(0, 229, 255, 0.15) 0%, transparent 40%); background-attachment: fixed; color: var(--text-pure); min-height: 100vh; padding: 16px 8px 80px; position: relative; }
+.container { max-width: 900px; margin: 0 auto; background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: 24px; box-shadow: 0 25px 60px -10px rgba(0, 0, 0, 0.9), 0 0 1px 1px var(--border-subtle); overflow: hidden; position: relative; z-index: 1; }
 .container::before { content: ''; display: block; height: 4px; background: linear-gradient(90deg, var(--neon-cyan), var(--neon-purple), var(--neon-pink), var(--neon-yellow)); }
 .header { padding: 32px 20px 20px; text-align: center; }
 h1 { font-family: 'Syne', sans-serif; font-size: 2.2em; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; background: linear-gradient(180deg, #ffffff 30%, #a5b4fc 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; display: flex; align-items: center; justify-content: center; gap: 12px; }
@@ -79,6 +79,10 @@ button:active { transform: scale(0.98); }
 #load-songs-btn { background: linear-gradient(135deg, var(--neon-purple), var(--neon-pink)); color: #fff; box-shadow: 0 4px 20px rgba(255, 0, 85, 0.35); }
 #load-songs-btn:disabled { opacity: 0.45; cursor: not-allowed; box-shadow: none; }
 #shuffle-btn { width: 100%; padding: 14px; background: transparent; border: 1px solid var(--border-subtle); color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; font-size: 14px; }
+
+/* УПРАВЛЕНИЕ СЧЁТОМ ВЕДУЩЕГО */
+.score-header-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.toggle-all-teams-btn { background: rgba(0, 229, 255, 0.1); border: 1px solid var(--neon-cyan); color: var(--neon-cyan); padding: 6px 14px; border-radius: 10px; font-size: 0.85em; text-transform: uppercase; cursor: pointer; }
 .score-controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; margin-top: 6px; }
 .score-team-group { background: var(--bg-deep); border: 1px solid var(--border-subtle); border-radius: 16px; padding: 16px 12px; cursor: pointer; transition: all 0.25s ease; }
 .score-team-header { text-align: center; margin-bottom: 10px; }
@@ -121,57 +125,21 @@ button:active { transform: scale(0.98); }
 .score-notification, .action-notification { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: var(--bg-surface); border: 1px solid var(--neon-cyan); padding: 14px 22px; border-radius: 14px; font-size: 1.1em; font-weight: 700; z-index: 3000; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
 .action-notification { top: 75px; border-color: var(--neon-yellow); color: var(--neon-yellow); }
 .score-notification.show, .action-notification.show { opacity: 1; }
-#settings-modal, #qr-modal { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; z-index: 2000; opacity: 0; pointer-events: none; transition: opacity 0.2s ease; }
-#settings-modal.active, #qr-modal.active { opacity: 1; pointer-events: auto; }
-.modal-content.settings-redesign { background: var(--bg-surface); padding: 24px 20px; border-radius: 24px; width: 94%; max-width: 440px; max-height: 88vh; overflow-y: auto; border: 1px solid var(--border-glow); box-shadow: 0 20px 60px rgba(0,0,0,0.9), 0 0 30px rgba(0, 229, 255, 0.1); position: relative; }
-.settings-header { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; padding-bottom: 10px; border-bottom: 1px solid var(--border-subtle); }
-.settings-header h3 { font-family: 'Syne', sans-serif; font-size: 1.4em; margin: 0; color: #fff; }
-.settings-group { background: var(--bg-deep); border: 1px solid var(--border-subtle); border-radius: 16px; padding: 14px; margin-bottom: 14px; display: flex; flex-direction: column; gap: 12px; }
-.settings-group-title { font-size: 0.75em; font-weight: 700; text-transform: uppercase; color: var(--neon-cyan); letter-spacing: 1.2px; display: flex; align-items: center; gap: 8px; margin-bottom: 2px; }
-.settings-field { display: flex; flex-direction: column; gap: 6px; }
-.settings-field.row { flex-direction: row; justify-content: space-between; align-items: center; gap: 12px; }
-.settings-field label { font-size: 0.85em; color: var(--text-pure); font-weight: 600; margin: 0; }
-.settings-field input, .settings-field select { padding: 10px 14px; font-size: 14px; border-radius: 10px; }
-.settings-field.row select { max-width: 190px; }
-.settings-save-btn { width: 100%; padding: 15px; margin-top: 10px; background: var(--neon-cyan); color: #000; font-size: 15px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; border-radius: 14px; box-shadow: 0 4px 20px rgba(0, 229, 255, 0.35); }
-.close-modal { position: absolute; top: 18px; right: 18px; background: transparent; border: none; color: var(--text-dim); font-size: 1.5em; line-height: 1; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 10; }
-.close-modal:hover { color: #fff; }
-.qr-modal-content { background: var(--bg-surface); border: 1px solid var(--neon-cyan); border-radius: 24px; padding: 28px 24px; width: 90%; max-width: 340px; text-align: center; position: relative; box-shadow: 0 0 50px rgba(0, 229, 255, 0.25); }
-.qr-box-img { background: #fff; border-radius: 16px; padding: 14px; margin: 16px auto; display: inline-block; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8); }
-.qr-box-img img { width: 190px; height: 190px; display: block; }
-.winner-screen { text-align: center; padding: 20px; }
-.winner-screen h2 { font-family: 'Syne', sans-serif; font-size: 1.8em; margin-bottom: 20px; }
-.winner-screen h2 strong { color: var(--neon-yellow); }
-.final-scores { display: flex; flex-direction: column; gap: 8px; font-size: 1.1em; color: var(--text-dim); }
-.settings-update-box { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border-subtle); text-align: center; }
-.settings-update-box button { background: transparent !important; border: 1px solid var(--neon-cyan) !important; color: var(--neon-cyan) !important; padding: 10px 14px !important; font-size: 0.85em !important; text-transform: uppercase; letter-spacing: 1px; }
-.update-status-msg { font-family: 'Ubuntu Mono', monospace; font-size: 0.8em; color: var(--neon-yellow); margin-top: 6px; min-height: 1.2em; }
-#host-chat-toggle-btn { position: fixed; bottom: 20px; right: 20px; width: 52px; height: 52px; border-radius: 50%; background: linear-gradient(135deg, var(--neon-cyan), #0077ff); color: #000; display: none; align-items: center; justify-content: center; font-size: 1.3em; cursor: pointer; z-index: 2500; box-shadow: 0 8px 25px rgba(0, 229, 255, 0.4); border: none; transition: transform 0.2s ease, box-shadow 0.2s ease; }
-#host-chat-toggle-btn.has-pulse { animation: chatButtonGlowPulse 1.4s infinite alternate; }
-@keyframes chatButtonGlowPulse { 0% { box-shadow: 0 0 15px rgba(0, 229, 255, 0.6), 0 0 30px rgba(0, 229, 255, 0.3); transform: scale(1); } 100% { box-shadow: 0 0 35px var(--neon-pink), 0 0 60px rgba(255, 0, 85, 0.6); transform: scale(1.08); } }
-.chat-unread-badge { position: absolute; top: -4px; right: -4px; background: var(--neon-pink); color: #fff; font-size: 11px; font-weight: 800; padding: 2px 7px; border-radius: 10px; box-shadow: 0 0 10px rgba(255, 0, 85, 0.6); display: none; }
-#host-chat-box { position: fixed; bottom: 82px; right: 20px; width: min(350px, calc(100vw - 32px)); height: 420px; background: var(--bg-surface); border: 1px solid var(--border-glow); border-radius: 20px; box-shadow: 0 15px 40px rgba(0, 0, 0, 0.9); display: none; flex-direction: column; z-index: 2500; overflow: hidden; backdrop-filter: blur(16px); }
-.host-chat-head { background: var(--bg-elevated); padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-subtle); font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.95em; }
-.host-chat-msgs { flex: 1; padding: 12px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
-.chat-msg-row { display: flex; flex-direction: column; font-size: 0.85em; line-height: 1.3; }
-.chat-msg-row .author { font-weight: 700; font-size: 0.8em; color: var(--neon-cyan); margin-bottom: 2px; }
-.chat-msg-row.host-author .author { color: var(--neon-yellow); }
-.chat-msg-row.system-event { background: rgba(255, 0, 85, 0.1); border-left: 3px solid var(--neon-pink); padding: 6px 10px; border-radius: 8px; }
-.chat-msg-row.system-event .body { color: var(--neon-pink); font-weight: 700; }
-.chat-msg-row .bubble { background: var(--bg-deep); border: 1px solid var(--border-subtle); padding: 8px 12px; border-radius: 12px; color: var(--text-pure); word-break: break-word; }
-.chat-msg-row.host-author .bubble { border-color: rgba(255, 234, 0, 0.3); background: rgba(255, 234, 0, 0.05); }
-.host-quick-replies { display: flex; gap: 6px; padding: 6px 10px; background: var(--bg-elevated); border-top: 1px solid var(--border-subtle); overflow-x: auto; }
-.quick-reply-btn { background: var(--bg-deep); border: 1px solid var(--border-subtle); color: #fff; padding: 5px 9px; border-radius: 8px; font-size: 11px; font-weight: 700; white-space: nowrap; cursor: pointer; flex-shrink: 0; transition: all 0.15s; }
-.quick-reply-btn:hover { border-color: var(--neon-cyan); color: var(--neon-cyan); }
-.quick-reply-btn.correct { border-color: var(--neon-lime); color: var(--neon-lime); }
-.quick-reply-btn.wrong { border-color: var(--neon-pink); color: var(--neon-pink); }
-.emoji-popover { position: absolute; bottom: 60px; left: 10px; right: 10px; background: #111520; border: 1px solid var(--neon-cyan); border-radius: 14px; padding: 10px; display: none; grid-template-columns: repeat(7, 1fr); gap: 6px; font-size: 1.4em; text-align: center; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.95); max-height: 180px; overflow-y: auto; z-index: 2600; }
-.emoji-popover span { cursor: pointer; padding: 4px; border-radius: 8px; transition: background 0.1s; }
-.emoji-popover span:hover { background: rgba(255, 255, 255, 0.15); }
-.host-chat-footer { padding: 8px 10px; background: var(--bg-deep); border-top: 1px solid var(--border-subtle); display: flex; gap: 6px; align-items: center; position: relative; }
-.btn-emoji-toggle { background: transparent; border: 1px solid var(--border-subtle); color: var(--neon-yellow); font-size: 1.1em; width: 40px; height: 40px; border-radius: 10px; cursor: pointer; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; }
-.host-chat-footer input { flex: 1; min-width: 0; padding: 8px 12px; font-size: 13px; margin: 0; border-radius: 10px; }
-.host-chat-footer button.btn-send { background: var(--neon-cyan); color: #000; width: 40px; height: 40px; border-radius: 10px; font-size: 13px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; }
+
+/* ПЛАШКА ПОДСКАЗКИ ДЛЯ ВЕДУЩЕГО (ВЕРНО/НЕВЕРНО) */
+.host-judge-indicator {
+display: none; padding: 10px 16px; border-radius: 12px; font-family: 'Syne', sans-serif;
+font-size: 1.1em; font-weight: 900; text-align: center; text-transform: uppercase;
+margin-bottom: 12px; letter-spacing: 1.5px;
+}
+.host-judge-indicator.correct {
+display: block; background: rgba(0, 255, 102, 0.18); border: 2px solid var(--neon-lime);
+color: var(--neon-lime); box-shadow: 0 0 25px rgba(0, 255, 102, 0.4);
+}
+.host-judge-indicator.wrong {
+display: block; background: rgba(255, 0, 85, 0.18); border: 2px solid var(--neon-pink);
+color: var(--neon-pink); box-shadow: 0 0 25px rgba(255, 0, 85, 0.4);
+}
 
 /* СТИЛИ РЕЖИМА "ВАРИАНТЫ" У ВЕДУЩЕГО */
 #variants-control-section { display: none; }
@@ -209,17 +177,83 @@ button:active { transform: scale(0.98); }
 .lottery-team-indicator.waiting { color: var(--text-dim); }
 .lottery-team-indicator.confirmed { color: var(--neon-cyan); }
 .lottery-team-indicator.chosen { color: var(--neon-yellow); }
-#lottery-vortex-overlay { position: fixed; inset: 0; background: rgba(5, 6, 10, 0.95); backdrop-filter: blur(10px); z-index: 6000; display: none; align-items: center; justify-content: center; flex-direction: column; }
-#lottery-vortex-overlay.active { display: flex; }
+
+/* ПОЛНАЯ ИЗОЛЯЦИЯ МОДАЛЬНЫХ ОКОН ЧЕРЕЗ DISPLAY: NONE */
+#settings-modal, #qr-modal, #lottery-vortex-overlay, #joker-overlay {
+position: fixed !important; inset: 0 !important; width: 100vw !important; height: 100vh !important;
+background: rgba(0, 0, 0, 0.88) !important; backdrop-filter: blur(8px) !important;
+display: none !important; align-items: center !important; justify-content: center !important;
+z-index: 99999 !important; padding: 16px !important;
+}
+#settings-modal.active, #qr-modal.active, #lottery-vortex-overlay.active, #joker-overlay.active {
+display: flex !important;
+}
+
+.modal-content.settings-redesign {
+background: var(--bg-surface); padding: 24px 20px; border-radius: 24px;
+width: 94%; max-width: 440px; max-height: 88vh; overflow-y: auto;
+border: 1px solid var(--border-glow); box-shadow: 0 20px 60px rgba(0,0,0,0.9), 0 0 30px rgba(0, 229, 255, 0.1);
+position: relative; margin: auto;
+}
+.settings-header { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; padding-bottom: 10px; border-bottom: 1px solid var(--border-subtle); }
+.settings-header h3 { font-family: 'Syne', sans-serif; font-size: 1.4em; margin: 0; color: #fff; }
+.settings-group { background: var(--bg-deep); border: 1px solid var(--border-subtle); border-radius: 16px; padding: 14px; margin-bottom: 14px; display: flex; flex-direction: column; gap: 12px; }
+.settings-group-title { font-size: 0.75em; font-weight: 700; text-transform: uppercase; color: var(--neon-cyan); letter-spacing: 1.2px; display: flex; align-items: center; gap: 8px; margin-bottom: 2px; }
+.settings-field { display: flex; flex-direction: column; gap: 6px; }
+.settings-field.row { flex-direction: row; justify-content: space-between; align-items: center; gap: 12px; }
+.settings-field label { font-size: 0.85em; color: var(--text-pure); font-weight: 600; margin: 0; }
+.settings-field input, .settings-field select { padding: 10px 14px; font-size: 14px; border-radius: 10px; }
+.settings-field.row select { max-width: 190px; }
+.settings-save-btn { width: 100%; padding: 15px; margin-top: 10px; background: var(--neon-cyan); color: #000; font-size: 15px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; border-radius: 14px; box-shadow: 0 4px 20px rgba(0, 229, 255, 0.35); }
+.close-modal { position: absolute; top: 18px; right: 18px; background: transparent; border: none; color: var(--text-dim); font-size: 1.5em; line-height: 1; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 10; }
+.close-modal:hover { color: #fff; }
+.qr-modal-content { background: var(--bg-surface); border: 1px solid var(--neon-cyan); border-radius: 24px; padding: 28px 24px; width: 90%; max-width: 340px; text-align: center; position: relative; box-shadow: 0 0 50px rgba(0, 229, 255, 0.25); margin: auto; }
+.qr-box-img { background: #fff; border-radius: 16px; padding: 14px; margin: 16px auto; display: inline-block; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8); }
+.qr-box-img img { width: 190px; height: 190px; display: block; }
+.winner-screen { text-align: center; padding: 20px; }
+.winner-screen h2 { font-family: 'Syne', sans-serif; font-size: 1.8em; margin-bottom: 20px; }
+.winner-screen h2 strong { color: var(--neon-yellow); }
+.final-scores { display: flex; flex-direction: column; gap: 8px; font-size: 1.1em; color: var(--text-dim); }
+.settings-update-box { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border-subtle); text-align: center; }
+.settings-update-box button { background: transparent !important; border: 1px solid var(--neon-cyan) !important; color: var(--neon-cyan) !important; padding: 10px 14px !important; font-size: 0.85em !important; text-transform: uppercase; letter-spacing: 1px; }
+.update-status-msg { font-family: 'Ubuntu Mono', monospace; font-size: 0.8em; color: var(--neon-yellow); margin-top: 6px; min-height: 1.2em; }
+
+/* ЧАТ ВЕДУЩЕГО */
+#host-chat-toggle-btn { position: fixed; bottom: 20px; right: 20px; width: 52px; height: 52px; border-radius: 50%; background: linear-gradient(135deg, var(--neon-cyan), #0077ff); color: #000; display: none; align-items: center; justify-content: center; font-size: 1.3em; cursor: pointer; z-index: 2500; box-shadow: 0 8px 25px rgba(0, 229, 255, 0.4); border: none; transition: transform 0.2s ease, box-shadow 0.2s ease; }
+#host-chat-toggle-btn.has-pulse { animation: chatButtonGlowPulse 1.4s infinite alternate; }
+@keyframes chatButtonGlowPulse { 0% { box-shadow: 0 0 15px rgba(0, 229, 255, 0.6), 0 0 30px rgba(0, 229, 255, 0.3); transform: scale(1); } 100% { box-shadow: 0 0 35px var(--neon-pink), 0 0 60px rgba(255, 0, 85, 0.6); transform: scale(1.08); } }
+.chat-unread-badge { position: absolute; top: -4px; right: -4px; background: var(--neon-pink); color: #fff; font-size: 11px; font-weight: 800; padding: 2px 7px; border-radius: 10px; box-shadow: 0 0 10px rgba(255, 0, 85, 0.6); display: none; }
+#host-chat-box { position: fixed; bottom: 82px; right: 20px; width: min(350px, calc(100vw - 32px)); height: 420px; background: var(--bg-surface); border: 1px solid var(--border-glow); border-radius: 20px; box-shadow: 0 15px 40px rgba(0, 0, 0, 0.9); display: none; flex-direction: column; z-index: 2500; overflow: hidden; backdrop-filter: blur(16px); }
+.host-chat-head { background: var(--bg-elevated); padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-subtle); font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.95em; }
+.host-chat-msgs { flex: 1; padding: 12px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+.chat-msg-row { display: flex; flex-direction: column; font-size: 0.85em; line-height: 1.3; }
+.chat-msg-row .author { font-weight: 700; font-size: 0.8em; color: var(--neon-cyan); margin-bottom: 2px; }
+.chat-msg-row.host-author .author { color: var(--neon-yellow); }
+.chat-msg-row.system-event { background: rgba(255, 0, 85, 0.1); border-left: 3px solid var(--neon-pink); padding: 6px 10px; border-radius: 8px; }
+.chat-msg-row.system-event .body { color: var(--neon-pink); font-weight: 700; }
+.chat-msg-row .bubble { background: var(--bg-deep); border: 1px solid var(--border-subtle); padding: 8px 12px; border-radius: 12px; color: var(--text-pure); word-break: break-word; }
+.chat-msg-row.host-author .bubble { border-color: rgba(255, 234, 0, 0.3); background: rgba(255, 234, 0, 0.05); }
+.host-quick-replies { display: flex; gap: 6px; padding: 6px 10px; background: var(--bg-elevated); border-top: 1px solid var(--border-subtle); overflow-x: auto; }
+.quick-reply-btn { background: var(--bg-deep); border: 1px solid var(--border-subtle); color: #fff; padding: 5px 9px; border-radius: 8px; font-size: 11px; font-weight: 700; white-space: nowrap; cursor: pointer; flex-shrink: 0; transition: all 0.15s; }
+.quick-reply-btn:hover { border-color: var(--neon-cyan); color: var(--neon-cyan); }
+.quick-reply-btn.correct { border-color: var(--neon-lime); color: var(--neon-lime); }
+.quick-reply-btn.wrong { border-color: var(--neon-pink); color: var(--neon-pink); }
+.emoji-popover { position: absolute; bottom: 60px; left: 10px; right: 10px; background: #111520; border: 1px solid var(--neon-cyan); border-radius: 14px; padding: 10px; display: none; grid-template-columns: repeat(7, 1fr); gap: 6px; font-size: 1.4em; text-align: center; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.95); max-height: 180px; overflow-y: auto; z-index: 2600; }
+.emoji-popover span { cursor: pointer; padding: 4px; border-radius: 8px; transition: background 0.1s; }
+.emoji-popover span:hover { background: rgba(255, 255, 255, 0.15); }
+.host-chat-footer { padding: 8px 10px; background: var(--bg-deep); border-top: 1px solid var(--border-subtle); display: flex; gap: 6px; align-items: center; position: relative; }
+.btn-emoji-toggle { background: transparent; border: 1px solid var(--border-subtle); color: var(--neon-yellow); font-size: 1.1em; width: 40px; height: 40px; border-radius: 10px; cursor: pointer; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; }
+.host-chat-footer input { flex: 1; min-width: 0; padding: 8px 12px; font-size: 13px; margin: 0; border-radius: 10px; }
+.host-chat-footer button.btn-send { background: var(--neon-cyan); color: #000; width: 40px; height: 40px; border-radius: 10px; font-size: 13px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; }
+
+/* ВИХРЬ И ДЖОКЕР */
 .vortex-stage { position: relative; width: min(500px, 85vw); height: min(500px, 85vw); display: flex; align-items: center; justify-content: center; }
 .vortex-number { position: absolute; width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, var(--neon-cyan), var(--neon-purple)); color: #000; font-family: 'Ubuntu Mono', monospace; font-size: 1.4em; font-weight: 900; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 20px rgba(0, 229, 255, 0.6); transition: all 1.2s cubic-bezier(0.23, 1, 0.32, 1); }
 .vortex-number.selected { width: 140px; height: 140px; font-size: 3em; background: linear-gradient(135deg, var(--neon-yellow), var(--neon-pink)); box-shadow: 0 0 60px rgba(255, 234, 0, 0.9), 0 0 120px rgba(255, 0, 85, 0.5); animation: selectedPulse 0.8s infinite alternate; z-index: 10; }
 @keyframes selectedPulse { 0% { transform: scale(1); } 100% { transform: scale(1.08); } }
 .vortex-title { font-family: 'Syne', sans-serif; font-size: 1.5em; font-weight: 800; color: var(--neon-cyan); text-transform: uppercase; letter-spacing: 3px; margin-bottom: 20px; text-shadow: 0 0 20px rgba(0, 229, 255, 0.5); }
 .vortex-result-title { font-family: 'Syne', sans-serif; font-size: 1.3em; font-weight: 800; color: var(--neon-yellow); text-transform: uppercase; letter-spacing: 2px; margin-top: 30px; text-shadow: 0 0 20px rgba(255, 234, 0, 0.6); }
-#joker-overlay { position: fixed; inset: 0; background: rgba(5, 6, 10, 0.92); backdrop-filter: blur(12px); z-index: 8000; display: none; align-items: center; justify-content: center; flex-direction: column; gap: 20px; }
-#joker-overlay.active { display: flex; animation: jokerFadeIn 0.4s ease; }
-@keyframes jokerFadeIn { from { opacity: 0; } to { opacity: 1; } }
+
 .joker-card { font-size: clamp(6em, 20vw, 10em); animation: jokerCardSpin 1.5s cubic-bezier(0.34, 1.56, 0.64, 1); filter: drop-shadow(0 0 40px rgba(255, 215, 0, 0.9)); }
 @keyframes jokerCardSpin { 0% { transform: rotateY(0deg) scale(0.3); opacity: 0; } 50% { transform: rotateY(720deg) scale(1.3); opacity: 1; } 100% { transform: rotateY(720deg) scale(1); opacity: 1; } }
 .joker-title { font-family: 'Syne', sans-serif; font-size: clamp(1.8em, 6vw, 3em); font-weight: 900; text-transform: uppercase; letter-spacing: 4px; background: linear-gradient(135deg, var(--neon-gold), #ff8c00, var(--neon-gold)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; animation: jokerTitlePulse 0.8s infinite alternate; }
@@ -239,17 +273,7 @@ button:active { transform: scale(0.98); }
 <div class="wave-hand-halo"><span class="wave-hand-emoji">👋</span></div>
 <div class="wave-team-badge" id="buzzer-wave-team">Команда</div>
 </div>
-<div id="lottery-vortex-overlay">
-<div class="vortex-title" id="vortex-title">🎲 Рандомайзер выбирает...</div>
-<div class="vortex-stage" id="vortex-stage"></div>
-<div class="vortex-result-title" id="vortex-result-title" style="display:none;"></div>
-</div>
-<div id="joker-overlay">
-<div class="joker-card">🃏</div>
-<div class="joker-title">Секретный джокер!</div>
-<div class="joker-multiplier">×3 ОЧКА</div>
-<div class="joker-team-name" id="joker-team-name"></div>
-</div>
+
 <div class="container">
 <div class="header">
 <h1><i class="fas fa-bolt"></i> Revers Quiz</h1>
@@ -270,7 +294,7 @@ button:active { transform: scale(0.98); }
 <div class="online-link-area">
 <span style="font-size:0.8em; color:var(--text-dim);">Быстрая ссылка:</span>
 <div class="link-actions">
-<div class="copy-link-btn" onclick="copyPlayerLink()" title="Нажмите, чтобы скопировать"><i class="fas fa-copy"></i> https://clck.ru/3WBWUq</div>
+<div class="copy-link-btn" onclick="copyPlayerLink()" title="Нажмите, чтобы скопировать"><i class="fas fa-copy"></i> <span id="host-quick-link-text">https://clck.ru/3WBWUq</span></div>
 <button class="qr-trigger-btn" onclick="openQrModal()"><i class="fas fa-qrcode"></i> QR</button>
 </div>
 </div>
@@ -288,6 +312,10 @@ button:active { transform: scale(0.98); }
 <span><i class="fas fa-list-ul"></i> Режим «Варианты»</span>
 <span id="variants-answering-badge" style="font-size:0.8em; color:var(--neon-yellow);">Ожидание ответа...</span>
 </div>
+
+<!-- ПЛАШКА-ИНДИКАТОР ВЕРДИКТА ВЕДУЩЕМУ (ПУНКТ 4) -->
+<div id="host-judge-indicator" class="host-judge-indicator"></div>
+
 <div class="variants-grid-host" id="variants-host-grid"></div>
 <div class="variants-btn-row" id="variants-host-buttons" style="display:none;">
 <button class="variants-btn ask" id="btn-ask-sure" onclick="sendSureConfirmationRequest()"><i class="fas fa-question-circle"></i> Спросить: «Уверены?»</button>
@@ -347,7 +375,12 @@ button:active { transform: scale(0.98); }
 </div>
 <div id="quiz-area" style="display: none;">
 <div class="section">
-<h2 class="section-title"><i class="fas fa-trophy"></i> Счёт игры</h2>
+<div class="score-header-bar">
+<h2 class="section-title" style="margin:0;"><i class="fas fa-trophy"></i> Счёт игры</h2>
+<button id="toggle-all-teams-btn" class="toggle-all-teams-btn" onclick="toggleAllTeamsView()" style="display:none;">
+Все команды ▾
+</button>
+</div>
 <div class="score-controls" id="teams-scoreboard-grid"></div>
 <div class="result-sounds">
 <button class="result-btn winner" onclick="playSound('winner')"><i class="fas fa-check"></i> Правильно</button>
@@ -394,6 +427,7 @@ button:active { transform: scale(0.98); }
 <button id="end-quiz-btn" onclick="endQuiz()"><i class="fas fa-flag-checkered"></i> Завершить игру</button>
 </div>
 </div>
+
 <button id="host-chat-toggle-btn" onclick="toggleHostChat()">
 <i class="fas fa-comments"></i>
 <span class="chat-unread-badge" id="host-unread-badge">0</span>
@@ -417,6 +451,7 @@ button:active { transform: scale(0.98); }
 <button class="btn-send" onclick="sendHostChatMessage()"><i class="fas fa-paper-plane"></i></button>
 </div>
 </div>
+
 <audio id="audio-revers" preload="auto" playsinline style="display:none;"></audio>
 <audio id="audio-normal" preload="none" playsinline style="display:none;"></audio>
 <audio id="audio-winner" preload="auto" playsinline style="display:none;"></audio>
@@ -427,6 +462,8 @@ button:active { transform: scale(0.98); }
 <audio id="audio-game-over" preload="auto" playsinline style="display:none;"></audio>
 <div id="settings-btn" onclick="openSettings()"><i class="fas fa-sliders-h"></i></div>
 <div id="timer-circle">0</div>
+
+<!-- ИЗОЛИРОВАННЫЕ МОДАЛЬНЫЕ ОКНА -->
 <div id="settings-modal" onclick="if(event.target === this) closeSettings();">
 <div class="modal-content settings-redesign" onclick="event.stopPropagation();">
 <button type="button" class="close-modal" onclick="closeSettings()">&times;</button>
@@ -445,6 +482,34 @@ button:active { transform: scale(0.98); }
 </select>
 </div>
 </div>
+
+<!-- СПЕЦИАЛЬНЫЕ НАСТРОЙКИ РЕЖИМА "ВАРИАНТЫ" -->
+<div class="settings-group" id="variants-sub-settings" style="display:none;">
+<div class="settings-group-title"><i class="fas fa-list-check"></i> Настройки режима «Варианты»</div>
+<div class="settings-field row">
+<label for="variants-timer-input">Время на выбор ответа (сек)</label>
+<input type="number" id="variants-timer-input" min="1" max="60" value="3" style="max-width:90px; text-align:center;">
+</div>
+<div class="settings-field row">
+<label for="variants-penalty-toggle">Штраф за тайм-аут (-0.5 балла)</label>
+<select id="variants-penalty-toggle">
+<option value="false" selected>❌ Выкл (без штрафа)</option>
+<option value="true">⚠️ Вкл (отнимать 0.5 балла)</option>
+</select>
+</div>
+<div class="settings-field row">
+<label for="variants-auto-normal-toggle">Автовоспроизведение оригинала</label>
+<select id="variants-auto-normal-toggle">
+<option value="false" selected>❌ Выкл (включает ведущий)</option>
+<option value="true">🎵 Вкл (автозапуск оригинала)</option>
+</select>
+</div>
+<div class="settings-field row">
+<label for="variants-normal-delay-input">Задержка автооригинала (сек)</label>
+<input type="number" id="variants-normal-delay-input" min="0" max="10" value="2" style="max-width:90px; text-align:center;">
+</div>
+</div>
+
 <div class="settings-group" id="interactive-sub-settings" style="display:none;">
 <div class="settings-group-title"><i class="fas fa-users-cog"></i> Онлайн-участники</div>
 <div class="settings-field row">
@@ -520,17 +585,32 @@ button:active { transform: scale(0.98); }
 </div>
 </div>
 </div>
+
 <div id="qr-modal" onclick="if(event.target === this) closeQrModal();">
 <div class="qr-modal-content" onclick="event.stopPropagation();">
 <button type="button" class="close-modal" onclick="closeQrModal()">&times;</button>
 <h3 style="font-family:'Syne',sans-serif; color:var(--neon-cyan); margin-bottom:4px;"><i class="fas fa-qrcode"></i> Вход для команд</h3>
 <p style="font-size:0.85em; color:var(--text-dim);">Отсканируйте камерой телефона для перехода</p>
 <div class="qr-box-img">
-<img src="https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=https%3A%2F%2Fclck.ru%2F3WBWUq" alt="QR Code" />
+<img id="qr-modal-image" src="" alt="QR Code" />
 </div>
-<div style="font-family:'Ubuntu Mono',monospace; font-size:1.1em; color:var(--neon-yellow); font-weight:700;">https://clck.ru/3WBWUq</div>
+<div style="font-family:'Ubuntu Mono',monospace; font-size:1.1em; color:var(--neon-yellow); font-weight:700;" id="qr-modal-url-display"></div>
 </div>
 </div>
+
+<div id="lottery-vortex-overlay">
+<div class="vortex-title" id="vortex-title">🎲 Рандомайзер выбирает...</div>
+<div class="vortex-stage" id="vortex-stage"></div>
+<div class="vortex-result-title" id="vortex-result-title" style="display:none;"></div>
+</div>
+
+<div id="joker-overlay">
+<div class="joker-card">🃏</div>
+<div class="joker-title">Секретный джокер!</div>
+<div class="joker-multiplier">×3 ОЧКА</div>
+<div class="joker-team-name" id="joker-team-name"></div>
+</div>
+
 <script>
 var firebaseConfig = {
 apiKey: "AIzaSyC9sh7uazv-WbudsO7TYap4-wENjkLD3K4",
@@ -579,11 +659,23 @@ var lastPlayedTrack = null;
 var trackOrder = {};
 var soundUrls = { winner: null, lost: null, ring: null, start: null, final: null, gameOver: null };
 var lotteryState = { phase: "idle", readyTeams: {}, numberChoices: {}, selectedNumber: null, allNumbers: [] };
-var variantsState = { active: false, correctTrack: "", options: [], answeringTeam: null, answeringTeamName: "", selectedOption: null, isFinal: false, askConfirm: false, attemptsLeft: 2, isRevealed: false, isCorrect: false };
+
+// ПАРАМЕТРЫ РЕЖИМА "ВАРИАНТЫ"
+var variantsTimerDuration = 3;
+var variantsPenaltyEnabled = false;
+var variantsAutoNormalEnabled = false;
+var variantsNormalDelay = 2;
+var variantsState = {
+active: false, correctTrack: "", options: [], answeringTeam: null, answeringTeamName: "",
+selectedOption: null, isFinal: false, askConfirm: false, attemptsLeft: 2, isRevealed: false,
+isCorrect: false, roundTimer: 3, timerDeadline: 0, penaltyEnabled: false
+};
+var variantsAutoNormalTimeout = null;
+var showAllOnlineTeams = false;
+
 var currentTrackIsJoker = false;
 var gameSessionStarted = false;
 
-// LAST.FM API CONFIGURATION
 var LASTFM_API_KEY = "260c156d8fa38243bd33e6ebcf81a901";
 
 function ensureAudioPlayer(id) {
@@ -633,38 +725,115 @@ container.appendChild(s);
 });
 }
 function toggleHostEmojiPopover() { var p = document.getElementById("host-emoji-popover"); p.style.display = p.style.display === "grid" ? "none" : "grid"; }
+
+function getPlayerDirectLink() {
+var base = window.location.origin + window.location.pathname.replace("index.html", "") + "player.html";
+return currentRoomPin ? (base + "?pin=" + currentRoomPin) : base;
+}
+
+function updateQuickLinkDisplays() {
+var link = getPlayerDirectLink();
+var btnText = document.getElementById("host-quick-link-text");
+if (btnText) btnText.textContent = link;
+var qrImg = document.getElementById("qr-modal-image");
+if (qrImg) qrImg.src = "https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=" + encodeURIComponent(link);
+var urlDisp = document.getElementById("qr-modal-url-display");
+if (urlDisp) urlDisp.textContent = link;
+}
+
 function copyPlayerLink() {
-var link = "https://clck.ru/3WBWUq";
+var link = getPlayerDirectLink();
 if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(link).then(function() { showActionNotification("📋 Ссылка скопирована!"); }).catch(function() { fallbackCopyText(link); }); }
 else { fallbackCopyText(link); }
 }
+
 function fallbackCopyText(text) {
 var textArea = document.createElement("textarea"); textArea.value = text; textArea.style.position = "fixed"; document.body.appendChild(textArea); textArea.focus(); textArea.select();
 try { document.execCommand('copy'); showActionNotification("📋 Ссылка скопирована!"); } catch (err) { alert("Ссылка: " + text); }
 document.body.removeChild(textArea);
 }
-function openQrModal() { var modal = document.getElementById("qr-modal"); if (modal) modal.classList.add("active"); }
+
+function openSettings() {
+var tIn = document.getElementById("timer-input");
+var dIn = document.getElementById("original-delay-input");
+var mIn = document.getElementById("mix-mode");
+var modeSel = document.getElementById("game-mode-toggle");
+var streamSel = document.getElementById("stream-audio-toggle");
+var chatModeSel = document.getElementById("chat-mode-toggle");
+var scoreSel = document.getElementById("show-score-toggle");
+var opponentScoreSel = document.getElementById("show-opponent-score-toggle");
+var jokerToggle = document.getElementById("joker-toggle");
+var jokerChanceSel = document.getElementById("joker-chance");
+var sMod = document.getElementById("settings-modal");
+var statusEl = document.getElementById("manual-update-status");
+
+var vTimerIn = document.getElementById("variants-timer-input");
+var vPenaltySel = document.getElementById("variants-penalty-toggle");
+var vAutoNormSel = document.getElementById("variants-auto-normal-toggle");
+var vNormDelayIn = document.getElementById("variants-normal-delay-input");
+
+if (tIn) tIn.value = timerDuration;
+if (dIn) dIn.value = originalDelay;
+if (mIn) mIn.value = mixMode ? "mixed" : "normal";
+if (modeSel) modeSel.value = gameMode;
+if (streamSel) streamSel.value = streamAudioToPlayers ? "true" : "false";
+if (chatModeSel) chatModeSel.value = chatMode;
+if (scoreSel) scoreSel.value = showScoreToPlayers ? "true" : "false";
+if (opponentScoreSel) opponentScoreSel.value = showOpponentScore ? "true" : "false";
+if (jokerToggle) jokerToggle.value = jokerEnabled ? "true" : "false";
+if (jokerChanceSel) jokerChanceSel.value = jokerChance.toString();
+
+if (vTimerIn) vTimerIn.value = variantsTimerDuration;
+if (vPenaltySel) vPenaltySel.value = variantsPenaltyEnabled ? "true" : "false";
+if (vAutoNormSel) vAutoNormSel.value = variantsAutoNormalEnabled ? "true" : "false";
+if (vNormDelayIn) vNormDelayIn.value = variantsNormalDelay;
+
+toggleInteractiveSettingsVisibility();
+if (statusEl) { var currentVer = localStorage.getItem('app_version') || '11'; statusEl.textContent = "Текущая версия: v" + currentVer; }
+if (sMod) { sMod.classList.add("active"); }
+}
+
+function closeSettings() {
+var sMod = document.getElementById("settings-modal");
+if (sMod) { sMod.classList.remove("active"); }
+if (document.activeElement && typeof document.activeElement.blur === "function") { document.activeElement.blur(); }
+}
+
+function openQrModal() {
+updateQuickLinkDisplays();
+var modal = document.getElementById("qr-modal");
+if (modal) modal.classList.add("active");
+}
 function closeQrModal() { var modal = document.getElementById("qr-modal"); if (modal) modal.classList.remove("active"); }
 function generateNewRoomPin() { var newPin = Math.floor(1000 + Math.random() * 9000).toString(); localStorage.setItem("host_room_pin", newPin); return newPin; }
+
 function updateHostChatButtonVisibility() {
 var btn = document.getElementById("host-chat-toggle-btn");
 if (!btn) return;
 btn.style.display = (isInteractiveMode && chatMode !== "disabled") ? "flex" : "none";
-if (chatMode === "disabled") { var box = document.getElementById("host-chat-box"); if (box) box.style.display = "none"; hostChatOpen = false; }
+if (chatMode === "disabled" || !isInteractiveMode) {
+var box = document.getElementById("host-chat-box");
+if (box) box.style.display = "none";
+hostChatOpen = false;
 }
+}
+
 function resetBuzzer() {
 if (isInteractiveMode && roomRef) {
 roomRef.child("buzzer").set({ locked: false, pressedBy: null, pressedByName: null, passedBy: [] });
 }
 }
+
 function forceStopAllSounds() {
 if (originalTimeout) { clearTimeout(originalTimeout); originalTimeout = null; }
+if (variantsAutoNormalTimeout) { clearTimeout(variantsAutoNormalTimeout); variantsAutoNormalTimeout = null; }
 ["audio-revers", "audio-normal", "audio-winner", "audio-lost", "audio-ring", "audio-start", "audio-final", "audio-game-over"].forEach(function(id) {
 var el = document.getElementById(id);
 if (el) { try { el.pause(); } catch(e) {} try { el.currentTime = 0; } catch(e) {} }
 });
 stopTimer();
 }
+
 function showJokerAnimation(teamName) {
 var overlay = document.getElementById("joker-overlay");
 var teamNameEl = document.getElementById("joker-team-name");
@@ -688,12 +857,14 @@ var remaining = overlay.querySelectorAll(".joker-confetti");
 remaining.forEach(function(c) { if (c.parentNode) c.parentNode.removeChild(c); });
 }, 3500);
 }
+
 function lockTrackControls() {
 if (gameSessionStarted) { applyLockUI(); return; }
 gameSessionStarted = true;
 applyLockUI();
 saveState();
 }
+
 function applyLockUI() {
 var loadBtn = document.getElementById("load-songs-btn");
 var shuffleBtn = document.getElementById("shuffle-btn");
@@ -708,6 +879,7 @@ shuffleBtn.style.cursor = "not-allowed";
 shuffleBtn.textContent = '🔒 Перемешивание заблокировано';
 }
 }
+
 function initHostRoom() {
 if (!isInteractiveMode) return;
 if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
@@ -715,6 +887,8 @@ db = firebase.database();
 currentRoomPin = localStorage.getItem("host_room_pin");
 if (!currentRoomPin) { currentRoomPin = generateNewRoomPin(); }
 document.getElementById("host-pin").textContent = currentRoomPin;
+updateQuickLinkDisplays();
+
 roomRef = db.ref("rooms/" + currentRoomPin);
 roomRef.update({
 status: "idle", showScore: showScoreToPlayers, showOpponentScore: showOpponentScore,
@@ -723,7 +897,7 @@ buzzer: { locked: true, pressedBy: null, passedBy: [] }, revealedTrack: "",
 systemSounds: soundUrls, timerState: { active: false, value: 0 },
 audioSync: { trackSessionId: "", reversUrl: "", normalUrl: "", duration: 0, currentTime: 0, playAction: "stop", startAt: 0, isJoker: false, jokerEnabled: jokerEnabled },
 lotteryState: { phase: "idle", readyTeams: {}, numberChoices: {}, selectedNumber: null, allNumbers: [] },
-variantsRound: { active: false, correctTrack: "", options: [], answeringTeam: null, answeringTeamName: "", selectedOption: null, isFinal: false, askConfirm: false, attemptsLeft: 2, isRevealed: false, isCorrect: false }
+variantsRound: { active: false, correctTrack: "", options: [], answeringTeam: null, answeringTeamName: "", selectedOption: null, isFinal: false, askConfirm: false, attemptsLeft: 2, isRevealed: false, isCorrect: false, roundTimer: variantsTimerDuration, timerDeadline: 0, penaltyEnabled: variantsPenaltyEnabled }
 });
 teamsData = [];
 renderHostTeamsList();
@@ -775,7 +949,7 @@ return "";
 
 async function fetchLastFmSimilar(artist) {
 try {
-var url = "https://ws.audioscrobbler.com/2.0/?method=artist.getsimilar&artist=" + encodeURIComponent(artist) + "&api_key=" + LASTFM_API_KEY + "&format=json&limit=20";
+var url = "https://ws.audioscrobbler.com/2.0/?method=artist.getsimilar&artist=" + encodeURIComponent(artist) + "&api_key=" + LASTFM_API_KEY + "&format=json&limit=25";
 var res = await fetch(url);
 if (!res.ok) return [];
 var data = await res.json();
@@ -805,21 +979,16 @@ return null;
 }
 
 async function fetchTrackVariants(trackName) {
-// 1. Правильный ответ СТРОГО из самой игры без изменений
 var correctTitle = trackName.trim();
 var originalArtist = extractArtistName(correctTitle);
-
 var isRussianTrack = /[а-яА-ЯёЁ]/.test(correctTitle) || (selectedFolder && selectedFolder.indexOf("Русские") !== -1);
 
 var distractors = [];
 var usedArtists = new Set();
 if (originalArtist) usedArtists.add(originalArtist.toLowerCase());
 
-// 2. Запрос похожих исполнителей в Last.fm
 if (originalArtist) {
 var similarArtists = await fetchLastFmSimilar(originalArtist);
-
-// Фильтруем похожих артистов по языку и уникальности
 similarArtists = similarArtists.filter(function(art) {
 if (!art) return false;
 var artLower = art.toLowerCase();
@@ -846,7 +1015,6 @@ distractors.push(optionCandidate);
 }
 }
 
-// 3. Защитный фоллбэк: если Last.fm вернул мало данных, добираем треки из локального списка игры
 var allFileNames = Object.keys(files).sort(function() { return Math.random() - 0.5; });
 for (var j = 0; j < allFileNames.length; j++) {
 if (distractors.length >= 3) break;
@@ -864,7 +1032,6 @@ if (localArt) usedArtists.add(localArt);
 distractors.push(localName);
 }
 
-// Крайний добор
 for (var k = 0; k < allFileNames.length; k++) {
 if (distractors.length >= 3) break;
 var fn = allFileNames[k].trim();
@@ -897,13 +1064,18 @@ isFinal: false,
 askConfirm: false,
 attemptsLeft: 2,
 isRevealed: false,
-isCorrect: false
+isCorrect: false,
+roundTimer: variantsTimerDuration,
+timerDeadline: 0,
+penaltyEnabled: variantsPenaltyEnabled
 };
 
 roomRef.child("variantsRound").set(variantsState);
 renderHostVariantsGrid(vData.options, null, false);
 document.getElementById("variants-answering-badge").textContent = "Ожидание ответа...";
 document.getElementById("variants-host-buttons").style.display = "none";
+var judgeEl = document.getElementById("host-judge-indicator");
+if (judgeEl) { judgeEl.className = "host-judge-indicator"; judgeEl.style.display = "none"; }
 }
 
 function updateVariantsHostUI() {
@@ -912,6 +1084,20 @@ var badge = document.getElementById("variants-answering-badge");
 var btnRow = document.getElementById("variants-host-buttons");
 var btnAsk = document.getElementById("btn-ask-sure");
 var btnLock = document.getElementById("btn-lock-choice");
+var judgeEl = document.getElementById("host-judge-indicator");
+
+if (variantsState.selectedOption) {
+var isSelectedCorrect = variantsState.selectedOption.toLowerCase() === (variantsState.correctTrack || "").toLowerCase();
+if (judgeEl) {
+judgeEl.className = "host-judge-indicator " + (isSelectedCorrect ? "correct" : "wrong");
+judgeEl.innerHTML = isSelectedCorrect 
+? '<i class="fas fa-check-circle"></i> Верно! (Команда выбрала правильный ответ)' 
+: '<i class="fas fa-times-circle"></i> Неверно! (Команда ошиблась)';
+judgeEl.style.display = "block";
+}
+} else {
+if (judgeEl) judgeEl.style.display = "none";
+}
 
 if (variantsState.active && variantsState.answeringTeamName) {
 badge.textContent = "Отвечает: " + variantsState.answeringTeamName;
@@ -922,6 +1108,14 @@ btnLock.disabled = !variantsState.selectedOption;
 } else if (variantsState.isFinal && !variantsState.isRevealed) {
 btnRow.style.display = "none";
 badge.textContent = "🔒 Ответ " + variantsState.answeringTeamName + " зафиксирован!";
+
+if (variantsAutoNormalEnabled && !variantsAutoNormalTimeout) {
+variantsAutoNormalTimeout = setTimeout(function() {
+variantsAutoNormalTimeout = null;
+var isCorrect = (variantsState.selectedOption || "").toLowerCase() === (variantsState.correctTrack || "").toLowerCase();
+playSound(isCorrect ? 'winner' : 'lost');
+}, Math.max(500, variantsNormalDelay * 1000));
+}
 } else if (variantsState.isRevealed) {
 btnRow.style.display = "none";
 badge.textContent = variantsState.isCorrect ? "🎉 ОТВЕТ ВЕРНЫЙ!" : "❌ ОТВЕТ НЕВЕРНЫЙ!";
@@ -929,6 +1123,7 @@ badge.textContent = variantsState.isCorrect ? "🎉 ОТВЕТ ВЕРНЫЙ!" : 
 } else {
 badge.textContent = "Ожидание нажатия кнопки...";
 btnRow.style.display = "none";
+if (judgeEl) judgeEl.style.display = "none";
 }
 
 renderHostVariantsGrid(variantsState.options || [], variantsState.selectedOption, variantsState.isFinal);
@@ -1007,6 +1202,7 @@ if (nextRoundBtn) { nextRoundBtn.style.display = remainingCount > 1 ? "block" : 
 if (remainingLabel) { remainingLabel.textContent = "Осталось несыгранных треков: " + remainingCount; }
 }
 }
+
 function renderLotteryReadyStatus(onlineTeams) {
 var container = document.getElementById("lottery-ready-status-2");
 if (!container) return;
@@ -1020,6 +1216,7 @@ row.innerHTML = '<div class="lottery-team-name">' + t.name + '</div><div class="
 container.appendChild(row);
 });
 }
+
 function renderLotteryChoicesStatus(onlineTeams) {
 var container = document.getElementById("lottery-choices-status");
 if (!container) return;
@@ -1033,6 +1230,7 @@ row.innerHTML = '<div class="lottery-team-name">' + t.name + '</div><div class="
 container.appendChild(row);
 });
 }
+
 function startLotteryReadyCheck() {
 if (!roomRef || teamsData.length === 0) { showActionNotification("❌ Сначала дождитесь подключения команд!"); return; }
 var onlineTeams = teamsData.filter(function(t) { return t.online !== false; });
@@ -1042,6 +1240,7 @@ onlineTeams.forEach(function(t) { readyTeams[t.id] = false; });
 roomRef.child("lotteryState").set({ phase: "ready_check", readyTeams: readyTeams, numberChoices: {}, selectedNumber: null, allNumbers: [] });
 showActionNotification("📢 Опрос готовности запущен!");
 }
+
 function startLotteryGame() {
 if (!roomRef) return;
 var allNumbers = Object.keys(trackOrder).map(function(n) { return trackOrder[n]; }).sort(function(a, b) { return a - b; });
@@ -1059,6 +1258,7 @@ return;
 roomRef.child("lotteryState").update({ phase: "number_selection", numberChoices: {}, selectedNumber: null, allNumbers: allNumbers });
 showActionNotification("🎮 Игра началась! Команды выбирают номера.");
 }
+
 function launchLotteryRandomizer() {
 if (!roomRef) return;
 var choices = lotteryState.numberChoices || {};
@@ -1078,6 +1278,7 @@ showActionNotification("🎯 Трек №" + selectedNumber + " заряжен. 
 }
 });
 }
+
 function preloadTrackToPlayer(trackName) {
 var audioRevers = ensureAudioPlayer("audio-revers");
 var audioNormal = ensureAudioPlayer("audio-normal");
@@ -1153,6 +1354,7 @@ if (isInteractiveMode && roomRef) {
 roomRef.child("status").set("idle");
 }
 }
+
 function startNewLotteryRound() {
 if (!roomRef) return;
 forceStopAllSounds();
@@ -1190,6 +1392,7 @@ roomRef.child("lotteryState").update({ phase: "number_selection", numberChoices:
 resetBuzzer();
 showActionNotification("🎲 Новый раунд! Доступно треков: " + availableNumbers.length);
 }
+
 function runHostVortexAnimation(numbers, onComplete) {
 var overlay = document.getElementById("lottery-vortex-overlay");
 var stage = document.getElementById("vortex-stage");
@@ -1247,6 +1450,7 @@ if (onComplete) onComplete(selectedNumber);
 }, 2500);
 }, 3000);
 }
+
 function renderHostTeamsList() {
 var container = document.getElementById("host-teams-container");
 if (!container) return;
@@ -1265,6 +1469,7 @@ pill.innerHTML = statusIcon + ' ' + t.name + ' (' + formatScore(t.score) + ')' +
 container.appendChild(pill);
 });
 }
+
 function renderOfflineTeamsInputs() {
 var container = document.getElementById("teams-input-container");
 if (!container) return;
@@ -1280,16 +1485,19 @@ delBtn.onclick = function() { removeOfflineTeam(idx); }; row.appendChild(delBtn)
 container.appendChild(row);
 });
 }
+
 function addNewOfflineTeam() {
 var newIdx = teamsData.length + 1;
 teamsData.push({ id: "team_" + Date.now() + "_" + Math.random().toString(36).substr(2, 4), name: "Команда " + newIdx, score: 0, online: true });
 renderOfflineTeamsInputs(); renderScoreboardGrid(); saveState();
 }
+
 function removeOfflineTeam(index) {
 if (teamsData.length <= 2) return;
 teamsData.splice(index, 1);
 renderOfflineTeamsInputs(); renderScoreboardGrid(); saveState();
 }
+
 function saveOfflineTeams() {
 teamsData.forEach(function(t, idx) {
 var el = document.getElementById("input-team-" + idx);
@@ -1298,16 +1506,51 @@ if (el && el.value.trim()) { t.name = el.value.trim(); }
 renderScoreboardGrid(); saveState();
 showActionNotification('✅ Составы команд сохранены!');
 }
+
+/* === ОПТИМИЗИРОВАННОЕ УПРАВЛЕНИЕ СЧЁТОМ (ПУНКТ 1 И 3) === */
+function toggleAllTeamsView() {
+showAllOnlineTeams = !showAllOnlineTeams;
+var btn = document.getElementById("toggle-all-teams-btn");
+if (btn) {
+btn.innerHTML = showAllOnlineTeams ? 'Свернуть ▴' : 'Все команды ▾';
+}
+renderScoreboardGrid();
+}
+
 function renderScoreboardGrid() {
 var grid = document.getElementById("teams-scoreboard-grid");
+var toggleBtn = document.getElementById("toggle-all-teams-btn");
 if (!grid) return;
 grid.innerHTML = "";
+
 if (isInteractiveMode && teamsData.length === 0) {
 grid.innerHTML = '<div style="color:var(--text-dim); text-align:center; grid-column: 1 / -1; padding:20px;">Участники пока не подключились к комнате</div>';
+if (toggleBtn) toggleBtn.style.display = "none";
 return;
 }
-if (!activeTeamId && teamsData.length > 0) { activeTeamId = teamsData[0].id; }
-teamsData.forEach(function(t) {
+
+var isOnlineMode = (gameMode !== "offline");
+
+if (toggleBtn) {
+toggleBtn.style.display = (isOnlineMode && teamsData.length > 1) ? "block" : "none";
+}
+
+var teamsToDisplay = [];
+if (isOnlineMode && !showAllOnlineTeams) {
+// В начале игры и в ожидании раунда скрываем карточки, пока кто-то не нажмёт кнопку
+if (activeTeamId) {
+var focusedTeam = teamsData.find(function(t) { return t.id === activeTeamId; });
+if (focusedTeam) teamsToDisplay = [focusedTeam];
+}
+if (teamsToDisplay.length === 0) {
+grid.innerHTML = '<div style="color:var(--text-dim); text-align:center; grid-column: 1 / -1; padding:16px; font-size:0.9em;"><i class="fas fa-hourglass-start" style="margin-right:6px;"></i>Ожидание раунда / ответа команды...</div>';
+return;
+}
+} else {
+teamsToDisplay = teamsData;
+}
+
+teamsToDisplay.forEach(function(t) {
 var isOffline = (t.online === false);
 var group = document.createElement("div");
 group.className = "score-team-group" + (activeTeamId === t.id ? " active" : "");
@@ -1334,6 +1577,7 @@ group.innerHTML =
 grid.appendChild(group);
 });
 }
+
 function showWaveHandPopup(teamName) {
 var popup = document.getElementById("buzzer-wave-popup");
 var teamText = document.getElementById("buzzer-wave-team");
@@ -1358,16 +1602,20 @@ if (soundUrls.ring) { var a = document.getElementById("audio-ring"); a.src = sou
 showWaveHandPopup(teamName);
 
 if (isVariantsMode && roomRef) {
+var deadline = Date.now() + (variantsTimerDuration * 1000);
 roomRef.child("variantsRound").update({
 active: true,
 answeringTeam: teamId,
-answeringTeamName: teamName
+answeringTeamName: teamName,
+roundTimer: variantsTimerDuration,
+timerDeadline: deadline,
+penaltyEnabled: variantsPenaltyEnabled
 });
 }
 }
 
 function toggleHostChat() {
-if (chatMode === "disabled") return;
+if (chatMode === "disabled" || !isInteractiveMode) return;
 var chatBox = document.getElementById("host-chat-box");
 var toggleBtn = document.getElementById("host-chat-toggle-btn");
 hostChatOpen = !hostChatOpen;
@@ -1447,6 +1695,7 @@ audios.forEach(function(id) { var a = document.getElementById(id); if (a) { a.pl
 }
 document.addEventListener('click', unlockMobileAudio, { once: true });
 document.addEventListener('touchstart', unlockMobileAudio, { once: true });
+
 window.addEventListener('load', function() {
 restoreSession();
 applyGameModeUI();
@@ -1454,6 +1703,7 @@ if (!isInteractiveMode) { renderOfflineTeamsInputs(); }
 renderScoreboardGrid();
 initHostRoom();
 });
+
 function applyGameModeUI() {
 var onlineSec = document.getElementById("host-online-section");
 var localSec = document.getElementById("local-teams-section");
@@ -1475,6 +1725,7 @@ sub.textContent = "Угадай трек наоборот";
 if (varSec) { varSec.style.display = isVariantsMode ? "block" : "none"; }
 if (gameSessionStarted) { applyLockUI(); }
 }
+
 function restoreSession() {
 var saved = localStorage.getItem('reversQuiz');
 if (saved) {
@@ -1493,6 +1744,12 @@ chatMode = data.chatMode || "disabled";
 jokerEnabled = data.jokerEnabled !== false;
 jokerChance = typeof data.jokerChance !== 'undefined' ? data.jokerChance : 0.2;
 gameSessionStarted = data.gameSessionStarted === true;
+
+variantsTimerDuration = typeof data.variantsTimerDuration !== 'undefined' ? data.variantsTimerDuration : 3;
+variantsPenaltyEnabled = data.variantsPenaltyEnabled === true;
+variantsAutoNormalEnabled = data.variantsAutoNormalEnabled === true;
+variantsNormalDelay = typeof data.variantsNormalDelay !== 'undefined' ? data.variantsNormalDelay : 2;
+
 if (Array.isArray(data.teamsData) && data.teamsData.length >= 2) { teamsData = data.teamsData; }
 playedTracks = new Set(data.playedTracks || []);
 selectedFolder = data.selectedFolder || "";
@@ -1519,6 +1776,7 @@ updateLotteryUI();
 } catch(e) { console.warn("Ошибка восстановления сессии:", e); }
 }
 }
+
 function saveState() {
 try {
 var state = {
@@ -1527,6 +1785,10 @@ showScoreToPlayers: showScoreToPlayers, showOpponentScore: showOpponentScore,
 streamAudioToPlayers: streamAudioToPlayers, chatMode: chatMode,
 jokerEnabled: jokerEnabled, jokerChance: jokerChance,
 gameSessionStarted: gameSessionStarted,
+variantsTimerDuration: variantsTimerDuration,
+variantsPenaltyEnabled: variantsPenaltyEnabled,
+variantsAutoNormalEnabled: variantsAutoNormalEnabled,
+variantsNormalDelay: variantsNormalDelay,
 teamsData: teamsData, playedTracks: Array.from(playedTracks),
 selectedFolder: selectedFolder, timerDuration: timerDuration,
 originalDelay: originalDelay, mixMode: mixMode,
@@ -1536,6 +1798,7 @@ trackOrder: trackOrder, files: files
 localStorage.setItem('reversQuiz', JSON.stringify(state));
 } catch(e) { console.warn("Ошибка сохранения:", e); }
 }
+
 async function preloadAllSounds() {
 try {
 var rootUrl = "https://cloud-api.yandex.net/v1/disk/public/resources?public_key=" + encodeURIComponent(PUBLIC_KEY) + "&limit=100";
@@ -1554,6 +1817,7 @@ if (n.indexOf("game_over") !== -1 && n.endsWith(".mp3")) { soundUrls.gameOver = 
 if (isInteractiveMode && roomRef) { roomRef.child("systemSounds").set(soundUrls); }
 } catch (e) { console.error("Ошибка загрузки системных звуков:", e); }
 }
+
 function awardJokerPoints(teamId) {
 var team = teamsData.find(function(t) { return t.id === teamId; });
 if (!team) return;
@@ -1575,6 +1839,7 @@ roomRef.child("teams/" + teamId).update({ score: team.score, lastScoreDelta: jok
 roomRef.child("audioSync").update({ systemTrigger: { type: "joker", time: Date.now() } });
 }
 }
+
 function playSound(type) {
 var url = type === 'winner' ? soundUrls.winner : soundUrls.lost;
 var audio = document.getElementById(type === 'winner' ? 'audio-winner' : 'audio-lost');
@@ -1611,6 +1876,7 @@ if (originalTimeout) { clearTimeout(originalTimeout); originalTimeout = null; }
 var delayMs = Math.max(0, originalDelay * 1000);
 originalTimeout = setTimeout(function() { startOriginalPlayback(); originalTimeout = null; }, delayMs);
 }
+
 async function playNormalWithAutoRecovery(audioEl, normalUrl, trackName) {
 var normalIcon = document.getElementById("normal-play-icon");
 try {
@@ -1641,6 +1907,7 @@ return true;
 return false;
 }
 }
+
 async function startOriginalPlayback() {
 var p = document.getElementById("original-player");
 var b = document.getElementById("normal-toggle");
@@ -1652,6 +1919,7 @@ if (b) b.textContent = "Скрыть оригинал";
 var success = await playNormalWithAutoRecovery(a, trackObj.normal, currentTrackName);
 if (success && isInteractiveMode && roomRef && streamAudioToPlayers) { roomRef.child("audioSync").update({ playAction: "play_normal", currentTime: 0, startAt: Date.now() + 150 }); }
 }
+
 function formatTime(seconds) {
 if (!isFinite(seconds) || isNaN(seconds) || seconds < 0) { return "00:00"; }
 seconds = Math.floor(seconds);
@@ -1659,16 +1927,19 @@ var mins = Math.floor(seconds / 60);
 var secs = seconds % 60;
 return String(mins).padStart(2, '0') + ":" + String(secs).padStart(2, '0');
 }
+
 function updateReversDurationDisplay() {
 var a = document.getElementById("audio-revers");
 var durEl = document.getElementById("revers-duration");
 if (a && durEl && isFinite(a.duration) && a.duration > 0) { durEl.textContent = formatTime(a.duration); return true; }
 return false;
 }
+
 function updateFolderSection() {
 var folderSection = document.getElementById("folder-section");
 if (folderSection) { folderSection.style.display = mixMode ? "none" : "block"; }
 }
+
 async function fetchFolderFiles(path) {
 var limit = 100; var offset = 0; var allItems = []; var filesMap = {};
 try {
@@ -1703,6 +1974,7 @@ if (match) { filesMap[k].normal = filesMap[match].normal; }
 return filesMap;
 } catch (e) { console.error("Ошибка загрузки папки:", e); return {}; }
 }
+
 async function loadFiles() {
 if (gameSessionStarted) {
 showActionNotification("🔒 Игра уже начата — загрузка треков заблокирована.");
@@ -1741,7 +2013,6 @@ generateSongButtons();
 updateShuffleButtonState();
 saveState();
 preloadAllSounds();
-updateNextTrackButton();
 updateLotteryUI();
 showActionNotification('✅ Треки загружены и перемешаны!');
 } catch (e) {
@@ -1752,6 +2023,7 @@ if (!gameSessionStarted) {
 loadBtn.innerHTML = '<i class="fas fa-cloud-download-alt"></i> Загрузить треки';
 }
 }
+
 function updateShuffleButtonState() {
 var shuffleBtn = document.getElementById("shuffle-btn");
 var hasStarted = lastPlayedTrack !== null;
@@ -1763,6 +2035,7 @@ shuffleBtn.style.cursor = hasStarted ? "not-allowed" : "pointer";
 shuffleBtn.textContent = hasStarted ? '❌ Игра начата' : '🔄 Перемешать треки';
 }
 }
+
 function shuffleTracks() {
 if (gameSessionStarted) { showActionNotification('🔒 Перемешивание заблокировано: игра начата.'); return; }
 if (lastPlayedTrack !== null) { showActionNotification('❌ Нельзя перемешивать после начала!'); return; }
@@ -1775,10 +2048,12 @@ showActionNotification('✅ Треки перемешаны!');
 updateNextTrackButton();
 updateLotteryUI();
 }
+
 function showActionNotification(text) {
 var notif = document.getElementById("action-notification");
 if (notif) { notif.textContent = text; notif.classList.add("show"); setTimeout(function() { notif.classList.remove("show"); }, 2000); }
 }
+
 function generateSongButtons() {
 var container = document.getElementById("song-buttons");
 if (!container) return;
@@ -1796,11 +2071,13 @@ container.appendChild(btn);
 });
 updateNextTrackButton();
 }
+
 function purgeAudioBuffer(audioEl) { if (audioEl) { audioEl.pause(); audioEl.currentTime = 0; } }
 
 function playTrack(name) {
 hideBuzzerAlert();
 if (originalTimeout) { clearTimeout(originalTimeout); originalTimeout = null; }
+if (variantsAutoNormalTimeout) { clearTimeout(variantsAutoNormalTimeout); variantsAutoNormalTimeout = null; }
 hideOriginal(); stopAllSounds(); hideTrackPopup();
 if (isInteractiveMode) { clearTeamHighlight(); }
 if (!isInteractiveMode && name !== lastPlayedTrack) {
@@ -1898,6 +2175,7 @@ if (unplayed.length === 0) { showActionNotification('❗ Все треки сы�
 var nextTrack = unplayed[0];
 playTrack(nextTrack);
 }
+
 function updateNextTrackButton() {
 var btn = document.getElementById("next-track-btn");
 if (!btn) return;
@@ -1905,8 +2183,10 @@ var allNames = Object.keys(files);
 var unplayed = allNames.filter(function(name) { return !playedTracks.has(name); });
 btn.disabled = unplayed.length === 0;
 }
+
 function showTrackPopup(name) { var popup = document.getElementById("track-name-popup"); if (popup) { popup.textContent = name; popup.style.opacity = 1; } }
 function hideTrackPopup() { var popup = document.getElementById("track-name-popup"); if (popup) popup.style.opacity = 0; }
+
 function toggleRevers() {
 var audio = document.getElementById("audio-revers");
 var normal = document.getElementById("audio-normal");
@@ -1962,6 +2242,7 @@ setTimeout(function() {
 audio.play().then(function() { icon.classList.replace("fa-play", "fa-pause"); showTrackPopup(currentTrackName); updateReversProgress(); }).catch(function(err) { console.warn("Возобновление:", err); });
 }, delayStart);
 }
+
 function cycleNextOfflineTeam() {
 if (teamsData.length === 0) return;
 var currIdx = teamsData.findIndex(function(t) { return t.id === activeTeamId; });
@@ -1969,17 +2250,23 @@ if (currIdx === -1) currIdx = 0;
 var nextIdx = (currIdx + 1) % teamsData.length;
 activateTeam(teamsData[nextIdx].id);
 }
+
 function manualActivateTeam(teamId) { activateTeam(teamId); saveState(); }
+
 function activateTeam(teamId) {
 activeTeamId = teamId;
 document.querySelectorAll('.score-team-group').forEach(function(el) { el.classList.remove('active'); });
 var activeCard = document.getElementById('score-card-' + teamId);
 if (activeCard) { activeCard.classList.add('active'); }
+renderScoreboardGrid();
 }
+
 function clearTeamHighlight() {
 activeTeamId = null;
 document.querySelectorAll('.score-team-group').forEach(function(el) { el.classList.remove('active'); });
+renderScoreboardGrid();
 }
+
 function changeScore(teamId, delta) {
 var team = teamsData.find(function(t) { return t.id === teamId; });
 if (!team) return;
@@ -1996,6 +2283,7 @@ roomRef.child("teams/" + teamId).update({ score: team.score, lastScoreDelta: del
 if (streamAudioToPlayers && delta > 0) { roomRef.child("audioSync").update({ systemTrigger: { type: "ring", time: Date.now() } }); }
 }
 }
+
 function showOriginal() {
 var p = document.getElementById("original-player");
 var b = document.getElementById("normal-toggle");
@@ -2003,6 +2291,7 @@ p.style.display = p.style.display === "none" ? "block" : "none";
 b.textContent = p.style.display === "none" ? "Показать оригинал" : "Скрыть оригинал";
 if (p.style.display === "none") document.getElementById("audio-normal").pause();
 }
+
 function hideOriginal() {
 var p = document.getElementById("original-player");
 p.style.display = "none";
@@ -2010,12 +2299,14 @@ document.getElementById("normal-toggle").textContent = "Показать ори�
 document.getElementById("audio-normal").pause();
 document.getElementById("normal-play-icon").classList.replace("fa-pause", "fa-play");
 }
+
 async function toggleNormal() {
 var a = ensureAudioPlayer("audio-normal");
 var r = document.getElementById("audio-revers");
 var i = document.getElementById("normal-play-icon");
 if (a.paused) {
 if (originalTimeout) { clearTimeout(originalTimeout); originalTimeout = null; }
+if (variantsAutoNormalTimeout) { clearTimeout(variantsAutoNormalTimeout); variantsAutoNormalTimeout = null; }
 stopTimer(); hideBuzzerAlert(); hideTrackPopup();
 if (r && !r.paused) { r.pause(); var rIcon = document.getElementById("revers-play-icon"); if (rIcon) rIcon.classList.replace("fa-pause", "fa-play"); }
 var trackObj = files[currentTrackName];
@@ -2029,6 +2320,7 @@ if (i) i.classList.replace("fa-play", "fa-pause");
 if (isInteractiveMode && roomRef && streamAudioToPlayers) { roomRef.child("audioSync").update({ playAction: "pause" }); }
 }
 }
+
 function updateReversProgress() {
 var a = document.getElementById("audio-revers");
 var fill = document.getElementById("revers-progress-fill");
@@ -2039,6 +2331,7 @@ fill.style.width = (progress * 100 || 0) + "%";
 currentTimeEl.textContent = formatTime(a.currentTime);
 if (!a.paused) requestAnimationFrame(updateReversProgress);
 }
+
 function updateNormalProgress() {
 var a = document.getElementById("audio-normal");
 var fill = document.getElementById("normal-progress-fill");
@@ -2049,8 +2342,10 @@ fill.style.width = (progress * 100 || 0) + "%";
 currentTimeEl.textContent = formatTime(a.currentTime);
 if (!a.paused) requestAnimationFrame(updateNormalProgress);
 }
+
 function seekRevers(e) { var bar = document.getElementById("revers-progress-bar"); var audio = document.getElementById("audio-revers"); var percent = e.offsetX / bar.offsetWidth; audio.currentTime = percent * audio.duration; }
 function seekNormal(e) { var bar = document.getElementById("normal-progress-bar"); var audio = document.getElementById("audio-normal"); var percent = e.offsetX / bar.offsetWidth; audio.currentTime = percent * audio.duration; }
+
 function markAsPlayed() {
 if (currentTrackName && !playedTracks.has(currentTrackName)) {
 playedTracks.add(currentTrackName); updateTrackCounter(); saveState();
@@ -2059,6 +2354,7 @@ updateNextTrackButton();
 }
 }
 document.getElementById("audio-revers").addEventListener("playing", markAsPlayed);
+
 function showNotification(text, isAddition) {
 if (typeof isAddition === 'undefined') isAddition = true;
 var notif = document.getElementById("score-notification");
@@ -2070,18 +2366,22 @@ notif.classList.add("show");
 setTimeout(function() { notif.classList.remove("show"); }, 1200);
 }
 }
+
 function stopAllSounds() {
 if (originalTimeout) { clearTimeout(originalTimeout); originalTimeout = null; }
+if (variantsAutoNormalTimeout) { clearTimeout(variantsAutoNormalTimeout); variantsAutoNormalTimeout = null; }
 ["audio-revers", "audio-normal", "audio-winner", "audio-lost", "audio-ring", "audio-start", "audio-final", "audio-game-over"].forEach(function(id) {
 var el = document.getElementById(id); if (el) { el.pause(); el.currentTime = 0; }
 });
 stopTimer();
 }
+
 function updateTrackCounter() {
 var counter = document.getElementById("track-counter");
 if (counter) { counter.textContent = Object.keys(files).length - playedTracks.size; }
 updateNextTrackButton();
 }
+
 function endQuiz() {
 localStorage.removeItem('reversQuiz');
 forceStopAllSounds();
@@ -2097,7 +2397,7 @@ status: "game_over", revealedTrack: "",
 leaderboard: sortedTeams.map(function(t) { return { name: t.name, score: t.score }; }),
 audioSync: { trackSessionId: "", reversUrl: "", normalUrl: "", duration: 0, currentTime: 0, playAction: "stop", systemTrigger: { type: "gameOver", time: Date.now() }, startAt: 0, isJoker: false, jokerEnabled: jokerEnabled },
 lotteryState: { phase: "idle", readyTeams: {}, numberChoices: {}, selectedNumber: null, allNumbers: [] },
-variantsRound: { active: false, correctTrack: "", options: [], answeringTeam: null, answeringTeamName: "", selectedOption: null, isFinal: false, askConfirm: false, attemptsLeft: 2, isRevealed: false, isCorrect: false }
+variantsRound: { active: false, correctTrack: "", options: [], answeringTeam: null, answeringTeamName: "", selectedOption: null, isFinal: false, askConfirm: false, attemptsLeft: 2, isRevealed: false, isCorrect: false, roundTimer: variantsTimerDuration, timerDeadline: 0, penaltyEnabled: variantsPenaltyEnabled }
 });
 }
 localStorage.removeItem("host_room_pin");
@@ -2105,7 +2405,14 @@ var quizArea = document.getElementById("quiz-area");
 quizArea.innerHTML = '';
 var resultDiv = document.createElement('div');
 resultDiv.className = 'winner-screen';
-var scoreListHtml = sortedTeams.map(function(t, idx) { return '<div>' + (idx + 1) + '. ' + t.name + ': <strong>' + formatScore(t.score) + '</strong></div>'; }).join('');
+
+var topScore = sortedTeams[0] ? sortedTeams[0].score : 0;
+var scoreListHtml = sortedTeams.map(function(t, idx) {
+var isTieWinner = (t.score === topScore);
+var rankBadge = isTieWinner ? '🤝 ' : (idx + 1) + '. ';
+return '<div>' + rankBadge + t.name + ': <strong>' + formatScore(t.score) + '</strong></div>';
+}).join('');
+
 resultDiv.innerHTML = '<h2>🏆 Итоги битвы:<br><strong>' + winnerText + '</strong></h2><div class="final-scores">' + scoreListHtml + '</div>';
 quizArea.appendChild(resultDiv);
 var restartBtn = document.createElement("button");
@@ -2114,45 +2421,17 @@ restartBtn.style.cssText = 'width: 100%; padding: 16px; margin-top: 24px; backgr
 restartBtn.onclick = function() { location.reload(); };
 quizArea.appendChild(restartBtn);
 }
+
 function toggleInteractiveSettingsVisibility() {
 var modeSel = document.getElementById("game-mode-toggle");
 var subSettings = document.getElementById("interactive-sub-settings");
-if (modeSel && subSettings) {
-subSettings.style.display = (modeSel.value !== "offline") ? "flex" : "none";
+var varSettings = document.getElementById("variants-sub-settings");
+if (modeSel) {
+if (subSettings) subSettings.style.display = (modeSel.value !== "offline") ? "flex" : "none";
+if (varSettings) varSettings.style.display = (modeSel.value === "variants") ? "flex" : "none";
 }
 }
-function openSettings() {
-var tIn = document.getElementById("timer-input");
-var dIn = document.getElementById("original-delay-input");
-var mIn = document.getElementById("mix-mode");
-var modeSel = document.getElementById("game-mode-toggle");
-var streamSel = document.getElementById("stream-audio-toggle");
-var chatModeSel = document.getElementById("chat-mode-toggle");
-var scoreSel = document.getElementById("show-score-toggle");
-var opponentScoreSel = document.getElementById("show-opponent-score-toggle");
-var jokerToggle = document.getElementById("joker-toggle");
-var jokerChanceSel = document.getElementById("joker-chance");
-var sMod = document.getElementById("settings-modal");
-var statusEl = document.getElementById("manual-update-status");
-if (tIn) tIn.value = timerDuration;
-if (dIn) dIn.value = originalDelay;
-if (mIn) mIn.value = mixMode ? "mixed" : "normal";
-if (modeSel) modeSel.value = gameMode;
-if (streamSel) streamSel.value = streamAudioToPlayers ? "true" : "false";
-if (chatModeSel) chatModeSel.value = chatMode;
-if (scoreSel) scoreSel.value = showScoreToPlayers ? "true" : "false";
-if (opponentScoreSel) opponentScoreSel.value = showOpponentScore ? "true" : "false";
-if (jokerToggle) jokerToggle.value = jokerEnabled ? "true" : "false";
-if (jokerChanceSel) jokerChanceSel.value = jokerChance.toString();
-toggleInteractiveSettingsVisibility();
-if (statusEl) { var currentVer = localStorage.getItem('app_version') || '11'; statusEl.textContent = "Текущая версия: v" + currentVer; }
-if (sMod) { sMod.classList.add("active"); }
-}
-function closeSettings() {
-var sMod = document.getElementById("settings-modal");
-if (sMod) { sMod.classList.remove("active"); }
-if (document.activeElement && typeof document.activeElement.blur === "function") { document.activeElement.blur(); }
-}
+
 function setSettings() {
 try {
 var inputTimer = document.getElementById("timer-input");
@@ -2165,10 +2444,18 @@ var newShowScore = document.getElementById("show-score-toggle").value === "true"
 var newShowOpponent = document.getElementById("show-opponent-score-toggle").value === "true";
 var newJokerEnabled = document.getElementById("joker-toggle").value === "true";
 var newJokerChance = parseFloat(document.getElementById("joker-chance").value);
+
+var vTimerVal = parseInt(document.getElementById("variants-timer-input").value) || 3;
+var vPenaltyVal = document.getElementById("variants-penalty-toggle").value === "true";
+var vAutoNormVal = document.getElementById("variants-auto-normal-toggle").value === "true";
+var vNormDelayVal = parseFloat(document.getElementById("variants-normal-delay-input").value);
+if (isNaN(vNormDelayVal) || vNormDelayVal < 0) vNormDelayVal = 2;
+
 var valTimer = parseInt(inputTimer.value);
 var valDelay = parseFloat(inputDelay.value);
 if (isNaN(valTimer) || valTimer < 1 || valTimer > 300) return alert("Таймер: от 1 до 300 сек.");
 if (isNaN(valDelay) || valDelay < 0 || valDelay > 30) return alert("Задержка оригинала: от 0 до 30 сек.");
+
 var needReload = (newGameMode !== gameMode);
 gameMode = newGameMode;
 isInteractiveMode = (gameMode !== "offline");
@@ -2183,9 +2470,21 @@ showScoreToPlayers = newShowScore;
 showOpponentScore = newShowOpponent;
 jokerEnabled = newJokerEnabled;
 jokerChance = newJokerChance;
+
+variantsTimerDuration = vTimerVal;
+variantsPenaltyEnabled = vPenaltyVal;
+variantsAutoNormalEnabled = vAutoNormVal;
+variantsNormalDelay = vNormDelayVal;
+
 if (isInteractiveMode && roomRef) {
 roomRef.update({ showScore: showScoreToPlayers, showOpponentScore: showOpponentScore, streamAudio: streamAudioToPlayers, chatMode: chatMode, gameMode: gameMode, systemSounds: soundUrls });
 roomRef.child("audioSync").update({ jokerEnabled: jokerEnabled });
+if (isVariantsMode) {
+roomRef.child("variantsRound").update({
+roundTimer: variantsTimerDuration,
+penaltyEnabled: variantsPenaltyEnabled
+});
+}
 }
 saveState();
 updateHostChatButtonVisibility();
@@ -2194,6 +2493,7 @@ else { updateFolderSection(); applyGameModeUI(); updateLotteryUI(); showActionNo
 } catch (err) { console.error("Ошибка при сохранении настроек:", err); }
 finally { closeSettings(); }
 }
+
 function startTimer() {
 if (isTimerActive) return;
 stopTimerSounds();
@@ -2225,12 +2525,14 @@ if (!soundUrls.final && circle) { isTimerActive = false; circle.classList.remove
 }
 }, 1000);
 }
+
 function stopTimerSounds() {
 var aStart = document.getElementById("audio-start");
 var aFinal = document.getElementById("audio-final");
 if (aStart) { aStart.pause(); aStart.currentTime = 0; }
 if (aFinal) { aFinal.onended = null; aFinal.pause(); aFinal.currentTime = 0; }
 }
+
 function stopTimer() {
 if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
 isTimerActive = false;
@@ -2239,6 +2541,7 @@ if (isInteractiveMode && roomRef) { roomRef.child("timerState").set({ active: fa
 var circle = document.getElementById("timer-circle");
 if (circle) { circle.classList.remove("active"); }
 }
+
 function updateTimerDisplay() {
 var el = document.getElementById("timer-circle");
 if (!el) return;
