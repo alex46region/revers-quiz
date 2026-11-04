@@ -11,25 +11,25 @@
 <title>⚡ Revers Quiz — Экран команды</title>
 <script>
 (async function checkClientVersionAndClearCache() {
-  try {
-    var res = await fetch("version.json?t=" + Date.now(), { cache: "no-store" });
-    if (!res.ok) return;
-    var data = await res.json();
-    var remoteVer = parseInt(data.nativeVersion) || 0;
-    var localVer = parseInt(localStorage.getItem("player_app_version")) || 0;
-    if (remoteVer > localVer) {
-      localStorage.setItem("player_app_version", remoteVer);
-      if ("caches" in window) {
-        var keys = await caches.keys();
-        await Promise.all(keys.map(function(k) { return caches.delete(k); }));
-      }
-      if ("serviceWorker" in navigator) {
-        var regs = await navigator.serviceWorker.getRegistrations();
-        for (var reg of regs) { await reg.update(); }
-      }
-      window.location.reload(true);
-    }
-  } catch(e) { console.warn("Проверка версии пропущена:", e); }
+try {
+var res = await fetch("version.json?t=" + Date.now(), { cache: "no-store" });
+if (!res.ok) return;
+var data = await res.json();
+var remoteVer = parseInt(data.nativeVersion) || 0;
+var localVer = parseInt(localStorage.getItem("player_app_version")) || 0;
+if (remoteVer > localVer) {
+localStorage.setItem("player_app_version", remoteVer);
+if ("caches" in window) {
+var keys = await caches.keys();
+await Promise.all(keys.map(function(k) { return caches.delete(k); }));
+}
+if ("serviceWorker" in navigator) {
+var regs = await navigator.serviceWorker.getRegistrations();
+for (var reg of regs) { await reg.update(); }
+}
+window.location.reload(true);
+}
+} catch(e) { console.warn("Проверка версии пропущена:", e); }
 })();
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -39,26 +39,16 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <style>
-:root {
-  --neon-cyan: #00f3ff;
-  --neon-magenta: #ff007f;
-  --neon-purple: #9d00ff;
-  --neon-yellow: #ffe600;
-  --neon-green: #00ff66;
-  --neon-gold: #ffd700;
-  --card-bg: rgba(16, 10, 38, 0.75);
-  --border-neon: rgba(0, 243, 255, 0.35);
-}
+:root { --neon-cyan: #00f3ff; --neon-magenta: #ff007f; --neon-purple: #9d00ff; --neon-yellow: #ffe600; --neon-green: #00ff66; --neon-gold: #ffd700; --card-bg: rgba(16, 10, 38, 0.75); --border-neon: rgba(0, 243, 255, 0.35); }
 * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Rajdhani', sans-serif; -webkit-tap-highlight-color: transparent; user-select: none; }
 body { background-color: #080318; background-image: radial-gradient(ellipse at 50% 0%, rgba(157, 0, 255, 0.35) 0%, transparent 60%), radial-gradient(circle at 10% 90%, rgba(255, 0, 127, 0.25) 0%, transparent 50%), radial-gradient(circle at 90% 90%, rgba(0, 243, 255, 0.2) 0%, transparent 50%), linear-gradient(to bottom, transparent 65%, rgba(0, 243, 255, 0.08) 100%), repeating-linear-gradient(0deg, transparent, transparent 38px, rgba(255, 0, 127, 0.08) 39px, rgba(255, 0, 127, 0.08) 40px), repeating-linear-gradient(90deg, transparent, transparent 38px, rgba(0, 243, 255, 0.08) 39px, rgba(0, 243, 255, 0.08) 40px); background-size: 100% 100%, 100% 100%, 100% 100%, 32px 32px, 32px 32px; color: #fff; min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; padding: 12px 14px calc(14px + env(safe-area-inset-bottom)); overflow: hidden; position: relative; }
 body::after { content: ""; position: fixed; inset: 0; background: repeating-linear-gradient(rgba(0,0,0,0) 0px, rgba(0,0,0,0) 2px, rgba(0,0,0,0.18) 3px); pointer-events: none; z-index: 9999; }
 
 .mode-header-badge {
-  text-align: center; font-family: 'Orbitron', monospace; font-size: 0.75em; font-weight: 800;
-  letter-spacing: 2px; text-transform: uppercase; color: var(--neon-cyan); margin-bottom: 6px;
-  text-shadow: 0 0 10px rgba(0, 243, 255, 0.5); opacity: 0.85;
+text-align: center; font-family: 'Orbitron', monospace; font-size: 0.75em; font-weight: 800;
+letter-spacing: 2px; text-transform: uppercase; color: var(--neon-cyan); margin-bottom: 6px;
+text-shadow: 0 0 10px rgba(0, 243, 255, 0.5); opacity: 0.85;
 }
-
 .player-countdown-badge { position: absolute; top: 14px; left: 50%; transform: translateX(-50%) scale(0.8); font-family: 'Orbitron', monospace; font-size: 1.3em; font-weight: 900; color: var(--neon-cyan); background: rgba(8, 4, 24, 0.9); border: 2px solid var(--neon-cyan); padding: 6px 18px; border-radius: 20px; box-shadow: 0 0 25px rgba(0, 243, 255, 0.5); display: none; align-items: center; gap: 8px; z-index: 2500; pointer-events: none; transition: all 0.25s ease; }
 .player-countdown-badge.show { display: flex; transform: translateX(-50%) scale(1); }
 .player-countdown-badge.urgent { color: var(--neon-magenta); border-color: var(--neon-magenta); box-shadow: 0 0 35px rgba(255, 0, 127, 0.8); animation: pulseUrgent 0.6s infinite alternate; }
@@ -93,7 +83,7 @@ body::after { content: ""; position: fixed; inset: 0; background: repeating-line
 .score-card.my-card { border-color: var(--neon-cyan); background: linear-gradient(180deg, rgba(0, 243, 255, 0.18) 0%, rgba(16, 10, 38, 0.8) 100%); box-shadow: 0 0 20px rgba(0, 243, 255, 0.35); }
 .score-card.opponent-card { border-color: rgba(255, 0, 127, 0.3); }
 
-/* АДАПТИВНОСТЬ НАЗВАНИЙ КОМАНД НА ТЕЛЕФОНАХ */
+/* АДАПТИВНОСТЬ НАЗВАНИЙ КОМАНД */
 .score-team-title {
   font-size: 0.72em; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
   color: #9d93c4; word-break: break-word; overflow-wrap: anywhere; line-height: 1.15;
@@ -168,7 +158,6 @@ body::after { content: ""; position: fixed; inset: 0; background: repeating-line
   background: radial-gradient(circle at 50% 20%, rgba(55, 30, 5, 0.96) 0%, rgba(10, 8, 18, 0.98) 80%) !important;
   border: 4px dashed rgba(255, 149, 0, 0.55);
 }
-
 .variants-player-container {
   width: 100%; max-width: 420px; display: flex; flex-direction: column; gap: 12px;
   text-align: center;
@@ -181,7 +170,6 @@ body::after { content: ""; position: fixed; inset: 0; background: repeating-line
 #variants-player-overlay.spectator-mode .variants-player-header {
   display: none;
 }
-
 .spectator-warning-banner {
   display: none; flex-direction: column; align-items: center; justify-content: center;
   background: rgba(255, 149, 0, 0.15); border: 2px solid #ff9500;
@@ -204,12 +192,10 @@ body::after { content: ""; position: fixed; inset: 0; background: repeating-line
   font-size: 0.9em; color: #ffd280; font-weight: 700; margin-top: 4px;
   word-break: break-word; overflow-wrap: anywhere; line-height: 1.25;
 }
-
 .variants-turn-status {
   font-size: 0.95em; font-weight: 700; color: var(--neon-yellow);
   margin-bottom: 2px;
 }
-
 .variants-timer-bar-wrap {
   display: flex; align-items: center; justify-content: center; gap: 8px;
   font-family: 'Orbitron', monospace; font-size: 1.05em; font-weight: 900;
@@ -229,7 +215,6 @@ body::after { content: ""; position: fixed; inset: 0; background: repeating-line
 }
 @keyframes timerPulseGlow { 0% { transform: scale(0.96); } 100% { transform: scale(1.04); } }
 @keyframes timerPulseUrgent { 0% { transform: scale(0.94); } 100% { transform: scale(1.08); } }
-
 .variant-btn-player {
   width: 100%; padding: 15px 14px;
   background: rgba(16, 10, 38, 0.85); border: 2px solid var(--border-neon);
@@ -255,7 +240,6 @@ body::after { content: ""; position: fixed; inset: 0; background: repeating-line
   color: #000; font-weight: 900; animation: none;
   box-shadow: 0 0 35px var(--neon-green);
 }
-
 .variant-btn-player.spectator {
   background: rgba(22, 20, 32, 0.7) !important;
   border: 1.5px dashed rgba(255, 149, 0, 0.4) !important;
@@ -274,7 +258,6 @@ body::after { content: ""; position: fixed; inset: 0; background: repeating-line
 .variant-btn-player.spectator.selected::before {
   content: "👀"; opacity: 1;
 }
-
 .variant-btn-player.revealed-correct {
   border-color: var(--neon-green) !important; background: var(--neon-green) !important;
   color: #000 !important; font-weight: 900 !important;
@@ -285,7 +268,6 @@ body::after { content: ""; position: fixed; inset: 0; background: repeating-line
   border-color: var(--neon-magenta) !important; background: rgba(255, 0, 127, 0.35) !important;
   color: #fff !important; text-decoration: line-through; opacity: 0.65;
 }
-
 #variant-result-overlay {
   position: fixed; inset: 0; z-index: 7000; display: none;
   flex-direction: column; align-items: center; justify-content: center;
@@ -306,7 +288,6 @@ body::after { content: ""; position: fixed; inset: 0; background: repeating-line
 .result-banner-title.win { color: var(--neon-green); text-shadow: 0 0 35px var(--neon-green), 0 0 70px var(--neon-cyan); }
 .result-banner-title.loss { color: var(--neon-magenta); text-shadow: 0 0 35px var(--neon-magenta); }
 .result-banner-sub { font-family: 'Rajdhani', sans-serif; font-size: 1.2em; font-weight: 700; color: #fff; margin-top: 8px; max-width: 90vw; }
-
 #confirm-choice-modal {
   position: fixed; inset: 0; background: rgba(0, 0, 0, 0.88);
   backdrop-filter: blur(10px); z-index: 6000; display: none;
@@ -325,6 +306,53 @@ body::after { content: ""; position: fixed; inset: 0; background: repeating-line
 .confirm-btn.yes { background: linear-gradient(135deg, var(--neon-green), #00bb55); color: #000; box-shadow: 0 0 25px rgba(0, 255, 102, 0.5); }
 .confirm-btn.no { background: linear-gradient(135deg, var(--neon-magenta), #b8005b); color: #fff; box-shadow: 0 0 25px rgba(255, 0, 127, 0.5); }
 
+/* МОТИВАЦИОННЫЙ БАННЕР УЧАСТНИКОВ */
+.player-phrase-banner {
+  position: fixed; top: 18px; left: 50%; transform: translateX(-50%);
+  width: 90%; max-width: 440px; border-radius: 20px; padding: 16px 20px;
+  text-align: center; z-index: 9500; display: none; backdrop-filter: blur(25px);
+  box-shadow: 0 15px 50px rgba(0, 0, 0, 0.9); animation: phrasePop 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+@keyframes phrasePop {
+  0% { transform: translateX(-50%) scale(0.7); opacity: 0; }
+  100% { transform: translateX(-50%) scale(1); opacity: 1; }
+}
+.player-phrase-banner.scenario-1.is-me {
+  background: rgba(6, 32, 18, 0.95); border: 2.5px solid var(--neon-green);
+  box-shadow: 0 0 45px rgba(0, 255, 102, 0.7);
+}
+.player-phrase-banner.scenario-1.is-opp {
+  background: rgba(10, 24, 38, 0.95); border: 2px dashed var(--neon-cyan);
+  box-shadow: 0 0 35px rgba(0, 243, 255, 0.4);
+}
+.player-phrase-banner.scenario-2.is-me {
+  background: rgba(38, 8, 24, 0.95); border: 2.5px solid var(--neon-magenta);
+  box-shadow: 0 0 45px rgba(255, 0, 127, 0.7);
+}
+.player-phrase-banner.scenario-2.is-opp {
+  background: rgba(28, 16, 12, 0.95); border: 2px dashed #ff9500;
+  box-shadow: 0 0 35px rgba(255, 149, 0, 0.4);
+}
+.player-phrase-banner.scenario-3.is-me {
+  background: rgba(36, 28, 6, 0.95); border: 2.5px solid var(--neon-yellow);
+  box-shadow: 0 0 45px rgba(255, 230, 0, 0.7);
+}
+.player-phrase-banner.scenario-3.is-opp {
+  background: rgba(20, 14, 38, 0.95); border: 2px dashed var(--neon-purple);
+  box-shadow: 0 0 35px rgba(157, 0, 255, 0.4);
+}
+.player-phrase-team {
+  font-family: 'Orbitron', monospace; font-size: 0.85em; font-weight: 900;
+  letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 4px;
+}
+.player-phrase-banner.scenario-1 .player-phrase-team { color: var(--neon-green); }
+.player-phrase-banner.scenario-2 .player-phrase-team { color: var(--neon-magenta); }
+.player-phrase-banner.scenario-3 .player-phrase-team { color: var(--neon-yellow); }
+.player-phrase-text {
+  font-family: 'Rajdhani', sans-serif; font-size: 1.25em; font-weight: 700;
+  color: #fff; line-height: 1.35; word-break: break-word; overflow-wrap: anywhere;
+}
+
 #game-over-view { display: none; flex-direction: column; margin: auto; width: 100%; max-width: 400px; background: var(--card-bg); backdrop-filter: blur(28px); border: 2px solid var(--neon-yellow); box-shadow: 0 0 60px rgba(255, 230, 0, 0.3); border-radius: 30px; padding: 30px 22px; text-align: center; animation: modalEnter 0.4s ease; }
 .trophy-icon { font-size: 3.2em; color: var(--neon-yellow); filter: drop-shadow(0 0 20px var(--neon-yellow)); margin-bottom: 12px; }
 .game-over-title { font-family: 'Orbitron', sans-serif; font-size: 1.9em; font-weight: 900; letter-spacing: 1px; margin-bottom: 4px; }
@@ -335,19 +363,18 @@ body::after { content: ""; position: fixed; inset: 0; background: repeating-line
 .leaderboard-row .pts { font-family: 'Orbitron', monospace; font-size: 1.25em; color: var(--neon-cyan); }
 .countdown-box { font-size: 0.9em; font-weight: 600; color: #9d93c4; }
 .countdown-box span { font-family: 'Orbitron', monospace; font-weight: 900; color: var(--neon-magenta); font-size: 1.2em; }
-
 #player-chat-modal { position: fixed; inset: 0; background: rgba(4, 2, 12, 0.88); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); z-index: 3000; display: none; align-items: center; justify-content: center; padding: 14px; }
 .player-chat-card { background: #0f0724; border: 2px solid var(--neon-cyan); border-radius: 26px; width: 100%; max-width: 440px; height: 80vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 25px 70px rgba(0, 0, 0, 0.95), 0 0 35px rgba(0, 243, 255, 0.25); position: relative; }
 .player-chat-head { padding: 16px 20px; background: rgba(20, 12, 44, 0.95); display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255, 255, 255, 0.1); font-family: 'Orbitron', sans-serif; font-size: 1.15em; font-weight: 900; letter-spacing: 1px; }
 .player-chat-messages { flex: 1; padding: 14px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
 .chat-msg { display: flex; flex-direction: column; font-size: 0.95em; line-height: 1.35; }
-.chat-msg .name { font-size: 0.8em; font-weight: 800; color: var(--neon-cyan); margin-bottom: 3px; letter-spacing: 0.5px; word-break: break-word; }
+.chat-msg .name { font-size: 0.8em; font-weight: 800; color: var(--neon-cyan); margin-bottom: 3px; letter-spacing: 0.5px; }
 .chat-msg.mine .name { color: var(--neon-green); }
 .chat-msg.host .name { color: var(--neon-yellow); }
 .chat-msg .text { background: rgba(24, 15, 52, 0.9); border: 1px solid rgba(255, 255, 255, 0.08); padding: 9px 15px; border-radius: 14px; color: #fff; word-break: break-word; }
 .chat-msg.mine .text { border-color: rgba(0, 255, 102, 0.35); background: rgba(0, 255, 102, 0.08); }
 .chat-msg.host .text { border-color: rgba(255, 230, 0, 0.35); background: rgba(255, 230, 0, 0.08); }
-.chat-msg.system { background: rgba(255, 0, 127, 0.15); border-left: 3px solid var(--neon-magenta); padding: 7px 12px; border-radius: 10px; color: var(--neon-magenta); font-weight: 700; word-break: break-word; }
+.chat-msg.system { background: rgba(255, 0, 127, 0.15); border-left: 3px solid var(--neon-magenta); padding: 7px 12px; border-radius: 10px; color: var(--neon-magenta); font-weight: 700; }
 .player-emoji-popover { position: absolute; bottom: 72px; left: 14px; right: 14px; background: #140b2e; border: 1.5px solid var(--neon-cyan); border-radius: 18px; padding: 12px; display: none; grid-template-columns: repeat(7, 1fr); gap: 6px; font-size: 1.45em; text-align: center; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.95); max-height: 180px; overflow-y: auto; z-index: 3100; }
 .player-emoji-popover span { cursor: pointer; padding: 5px; border-radius: 10px; transition: background 0.1s; }
 .player-emoji-popover span:hover { background: rgba(255, 255, 255, 0.12); }
@@ -356,8 +383,6 @@ body::after { content: ""; position: fixed; inset: 0; background: repeating-line
 .player-chat-input-bar input { flex: 1; min-width: 0; padding: 12px 16px; border-radius: 14px; background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(0, 243, 255, 0.25); color: #fff; font-size: 16px; outline: none; }
 .player-chat-input-bar input:focus { border-color: var(--neon-cyan); }
 .player-chat-input-bar button.btn-send-player { background: linear-gradient(135deg, var(--neon-cyan), #0077ff); color: #050212; border: none; width: 44px; height: 44px; border-radius: 14px; font-size: 15px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 0 15px rgba(0, 243, 255, 0.4); }
-
-/* ДЖОКЕР */
 #joker-overlay { position: fixed; inset: 0; background: rgba(5, 6, 10, 0.95); backdrop-filter: blur(15px); z-index: 9000; display: none; align-items: center; justify-content: center; flex-direction: column; gap: 20px; }
 #joker-overlay.active { display: flex; animation: jokerFadeIn 0.4s ease; }
 @keyframes jokerFadeIn { from { opacity: 0; } to { opacity: 1; } }
@@ -380,124 +405,121 @@ body::after { content: ""; position: fixed; inset: 0; background: repeating-line
 <audio id="player-sound-game-over" preload="auto" playsinline style="display:none;"></audio>
 
 <div class="player-countdown-badge" id="player-timer-badge">
-  <i class="fas fa-stopwatch"></i>
-  <span id="player-timer-badge-num">10</span>
+<i class="fas fa-stopwatch"></i>
+<span id="player-timer-badge-num">10</span>
 </div>
 <div class="score-delta-overlay" id="player-score-delta-popup">
-  <div class="score-delta-badge plus" id="player-score-delta-badge">+1</div>
-  <div class="score-delta-subtext" id="player-score-delta-subtext">Баллы обновлены!</div>
+<div class="score-delta-badge plus" id="player-score-delta-badge">+1</div>
+<div class="score-delta-subtext" id="player-score-delta-subtext">Баллы обновлены!</div>
 </div>
 <div id="joker-overlay">
-  <div class="joker-card">🃏</div>
-  <div class="joker-title">Секретный джокер!</div>
-  <div class="joker-multiplier">×3 ОЧКА</div>
+<div class="joker-card">🃏</div>
+<div class="joker-title">Секретный джокер!</div>
+<div class="joker-multiplier">×3 ОЧКА</div>
 </div>
-
 <!-- ОВЕРЛЕЙ РЕЗУЛЬТАТА РАУНДА "ВАРИАНТЫ" -->
 <div id="variant-result-overlay">
-  <div class="result-banner-icon" id="result-banner-icon">🎉</div>
-  <div class="result-banner-title" id="result-banner-title">ВЕРНО!</div>
-  <div class="result-banner-sub" id="result-banner-sub">Вы угадали трек!</div>
+<div class="result-banner-icon" id="result-banner-icon">🎉</div>
+<div class="result-banner-title" id="result-banner-title">ВЕРНО!</div>
+<div class="result-banner-sub" id="result-banner-sub">Вы угадали трек!</div>
 </div>
-
 <!-- ОВЕРЛЕЙ РЕЖИМА "ВАРИАНТЫ" С БАННЕРОМ ЗРИТЕЛЯ -->
 <div id="variants-player-overlay">
-  <div class="variants-player-container">
-    <div class="spectator-warning-banner" id="spectator-warning-banner">
-      <div class="spectator-banner-title"><i class="fas fa-eye"></i> РЕЖИМ ЗРИТЕЛЯ</div>
-      <div class="spectator-banner-sub" id="spectator-answering-team">Кнопки заблокированы — отвечает другая команда</div>
-    </div>
-
-    <div class="variants-player-header">🎯 ВЫБЕРИТЕ ВАРИАНТ</div>
-
-    <div class="variants-timer-bar-wrap" id="variants-timer-wrap">
-      <i class="fas fa-stopwatch"></i> Время: 
-      <div class="variants-timer-circle" id="variants-timer-circle">5</div>
-    </div>
-
-    <div class="variants-turn-status" id="variants-turn-status">Ожидание...</div>
-    <div id="variants-buttons-grid" style="display:grid; grid-template-columns:1fr; gap:12px;"></div>
-    <button class="pass-turn-btn" id="variants-pass-turn-btn" onclick="passTurn(false)" style="display:none; margin:10px auto 0;">
-      <i class="fas fa-forward"></i> Пас / Пропустить ход
-    </button>
-  </div>
+<div class="variants-player-container">
+<div class="spectator-warning-banner" id="spectator-warning-banner">
+<div class="spectator-banner-title"><i class="fas fa-eye"></i> РЕЖИМ ЗРИТЕЛЯ</div>
+<div class="spectator-banner-sub" id="spectator-answering-team">Кнопки заблокированы — отвечает другая команда</div>
 </div>
-
+<div class="variants-player-header">🎯 ВЫБЕРИТЕ ВАРИАНТ</div>
+<div class="variants-timer-bar-wrap" id="variants-timer-wrap">
+<i class="fas fa-stopwatch"></i> Время:
+<div class="variants-timer-circle" id="variants-timer-circle">5</div>
+</div>
+<div class="variants-turn-status" id="variants-turn-status">Ожидание...</div>
+<div id="variants-buttons-grid" style="display:grid; grid-template-columns:1fr; gap:12px;"></div>
+<button class="pass-turn-btn" id="variants-pass-turn-btn" onclick="passTurn(false)" style="display:none; margin:10px auto 0;">
+<i class="fas fa-forward"></i> Пас / Пропустить ход
+</button>
+</div>
+</div>
 <!-- МОДАЛЬНОЕ ОКНО "ВЫ УВЕРЕНЫ?" -->
 <div id="confirm-choice-modal">
-  <div class="confirm-choice-card">
-    <div class="confirm-choice-title">ВЫ УВЕРЕНЫ?</div>
-    <div class="confirm-choice-sub">Зафиксировать выбранный вариант окончательно?</div>
-    <div class="confirm-btn-row">
-      <button class="confirm-btn yes" onclick="submitChoiceConfirmation(true)">ДА</button>
-      <button class="confirm-btn no" onclick="submitChoiceConfirmation(false)">НЕТ</button>
-    </div>
-  </div>
+<div class="confirm-choice-card">
+<div class="confirm-choice-title">ВЫ УВЕРЕНЫ?</div>
+<div class="confirm-choice-sub">Зафиксировать выбранный вариант окончательно?</div>
+<div class="confirm-btn-row">
+<button class="confirm-btn yes" onclick="submitChoiceConfirmation(true)">ДА</button>
+<button class="confirm-btn no" onclick="submitChoiceConfirmation(false)">НЕТ</button>
+</div>
+</div>
+</div>
+
+<!-- МОТИВАЦИОННЫЙ БАННЕР УЧАСТНИКОВ -->
+<div id="player-phrase-banner" class="player-phrase-banner">
+  <div class="player-phrase-team" id="player-phrase-team"></div>
+  <div class="player-phrase-text" id="player-phrase-text"></div>
 </div>
 
 <div class="login-wrap" id="login-view">
-  <div class="brand-icon"><i class="fas fa-bolt"></i></div>
-  <h2>REVERS QUIZ</h2>
-  <p>Введите PIN-код с экрана ведущего и назовите команду</p>
-  <div class="input-box"><input type="number" id="room-pin" placeholder="PIN код комнаты" pattern="[0-9]*" /></div>
-  <div class="input-box"><input type="text" id="team-name" placeholder="Название команды" /></div>
-  <button class="btn-join" onclick="joinGame()">Войти в игру</button>
-  <div class="error-banner" id="login-error"></div>
+<div class="brand-icon"><i class="fas fa-bolt"></i></div>
+<h2>REVERS QUIZ</h2>
+<p>Введите PIN-код с экрана ведущего и назовите команду</p>
+<div class="input-box"><input type="number" id="room-pin" placeholder="PIN код комнаты" pattern="[0-9]*" /></div>
+<div class="input-box"><input type="text" id="team-name" placeholder="Название команды" /></div>
+<button class="btn-join" onclick="joinGame()">Войти в игру</button>
+<div class="error-banner" id="login-error"></div>
 </div>
-
 <div id="game-view">
-  <div id="mode-header-badge" class="mode-header-badge" style="display:none;"></div>
-  <div class="top-action-bar">
-    <div class="scoreboard-arena" id="scoreboard-wrap"></div>
-    <button class="player-chat-trigger-btn" id="player-chat-toggle-btn" onclick="togglePlayerChat()" title="Открыть чат"><i class="fas fa-comments"></i><span class="player-chat-unread-badge" id="player-chat-unread">0</span></button>
-  </div>
-  <div class="player-status-wrapper">
-    <div class="status-pill" id="round-status-pill"><i class="fas fa-hourglass-half"></i> <span>Ожидание раунда</span></div>
-    <div class="track-timer-bar" id="player-timer-bar">
-      <span class="joker-star">✨</span>
-      <i class="fas fa-music" style="color:var(--neon-cyan); font-size:0.9em;"></i>
-      <div class="progress-track"><div class="progress-fill" id="player-progress-fill"></div></div>
-      <div class="track-time-text" id="player-time-display">00:00 / 00:00</div>
-    </div>
-    <div class="revealed-track-box" id="revealed-track-box">
-      <div class="track-equalizer-bars"><div class="eq-bar"></div><div class="eq-bar"></div><div class="eq-bar"></div><div class="eq-bar"></div></div>
-      <div class="reveal-content-meta">
-        <div class="reveal-label-sub"><i class="fas fa-compact-disc fa-spin"></i> Оригинальный трек</div>
-        <div class="reveal-song-title" id="reveal-song-title-text">Название трека</div>
-      </div>
-    </div>
-  </div>
-  <div class="buzzer-stage">
-    <div class="buzzer-reactor-frame">
-      <button class="buzzer-3d-btn" id="buzzer-btn" disabled onclick="pressBuzzer()"><i class="fas fa-hand-paper" style="font-size:1.15em; margin-bottom:2px;"></i><span>ЖДИ</span></button>
-    </div>
-    <button class="pass-turn-btn" id="pass-btn" onclick="passTurn(false)"><i class="fas fa-forward"></i> Пас / Пропустить ход</button>
-  </div>
-  <div class="hud-footer" id="hud-footer">Ожидаем запуск раунда ведущим...</div>
+<div id="mode-header-badge" class="mode-header-badge" style="display:none;"></div>
+<div class="top-action-bar">
+<div class="scoreboard-arena" id="scoreboard-wrap"></div>
+<button class="player-chat-trigger-btn" id="player-chat-toggle-btn" onclick="togglePlayerChat()" title="Открыть чат"><i class="fas fa-comments"></i><span class="player-chat-unread-badge" id="player-chat-unread">0</span></button>
 </div>
-
+<div class="player-status-wrapper">
+<div class="status-pill" id="round-status-pill"><i class="fas fa-hourglass-half"></i> <span>Ожидание раунда</span></div>
+<div class="track-timer-bar" id="player-timer-bar">
+<span class="joker-star">✨</span>
+<i class="fas fa-music" style="color:var(--neon-cyan); font-size:0.9em;"></i>
+<div class="progress-track"><div class="progress-fill" id="player-progress-fill"></div></div>
+<div class="track-time-text" id="player-time-display">00:00 / 00:00</div>
+</div>
+<div class="revealed-track-box" id="revealed-track-box">
+<div class="track-equalizer-bars"><div class="eq-bar"></div><div class="eq-bar"></div><div class="eq-bar"></div><div class="eq-bar"></div></div>
+<div class="reveal-content-meta">
+<div class="reveal-label-sub"><i class="fas fa-compact-disc fa-spin"></i> Оригинальный трек</div>
+<div class="reveal-song-title" id="reveal-song-title-text">Название трека</div>
+</div>
+</div>
+</div>
+<div class="buzzer-stage">
+<div class="buzzer-reactor-frame">
+<button class="buzzer-3d-btn" id="buzzer-btn" disabled onclick="pressBuzzer()"><i class="fas fa-hand-paper" style="font-size:1.15em; margin-bottom:2px;"></i><span>ЖДИ</span></button>
+</div>
+<button class="pass-turn-btn" id="pass-btn" onclick="passTurn(false)"><i class="fas fa-forward"></i> Пас / Пропустить ход</button>
+</div>
+<div class="hud-footer" id="hud-footer">Ожидаем запуск раунда ведущим...</div>
+</div>
 <div id="game-over-view">
-  <div class="trophy-icon"><i class="fas fa-trophy"></i></div>
-  <div class="game-over-title">Итоги игры</div>
-  <div class="winner-name-badge" id="winner-badge-text">Победитель!</div>
-  <div class="final-leaderboard" id="final-leaderboard-list"></div>
-  <div class="countdown-box">Возврат к вводу PIN через: <span id="reset-seconds">10</span> сек.</div>
+<div class="trophy-icon"><i class="fas fa-trophy"></i></div>
+<div class="game-over-title">Итоги игры</div>
+<div class="winner-name-badge" id="winner-badge-text">Победитель!</div>
+<div class="final-leaderboard" id="final-leaderboard-list"></div>
+<div class="countdown-box">Возврат к вводу PIN через: <span id="reset-seconds">10</span> сек.</div>
 </div>
-
 <div id="player-chat-modal">
-  <div class="player-chat-card">
-    <div class="player-chat-head">
-      <span><i class="fas fa-comment-dots" style="color:var(--neon-cyan); margin-right:8px;"></i> Чат игры</span>
-      <i class="fas fa-times" onclick="togglePlayerChat()" style="cursor:pointer; color:#888;"></i>
-    </div>
-    <div class="player-chat-messages" id="player-chat-messages"></div>
-    <div class="player-emoji-popover" id="player-emoji-popover"></div>
-    <div class="player-chat-input-bar">
-      <button class="btn-player-emoji" onclick="togglePlayerEmojiPopover()">😊</button>
-      <input type="text" id="player-chat-input" placeholder="Введите ваш ответ..." onkeydown="if(event.key==='Enter') sendPlayerChatMessage();" />
-      <button class="btn-send-player" onclick="sendPlayerChatMessage()"><i class="fas fa-paper-plane"></i></button>
-    </div>
-  </div>
+<div class="player-chat-card">
+<div class="player-chat-head">
+<span><i class="fas fa-comment-dots" style="color:var(--neon-cyan); margin-right:8px;"></i> Чат игры</span>
+<i class="fas fa-times" onclick="togglePlayerChat()" style="cursor:pointer; color:#888;"></i>
+</div>
+<div class="player-chat-messages" id="player-chat-messages"></div>
+<div class="player-emoji-popover" id="player-emoji-popover"></div>
+<div class="player-chat-input-bar">
+<button class="btn-player-emoji" onclick="togglePlayerEmojiPopover()">😊</button>
+<input type="text" id="player-chat-input" placeholder="Введите ваш ответ..." onkeydown="if(event.key==='Enter') sendPlayerChatMessage();" />
+<button class="btn-send-player" onclick="sendPlayerChatMessage()"><i class="fas fa-paper-plane"></i></button>
+</div>
+</div>
 </div>
 <script>
 var firebaseConfig = {
@@ -543,6 +565,9 @@ var variantsCountdownTimer = null;
 
 /* ДЖОКЕР */
 var currentTrackShowStar = null;
+
+/* БАННЕР ФРАЗ */
+var currentClientBannerTimeout = null;
 
 /* ЗАЩИТА ОТ ПОВТОРНОГО ЗАПУСКА АУДИО */
 var pendingPlayTimeout = null;
@@ -612,20 +637,41 @@ function initEmojiPicker(containerId, inputId) {
   container.innerHTML = "";
   POPULAR_EMOJIS.forEach(function(em) {
     var s = document.createElement("span"); s.textContent = em;
-    s.onclick = function(e) { e.stopPropagation(); var input = document.getElementById(inputId); input.value += em; input.focus(); };
+    s.onclick = function(e) {
+      e.stopPropagation();
+      var input = document.getElementById(inputId);
+      input.value += em;
+      input.focus();
+    };
     container.appendChild(s);
   });
 }
-function togglePlayerEmojiPopover() { var p = document.getElementById("player-emoji-popover"); p.style.display = p.style.display === "grid" ? "none" : "grid"; }
-function formatTime(seconds) { seconds = Math.floor(seconds || 0); var mins = Math.floor(seconds / 60); var secs = seconds % 60; return String(mins).padStart(2, '0') + ":" + String(secs).padStart(2, '0'); }
+function togglePlayerEmojiPopover() {
+  var p = document.getElementById("player-emoji-popover");
+  p.style.display = p.style.display === "grid" ? "none" : "grid";
+}
+function formatTime(seconds) {
+  seconds = Math.floor(seconds || 0);
+  var mins = Math.floor(seconds / 60);
+  var secs = seconds % 60;
+  return String(mins).padStart(2, '0') + ":" + String(secs).padStart(2, '0');
+}
 
 function primeAudioElements() {
   ['player-audio-revers', 'player-audio-normal', 'player-sound-winner', 'player-sound-lost', 'player-sound-ring', 'player-sound-game-over'].forEach(function(id) {
     var a = document.getElementById(id); if (a) { a.play().then(function() { a.pause(); }).catch(function() {}); }
   });
 }
-function showError(msg) { var err = document.getElementById("login-error"); err.textContent = msg; err.style.display = "block"; }
-function bufferSystemSound(audioId, url) { if (!url) return; var a = document.getElementById(audioId); if (a && a.src !== url) { a.src = url; a.preload = "auto"; a.load(); } }
+function showError(msg) {
+  var err = document.getElementById("login-error");
+  err.textContent = msg;
+  err.style.display = "block";
+}
+function bufferSystemSound(audioId, url) {
+  if (!url) return;
+  var a = document.getElementById(audioId);
+  if (a && a.src !== url) { a.src = url; a.preload = "auto"; a.load(); }
+}
 function playLocalSystemSound(audioId) {
   if (!isStreamAudioAllowed) return;
   var a = document.getElementById(audioId);
@@ -677,6 +723,36 @@ function updateJokerVisuals(show) {
   if (statusPill) {
     if (show) { statusPill.classList.add("joker"); } else { statusPill.classList.remove("joker"); }
   }
+}
+
+function listenToVariantBanner() {
+  db.ref("rooms/" + currentRoom + "/variantBanner").on("value", function(snapshot) {
+    var b = snapshot.val();
+    var bannerEl = document.getElementById("player-phrase-banner");
+    var teamEl = document.getElementById("player-phrase-team");
+    var textEl = document.getElementById("player-phrase-text");
+
+    if (!b || !b.active) {
+      if (bannerEl) bannerEl.style.display = "none";
+      if (currentClientBannerTimeout) { clearTimeout(currentClientBannerTimeout); currentClientBannerTimeout = null; }
+      return;
+    }
+
+    var isMyTeam = (b.teamId === myTeamId);
+    var colorRole = isMyTeam ? "is-me" : "is-opp";
+
+    bannerEl.className = "player-phrase-banner scenario-" + b.scenario + " " + colorRole;
+    teamEl.textContent = isMyTeam ? "🎯 ВАША КОМАНДА:" : ("📢 " + b.teamName + ":");
+    textEl.textContent = "«" + b.phrase + "»";
+    bannerEl.style.display = "block";
+
+    if (b.scenario === 3) {
+      if (currentClientBannerTimeout) clearTimeout(currentClientBannerTimeout);
+      currentClientBannerTimeout = setTimeout(function() {
+        bannerEl.style.display = "none";
+      }, 3000);
+    }
+  });
 }
 
 function joinGame() {
@@ -737,6 +813,7 @@ function joinGame() {
     listenToAudioStream();
     listenToPlayerChat();
     if (isVariantsMode) { listenToVariantsState(); }
+    listenToVariantBanner();
   }).catch(function(e) { showError("Ошибка подключения: " + e.message); });
 }
 
@@ -823,6 +900,7 @@ function listenToAudioStream() {
       updateProgressDisplay(0, 0);
       hasWaitedForNewTrack = true;
       updateJokerVisuals(false);
+
       var vOverlay = document.getElementById("variants-player-overlay");
       if (vOverlay) {
         vOverlay.style.display = "none";
@@ -834,6 +912,7 @@ function listenToAudioStream() {
       if (rOverlay) { rOverlay.className = ""; rOverlay.style.display = "none"; }
       if (variantsCountdownTimer) { clearInterval(variantsCountdownTimer); variantsCountdownTimer = null; }
     }
+
     if (typeof sync.isJoker !== 'undefined' && currentTrackShowStar === null) {
       var jokerOn = (sync.jokerEnabled === true);
       if (!jokerOn) {
@@ -868,7 +947,6 @@ function listenToAudioStream() {
       }
 
       aNormal.pause(); aNormal.currentTime = 0; aNormal.src = ""; aNormal.preload = "none";
-      aRevers.pause(); aRevers.currentTime = 0;
       aRevers.src = sync.reversUrl; aRevers.preload = "auto"; aRevers.load();
       aRevers.onplaying = function() {
         aRevers.onplaying = null;
@@ -991,7 +1069,6 @@ function listenToVariantsState() {
       if (timerWrap) timerWrap.style.display = "none";
     }
 
-    /* ИСПРАВЛЕНИЕ БАГА ТАЙМЕРА (СТРОГО НЕ БОЛЬШЕ УСТАНОВЛЕННОГО ВРЕМЕНИ) */
     if (isMyTurn && !vr.isFinal && !vr.isRevealed && vr.timerDeadline > Date.now()) {
       startVariantsTimerCountdown(vr.timerDeadline, vr.roundTimer || 5, vr.penaltyEnabled);
     } else if (vr.isFinal || vr.isRevealed) {
@@ -1017,12 +1094,9 @@ function listenToVariantsState() {
 function startVariantsTimerCountdown(deadline, maxDuration, penaltyEnabled) {
   if (variantsCountdownTimer) clearInterval(variantsCountdownTimer);
   var circle = document.getElementById("variants-timer-circle");
-  
   function updateTimer() {
     var rawSeconds = Math.ceil((deadline - Date.now()) / 1000);
-    // Отсекаем рассинхрон миллисекунд: время не может быть больше заданного лимита
     var remaining = Math.max(0, Math.min(maxDuration, rawSeconds));
-    
     if (circle) {
       circle.textContent = remaining;
       if (remaining <= 2) {
@@ -1381,7 +1455,6 @@ function sendPlayerChatMessage() {
   db.ref("rooms/" + currentRoom + "/chat").push({ author: myTeamName, teamId: myTeamId, text: text, isHost: false, time: Date.now() });
   input.value = ""; document.getElementById("player-emoji-popover").style.display = "none";
 }
-
 function showGameOverScreen(leaderboard) {
   if (gameOverTimer) return;
   var aRevers = document.getElementById("player-audio-revers");
@@ -1398,7 +1471,6 @@ function showGameOverScreen(leaderboard) {
   var rOverlay = document.getElementById("variant-result-overlay");
   if (rOverlay) { rOverlay.className = ""; rOverlay.style.display = "none"; }
   if (variantsCountdownTimer) { clearInterval(variantsCountdownTimer); variantsCountdownTimer = null; }
-
   localStorage.removeItem("rq_saved_pin");
   localStorage.removeItem("rq_saved_team_id");
   localStorage.removeItem("rq_saved_team_name");
@@ -1408,35 +1480,29 @@ function showGameOverScreen(leaderboard) {
   var winnerBadge = document.getElementById("winner-badge-text");
   var list = document.getElementById("final-leaderboard-list");
   list.innerHTML = "";
-
   if (leaderboard.length > 0) {
     var topScore = leaderboard[0].score;
     var winners = leaderboard.filter(function(t) { return t.score === topScore; });
     var isTie = (winners.length > 1);
-
     if (isTie) {
       winnerBadge.textContent = "🤝 Боевая ничья!";
     } else {
       winnerBadge.textContent = "🏆 " + winners[0].name + " побеждает!";
     }
-
     leaderboard.forEach(function(t, idx) {
       var row = document.createElement("div");
       var isWinner = (t.score === topScore);
       row.className = "leaderboard-row" + (isWinner ? " gold" : "");
-
       var rankIcon;
       if (isWinner) {
         rankIcon = isTie ? '🤝 ' : '🥇 ';
       } else {
         rankIcon = (idx + 1) + '. ';
       }
-
       row.innerHTML = '<span>' + rankIcon + t.name + '</span><span class="pts">' + formatScoreDisplay(t.score) + '</span>';
       list.appendChild(row);
     });
   }
-
   var timeLeft = 10;
   var secSpan = document.getElementById("reset-seconds");
   secSpan.textContent = timeLeft;
@@ -1446,7 +1512,6 @@ function showGameOverScreen(leaderboard) {
     if (timeLeft <= 0) { clearInterval(gameOverTimer); gameOverTimer = null; window.location.reload(); }
   }, 1000);
 }
-
 function pressBuzzer() {
   if (!currentRoom || !myTeamId) return;
   if (navigator.vibrate) navigator.vibrate([40]);
@@ -1478,7 +1543,6 @@ function pressBuzzer() {
     }
   });
 }
-
 function passTurn(isTimeout) {
   if (!currentRoom || !myTeamId) return;
   if (navigator.vibrate) navigator.vibrate([20, 30, 20]);
