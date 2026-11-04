@@ -9,7 +9,7 @@
 <link rel="manifest" href="manifest.json">
 <script>
 if ('serviceWorker' in navigator) {
-navigator.serviceWorker.register('sw.js').catch(function(e) { console.warn(e); });
+  navigator.serviceWorker.register('sw.js').catch(function(e) { console.warn(e); });
 }
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -20,19 +20,19 @@ navigator.serviceWorker.register('sw.js').catch(function(e) { console.warn(e); }
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <style>
 :root {
---bg-deep: #05060a;
---bg-surface: #0e121a;
---bg-elevated: #161c28;
---neon-yellow: #ffea00;
---neon-lime: #00ff66;
---neon-pink: #ff0055;
---neon-cyan: #00e5ff;
---neon-purple: #7000ff;
---neon-gold: #ffd700;
---text-pure: #ffffff;
---text-dim: #8b9bb4;
---border-subtle: rgba(255, 255, 255, 0.07);
---border-glow: rgba(0, 229, 255, 0.4);
+  --bg-deep: #05060a;
+  --bg-surface: #0e121a;
+  --bg-elevated: #161c28;
+  --neon-yellow: #ffea00;
+  --neon-lime: #00ff66;
+  --neon-pink: #ff0055;
+  --neon-cyan: #00e5ff;
+  --neon-purple: #7000ff;
+  --neon-gold: #ffd700;
+  --text-pure: #ffffff;
+  --text-dim: #8b9bb4;
+  --border-subtle: rgba(255, 255, 255, 0.07);
+  --border-glow: rgba(0, 229, 255, 0.4);
 }
 * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Space Grotesk', sans-serif; -webkit-tap-highlight-color: transparent; }
 body { background-color: var(--bg-deep); background-image: radial-gradient(ellipse at 50% 0%, rgba(112, 0, 255, 0.25) 0%, transparent 60%), radial-gradient(circle at 100% 100%, rgba(255, 0, 85, 0.15) 0%, transparent 40%), radial-gradient(circle at 0% 100%, rgba(0, 229, 255, 0.15) 0%, transparent 40%); background-attachment: fixed; color: var(--text-pure); min-height: 100vh; padding: 16px 8px 80px; position: relative; }
@@ -55,15 +55,23 @@ h1 i { -webkit-text-fill-color: var(--neon-cyan); filter: drop-shadow(0 0 12px v
 .qr-trigger-btn { background: rgba(255, 234, 0, 0.1); border: 1px solid var(--neon-yellow); color: var(--neon-yellow); padding: 10px 16px; border-radius: 8px; font-size: 0.9em; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0; }
 .qr-trigger-btn:active { background: var(--neon-yellow); color: #000; }
 .connected-teams-list { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
-.team-pill { background: var(--bg-deep); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 8px 14px; font-size: 0.9em; font-weight: 700; display: inline-flex; align-items: center; gap: 8px; transition: all 0.3s ease; }
+
+/* АДАПТИВНОСТЬ ДЛИННЫХ ИМЕН КОМАНД */
+.team-pill {
+  background: var(--bg-deep); border: 1px solid var(--border-subtle); border-radius: 10px;
+  padding: 8px 14px; font-size: 0.88em; font-weight: 700; display: inline-flex;
+  align-items: center; gap: 8px; transition: all 0.3s ease; max-width: 100%;
+  word-break: break-word; overflow-wrap: anywhere; line-height: 1.25;
+}
 .team-pill.ready { border-color: var(--neon-lime); color: var(--neon-lime); }
 .team-pill.offline { border-color: rgba(255, 255, 255, 0.15); color: var(--text-dim); opacity: 0.65; filter: grayscale(1); }
+
 .buzzer-wave-overlay { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.8); z-index: 5000; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 12px; pointer-events: none; opacity: 0; transition: opacity 0.25s ease, transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
 .buzzer-wave-overlay.show { display: flex; opacity: 1; transform: translate(-50%, -50%) scale(1); }
 .wave-hand-halo { width: clamp(100px, 24vw, 150px); height: clamp(100px, 24vw, 150px); background: rgba(14, 18, 26, 0.85); backdrop-filter: blur(16px); border: 2px solid var(--neon-pink); border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 30px rgba(255, 0, 85, 0.5), 0 0 60px rgba(255, 0, 85, 0.25); }
 .wave-hand-emoji { font-size: clamp(3em, 8vw, 4.5em); display: inline-block; transform-origin: 70% 70%; animation: waveMotion 1.2s infinite ease-in-out; }
 @keyframes waveMotion { 0% { transform: rotate(0deg); } 15% { transform: rotate(16deg); } 30% { transform: rotate(-10deg); } 45% { transform: rotate(14deg); } 60% { transform: rotate(-6deg); } 75% { transform: rotate(10deg); } 100% { transform: rotate(0deg); } }
-.wave-team-badge { background: rgba(5, 6, 10, 0.9); backdrop-filter: blur(14px); border: 1px solid var(--neon-cyan); color: #fff; padding: 10px 22px; border-radius: 16px; font-family: 'Syne', sans-serif; font-size: clamp(1em, 3.2vw, 1.4em); font-weight: 800; text-transform: uppercase; letter-spacing: 1px; text-align: center; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8), 0 0 20px rgba(0, 229, 255, 0.3); max-width: 85vw; }
+.wave-team-badge { background: rgba(5, 6, 10, 0.9); backdrop-filter: blur(14px); border: 1px solid var(--neon-cyan); color: #fff; padding: 10px 22px; border-radius: 16px; font-family: 'Syne', sans-serif; font-size: clamp(0.95em, 3.2vw, 1.35em); font-weight: 800; text-transform: uppercase; letter-spacing: 1px; text-align: center; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8), 0 0 20px rgba(0, 229, 255, 0.3); max-width: 85vw; word-break: break-word; overflow-wrap: anywhere; line-height: 1.3; }
 .wave-team-badge span { color: var(--neon-cyan); text-shadow: 0 0 10px rgba(0, 229, 255, 0.5); }
 input[type="text"], input[type="number"], select { width: 100%; padding: 14px 16px; background: var(--bg-deep); border: 1px solid var(--border-subtle); border-radius: 12px; color: var(--text-pure); font-size: 15px; outline: none; transition: 0.2s ease; }
 input[type="text"]:focus, input[type="number"]:focus, select:focus { border-color: var(--neon-cyan); box-shadow: 0 0 15px rgba(0, 229, 255, 0.2); }
@@ -79,12 +87,14 @@ button:active { transform: scale(0.98); }
 #load-songs-btn { background: linear-gradient(135deg, var(--neon-purple), var(--neon-pink)); color: #fff; box-shadow: 0 4px 20px rgba(255, 0, 85, 0.35); }
 #load-songs-btn:disabled { opacity: 0.45; cursor: not-allowed; box-shadow: none; }
 #shuffle-btn { width: 100%; padding: 14px; background: transparent; border: 1px solid var(--border-subtle); color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; font-size: 14px; }
+
+/* УПРАВЛЕНИЕ СЧЕТОМ */
 .score-header-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
 .toggle-all-teams-btn { background: rgba(0, 229, 255, 0.1); border: 1px solid var(--neon-cyan); color: var(--neon-cyan); padding: 6px 14px; border-radius: 10px; font-size: 0.85em; text-transform: uppercase; cursor: pointer; }
 .score-controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; margin-top: 6px; }
-.score-team-group { background: var(--bg-deep); border: 1px solid var(--border-subtle); border-radius: 16px; padding: 16px 12px; cursor: pointer; transition: all 0.25s ease; }
-.score-team-header { text-align: center; margin-bottom: 10px; }
-.score-team-label { font-size: 0.9em; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.score-team-group { background: var(--bg-deep); border: 1px solid var(--border-subtle); border-radius: 16px; padding: 16px 12px; cursor: pointer; transition: all 0.25s ease; min-width: 0; }
+.score-team-header { text-align: center; margin-bottom: 10px; min-width: 0; }
+.score-team-label { font-size: 0.88em; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--text-dim); word-break: break-word; overflow-wrap: anywhere; line-height: 1.25; }
 .score-display { font-family: 'Ubuntu Mono', monospace; font-size: 2.6em; font-weight: 700; color: var(--text-pure); line-height: 1; margin: 6px 0; }
 .score-team-group.active { border-color: var(--neon-cyan); background: rgba(0, 229, 255, 0.04); box-shadow: 0 0 25px rgba(0, 229, 255, 0.25), inset 0 0 15px rgba(0, 229, 255, 0.05); }
 .score-team-group.active .score-team-label, .score-team-group.active .score-display { color: var(--neon-cyan); text-shadow: 0 0 15px rgba(0, 229, 255, 0.5); }
@@ -118,23 +128,24 @@ button:active { transform: scale(0.98); }
 #end-quiz-btn { width: 100%; padding: 18px; margin-top: 20px; background: transparent; border: 1px solid var(--neon-pink); color: var(--neon-pink); text-transform: uppercase; letter-spacing: 1px; font-size: 14px; }
 #timer-circle { font-family: 'Ubuntu Mono', monospace; position: fixed; top: 20px; right: 20px; width: 60px; height: 60px; border-radius: 16px; background: rgba(5, 6, 10, 0.85); backdrop-filter: blur(10px); border: 2px solid var(--neon-cyan); color: var(--neon-cyan); display: flex; align-items: center; justify-content: center; font-size: 1.6em; font-weight: 700; box-shadow: 0 0 20px rgba(0, 229, 255, 0.4); z-index: 1000; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
 #timer-circle.active { opacity: 1; }
-#settings-btn { position: fixed; top: 20px; left: 20px; width: 44px; height: 44px; background: rgba(5, 6, 10, 0.85); backdrop-filter: blur(10px); border: 1px solid var(--border-subtle); border-radius: 12px; color: var(--text-dim); display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 1000; }
+#settings-btn { position: fixed; top: 20px; left: 20px; width: 44px; height: 44px; background: rgba(5, 6, 10, 0.85); backdrop-filter: blur(10px); border: 1px solid var(--border-subtle); border-radius: 12px; color: var(--text-dim); display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 2000; }
+#settings-btn:hover { color: var(--neon-cyan); border-color: var(--neon-cyan); }
 #track-name-popup { position: fixed; top: 80px; left: 50%; transform: translateX(-50%); background: rgba(5, 6, 10, 0.95); border: 1px solid var(--neon-cyan); color: var(--neon-cyan); padding: 10px 20px; border-radius: 12px; font-size: 1.1em; font-weight: 700; z-index: 1000; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
 .score-notification, .action-notification { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: var(--bg-surface); border: 1px solid var(--neon-cyan); padding: 14px 22px; border-radius: 14px; font-size: 1.1em; font-weight: 700; z-index: 3000; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
 .action-notification { top: 75px; border-color: var(--neon-yellow); color: var(--neon-yellow); }
 .score-notification.show, .action-notification.show { opacity: 1; }
 .host-judge-indicator {
-display: none; padding: 10px 16px; border-radius: 12px; font-family: 'Syne', sans-serif;
-font-size: 1.1em; font-weight: 900; text-align: center; text-transform: uppercase;
-margin-bottom: 12px; letter-spacing: 1.5px;
+  display: none; padding: 10px 16px; border-radius: 12px; font-family: 'Syne', sans-serif;
+  font-size: 1.1em; font-weight: 900; text-align: center; text-transform: uppercase;
+  margin-bottom: 12px; letter-spacing: 1.5px;
 }
 .host-judge-indicator.correct {
-display: block; background: rgba(0, 255, 102, 0.18); border: 2px solid var(--neon-lime);
-color: var(--neon-lime); box-shadow: 0 0 25px rgba(0, 255, 102, 0.4);
+  display: block; background: rgba(0, 255, 102, 0.18); border: 2px solid var(--neon-lime);
+  color: var(--neon-lime); box-shadow: 0 0 25px rgba(0, 255, 102, 0.4);
 }
 .host-judge-indicator.wrong {
-display: block; background: rgba(255, 0, 85, 0.18); border: 2px solid var(--neon-pink);
-color: var(--neon-pink); box-shadow: 0 0 25px rgba(255, 0, 85, 0.4);
+  display: block; background: rgba(255, 0, 85, 0.18); border: 2px solid var(--neon-pink);
+  color: var(--neon-pink); box-shadow: 0 0 25px rgba(255, 0, 85, 0.4);
 }
 #variants-control-section { display: none; }
 .variants-panel { background: linear-gradient(135deg, rgba(0, 229, 255, 0.08) 0%, rgba(112, 0, 255, 0.08) 100%); border: 1.5px solid var(--neon-cyan); border-radius: 18px; padding: 18px; margin-bottom: 14px; }
@@ -150,19 +161,19 @@ color: var(--neon-pink); box-shadow: 0 0 25px rgba(255, 0, 85, 0.4);
 .variants-btn.lock { background: linear-gradient(135deg, var(--neon-lime), #00bb55); color: #000; box-shadow: 0 4px 15px rgba(0, 255, 102, 0.3); }
 .variants-btn:disabled { background: #252b3b; color: #556077; cursor: not-allowed; box-shadow: none; }
 #settings-modal, #qr-modal, #joker-overlay {
-position: fixed !important; inset: 0 !important; width: 100vw !important; height: 100vh !important;
-background: rgba(0, 0, 0, 0.88) !important; backdrop-filter: blur(8px) !important;
-display: none !important; align-items: center !important; justify-content: center !important;
-z-index: 99999 !important; padding: 16px !important;
+  position: fixed !important; inset: 0 !important; width: 100vw !important; height: 100vh !important;
+  background: rgba(0, 0, 0, 0.88) !important; backdrop-filter: blur(8px) !important;
+  display: none !important; align-items: center !important; justify-content: center !important;
+  z-index: 99999 !important; padding: 16px !important;
 }
 #settings-modal.active, #qr-modal.active, #joker-overlay.active {
-display: flex !important;
+  display: flex !important;
 }
 .modal-content.settings-redesign {
-background: var(--bg-surface); padding: 24px 20px; border-radius: 24px;
-width: 94%; max-width: 440px; max-height: 88vh; overflow-y: auto;
-border: 1px solid var(--border-glow); box-shadow: 0 20px 60px rgba(0,0,0,0.9), 0 0 30px rgba(0, 229, 255, 0.1);
-position: relative; margin: auto;
+  background: var(--bg-surface); padding: 24px 20px; border-radius: 24px;
+  width: 94%; max-width: 440px; max-height: 88vh; overflow-y: auto;
+  border: 1px solid var(--border-glow); box-shadow: 0 20px 60px rgba(0,0,0,0.9), 0 0 30px rgba(0, 229, 255, 0.1);
+  position: relative; margin: auto;
 }
 .settings-header { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; padding-bottom: 10px; border-bottom: 1px solid var(--border-subtle); }
 .settings-header h3 { font-family: 'Syne', sans-serif; font-size: 1.4em; margin: 0; color: #fff; }
@@ -201,17 +212,15 @@ position: relative; margin: auto;
 .chat-msg-row .bubble { background: var(--bg-deep); border: 1px solid var(--border-subtle); padding: 8px 12px; border-radius: 12px; color: var(--text-pure); word-break: break-word; }
 .chat-msg-row.host-author .bubble { border-color: rgba(255, 234, 0, 0.3); background: rgba(255, 234, 0, 0.05); }
 .host-quick-replies { display: flex; gap: 6px; padding: 6px 10px; background: var(--bg-elevated); border-top: 1px solid var(--border-subtle); overflow-x: auto; }
-.quick-reply-btn { background: var(--bg-deep); border: 1px solid var(--border-subtle); color: #fff; padding: 5px 9px; border-radius: 8px; font-size: 11px; font-weight: 700; white-space: nowrap; cursor: pointer; flex-shrink: 0; transition: all 0.15s; }
-.quick-reply-btn:hover { border-color: var(--neon-cyan); color: var(--neon-cyan); }
+.quick-reply-btn { background: var(--bg-deep); border: 1px solid var(--border-subtle); color: #fff; padding: 5px 9px; border-radius: 8px; font-size: 11px; font-weight: 700; white-space: nowrap; cursor: pointer; flex-shrink: 0; }
 .quick-reply-btn.correct { border-color: var(--neon-lime); color: var(--neon-lime); }
 .quick-reply-btn.wrong { border-color: var(--neon-pink); color: var(--neon-pink); }
 .emoji-popover { position: absolute; bottom: 60px; left: 10px; right: 10px; background: #111520; border: 1px solid var(--neon-cyan); border-radius: 14px; padding: 10px; display: none; grid-template-columns: repeat(7, 1fr); gap: 6px; font-size: 1.4em; text-align: center; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.95); max-height: 180px; overflow-y: auto; z-index: 2600; }
-.emoji-popover span { cursor: pointer; padding: 4px; border-radius: 8px; transition: background 0.1s; }
-.emoji-popover span:hover { background: rgba(255, 255, 255, 0.15); }
+.emoji-popover span { cursor: pointer; padding: 4px; border-radius: 8px; }
 .host-chat-footer { padding: 8px 10px; background: var(--bg-deep); border-top: 1px solid var(--border-subtle); display: flex; gap: 6px; align-items: center; position: relative; }
 .btn-emoji-toggle { background: transparent; border: 1px solid var(--border-subtle); color: var(--neon-yellow); font-size: 1.1em; width: 40px; height: 40px; border-radius: 10px; cursor: pointer; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; }
 .host-chat-footer input { flex: 1; min-width: 0; padding: 8px 12px; font-size: 13px; margin: 0; border-radius: 10px; }
-.host-chat-footer button.btn-send { background: var(--neon-cyan); color: #000; width: 40px; height: 40px; border-radius: 10px; font-size: 13px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; }
+.host-chat-footer button.btn-send { background: var(--neon-cyan); color: #000; width: 40px; height: 40px; border-radius: 10px; font-size: 13px; flex-shrink: 0; }
 .joker-card { font-size: clamp(6em, 20vw, 10em); animation: jokerCardSpin 1.5s cubic-bezier(0.34, 1.56, 0.64, 1); filter: drop-shadow(0 0 40px rgba(255, 215, 0, 0.9)); }
 @keyframes jokerCardSpin { 0% { transform: rotateY(0deg) scale(0.3); opacity: 0; } 50% { transform: rotateY(720deg) scale(1.3); opacity: 1; } 100% { transform: rotateY(720deg) scale(1); opacity: 1; } }
 .joker-title { font-family: 'Syne', sans-serif; font-size: clamp(1.8em, 6vw, 3em); font-weight: 900; text-transform: uppercase; letter-spacing: 4px; background: linear-gradient(135deg, var(--neon-gold), #ff8c00, var(--neon-gold)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; animation: jokerTitlePulse 0.8s infinite alternate; }
@@ -529,14 +538,14 @@ position: relative; margin: auto;
 </div>
 <script>
 var firebaseConfig = {
-apiKey: ["AIzaSyC9sh7uazv", "WbudsO7TYap4", "wENjkLD3K4"].join("-"),
-authDomain: "revers-quiz.firebaseapp.com",
-databaseURL: "https://revers-quiz-default-rtdb.firebaseio.com",
-projectId: "revers-quiz",
-storageBucket: "revers-quiz.firebasestorage.app",
-messagingSenderId: "940882425335",
-appId: "1:940882425335:web:bf3c52135d8a7cd7d9eaf2",
-measurementId: "G-93CJT9ZT4G"
+  apiKey: ["AIzaSyC9sh7uazv", "WbudsO7TYap4", "wENjkLD3K4"].join("-"),
+  authDomain: "revers-quiz.firebaseapp.com",
+  databaseURL: "https://revers-quiz-default-rtdb.firebaseio.com",
+  projectId: "revers-quiz",
+  storageBucket: "revers-quiz.firebasestorage.app",
+  messagingSenderId: "940882425335",
+  appId: "1:940882425335:web:bf3c52135d8a7cd7d9eaf2",
+  measurementId: "G-93CJT9ZT4G"
 };
 var db = null;
 var currentRoomPin = null;
@@ -552,8 +561,8 @@ var jokerEnabled = false;
 var jokerChance = 0.2;
 var defaultCorrectPoints = 1;
 var teamsData = [
-{ id: 'team_1', name: 'Команда 1', score: 0, online: true },
-{ id: 'team_2', name: 'Команда 2', score: 0, online: true }
+  { id: 'team_1', name: 'Команда 1', score: 0, online: true },
+  { id: 'team_2', name: 'Команда 2', score: 0, online: true }
 ];
 var activeTeamId = null;
 var buzzerWaveTimer = null;
@@ -580,9 +589,9 @@ var variantsWrongPenaltyEnabled = false;
 var variantsAutoNormalEnabled = false;
 var variantsNormalDelay = 1;
 var variantsState = {
-active: false, correctTrack: "", options: [], answeringTeam: null, answeringTeamName: "",
-selectedOption: null, isFinal: false, askConfirm: false, attemptsLeft: 2, isRevealed: false,
-isCorrect: false, roundTimer: 5, timerDeadline: 0, penaltyEnabled: false
+  active: false, correctTrack: "", options: [], answeringTeam: null, answeringTeamName: "",
+  selectedOption: null, isFinal: false, askConfirm: false, attemptsLeft: 2, isRevealed: false,
+  isCorrect: false, roundTimer: 5, timerDeadline: 0, penaltyEnabled: false
 };
 var variantsAutoNormalTimeout = null;
 var showAllOnlineTeams = false;
@@ -591,1522 +600,1623 @@ var gameSessionStarted = false;
 var lastHandledPassAt = 0;
 var LASTFM_API_KEY = ["260c156d8fa38243", "bd33e6ebcf81a901"].join("");
 var STATIC_PLAYER_URL = ["https:", "", "clck.ru", "3WBWUq"].join("/");
+
+/* ПЛАВНЫЙ СКРОЛЛ К НУЖНЫМ БЛОКАМ */
+function scrollToVariantsBlock() {
+  if (!isVariantsMode) return;
+  var target = document.getElementById("variants-control-section");
+  if (target && target.style.display !== "none") {
+    setTimeout(function() {
+      target.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 250);
+  }
+}
+
+function scrollToPlayerBlock() {
+  var target = document.getElementById("revers-player-container");
+  if (target) {
+    setTimeout(function() {
+      target.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 250);
+  }
+}
+
 function ensureAudioPlayer(id) {
-var a = document.getElementById(id);
-if (!a) { a = document.createElement("audio"); a.id = id; a.style.display = "none"; a.setAttribute("playsinline", "true"); document.body.appendChild(a); }
-return a;
+  var a = document.getElementById(id);
+  if (!a) { a = document.createElement("audio"); a.id = id; a.style.display = "none"; a.setAttribute("playsinline", "true"); document.body.appendChild(a); }
+  return a;
 }
+
 function playMessageNotificationSound() {
-try {
-var ctx = new (window.AudioContext || window.webkitAudioContext)();
-var osc = ctx.createOscillator(); var gain = ctx.createGain();
-osc.connect(gain); gain.connect(ctx.destination);
-osc.type = "sine";
-osc.frequency.setValueAtTime(587.33, ctx.currentTime);
-osc.frequency.setValueAtTime(880, ctx.currentTime + 0.08);
-gain.gain.setValueAtTime(0.15, ctx.currentTime);
-gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
-osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.35);
-} catch(e) {}
+  try {
+    var ctx = new (window.AudioContext || window.webkitAudioContext)();
+    var osc = ctx.createOscillator(); var gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(587.33, ctx.currentTime);
+    osc.frequency.setValueAtTime(880, ctx.currentTime + 0.08);
+    gain.gain.setValueAtTime(0.15, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+    osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.35);
+  } catch(e) {}
 }
+
 function playJokerSound() {
-try {
-var ctx = new (window.AudioContext || window.webkitAudioContext)();
-var notes = [523.25, 659.25, 783.99, 1046.50];
-notes.forEach(function(freq, i) {
-var osc = ctx.createOscillator();
-var gain = ctx.createGain();
-osc.connect(gain);
-gain.connect(ctx.destination);
-osc.type = "triangle";
-osc.frequency.setValueAtTime(freq, ctx.currentTime + i * 0.1);
-gain.gain.setValueAtTime(0, ctx.currentTime + i * 0.1);
-gain.gain.linearRampToValueAtTime(0.2, ctx.currentTime + i * 0.1 + 0.05);
-gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.1 + 0.5);
-osc.start(ctx.currentTime + i * 0.1);
-osc.stop(ctx.currentTime + i * 0.1 + 0.5);
-});
-} catch(e) {}
+  try {
+    var ctx = new (window.AudioContext || window.webkitAudioContext)();
+    var notes = [523.25, 659.25, 783.99, 1046.50];
+    notes.forEach(function(freq, i) {
+      var osc = ctx.createOscillator();
+      var gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = "triangle";
+      osc.frequency.setValueAtTime(freq, ctx.currentTime + i * 0.1);
+      gain.gain.setValueAtTime(0, ctx.currentTime + i * 0.1);
+      gain.gain.linearRampToValueAtTime(0.2, ctx.currentTime + i * 0.1 + 0.05);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.1 + 0.5);
+      osc.start(ctx.currentTime + i * 0.1);
+      osc.stop(ctx.currentTime + i * 0.1 + 0.5);
+    });
+  } catch(e) {}
 }
+
 var POPULAR_EMOJIS = ["👍","👏","🔥","🎉","😂","😎","🤩","🤔","😮","🎵","🎶","🎤","🎧","🏆","⭐","💯","❤️","👋","🤐","🚀","💃"];
 function initEmojiPicker(containerId, inputId) {
-var container = document.getElementById(containerId);
-if (!container) return;
-container.innerHTML = "";
-POPULAR_EMOJIS.forEach(function(em) {
-var s = document.createElement("span"); s.textContent = em;
-s.onclick = function(e) { e.stopPropagation(); var input = document.getElementById(inputId); input.value += em; input.focus(); };
-container.appendChild(s);
-});
+  var container = document.getElementById(containerId);
+  if (!container) return;
+  container.innerHTML = "";
+  POPULAR_EMOJIS.forEach(function(em) {
+    var s = document.createElement("span"); s.textContent = em;
+    s.onclick = function(e) { e.stopPropagation(); var input = document.getElementById(inputId); input.value += em; input.focus(); };
+    container.appendChild(s);
+  });
 }
 function toggleHostEmojiPopover() { var p = document.getElementById("host-emoji-popover"); p.style.display = p.style.display === "grid" ? "none" : "grid"; }
+
 function getPlayerDirectLink() {
-return STATIC_PLAYER_URL;
+  return STATIC_PLAYER_URL;
 }
+
 function updateQuickLinkDisplays() {
-var link = getPlayerDirectLink();
-var btnText = document.getElementById("host-quick-link-text");
-if (btnText) btnText.textContent = link;
-var qrImg = document.getElementById("qr-modal-image");
-if (qrImg) qrImg.src = "https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=" + encodeURIComponent(link);
-var urlDisp = document.getElementById("qr-modal-url-display");
-if (urlDisp) urlDisp.textContent = link;
+  var link = getPlayerDirectLink();
+  var btnText = document.getElementById("host-quick-link-text");
+  if (btnText) btnText.textContent = link;
+  var qrImg = document.getElementById("qr-modal-image");
+  if (qrImg) qrImg.src = "https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=" + encodeURIComponent(link);
+  var urlDisp = document.getElementById("qr-modal-url-display");
+  if (urlDisp) urlDisp.textContent = link;
 }
+
 function copyPlayerLink() {
-var link = getPlayerDirectLink();
-if (navigator.clipboard && navigator.clipboard.writeText) {
-navigator.clipboard.writeText(link).then(function() { showActionNotification("📋 Ссылка скопирована!"); }).catch(function() { fallbackCopyText(link); });
-} else {
-fallbackCopyText(link);
+  var link = getPlayerDirectLink();
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(link).then(function() { showActionNotification("📋 Ссылка скопирована!"); }).catch(function() { fallbackCopyText(link); });
+  } else {
+    fallbackCopyText(link);
+  }
 }
-}
+
 function fallbackCopyText(text) {
-var textArea = document.createElement("textarea"); textArea.value = text; textArea.style.position = "fixed"; document.body.appendChild(textArea); textArea.focus(); textArea.select();
-try { document.execCommand('copy'); showActionNotification("📋 Ссылка скопирована!"); } catch (err) { alert("Ссылка: " + text); }
-document.body.removeChild(textArea);
+  var textArea = document.createElement("textarea"); textArea.value = text; textArea.style.position = "fixed"; document.body.appendChild(textArea); textArea.focus(); textArea.select();
+  try { document.execCommand('copy'); showActionNotification("📋 Ссылка скопирована!"); } catch (err) { alert("Ссылка: " + text); }
+  document.body.removeChild(textArea);
 }
+
 function openSettings() {
-var tIn = document.getElementById("timer-input");
-var dIn = document.getElementById("original-delay-input");
-var mIn = document.getElementById("mix-mode");
-var modeSel = document.getElementById("game-mode-toggle");
-var streamSel = document.getElementById("stream-audio-toggle");
-var chatModeSel = document.getElementById("chat-mode-toggle");
-var scoreSel = document.getElementById("show-score-toggle");
-var opponentScoreSel = document.getElementById("show-opponent-score-toggle");
-var jokerToggle = document.getElementById("joker-toggle");
-var jokerChanceSel = document.getElementById("joker-chance");
-var sMod = document.getElementById("settings-modal");
-var statusEl = document.getElementById("manual-update-status");
-var defPtsIn = document.getElementById("default-correct-pts-input");
-var vTimerIn = document.getElementById("variants-timer-input");
-var vPenaltySel = document.getElementById("variants-penalty-toggle");
-var vWrongPenaltySel = document.getElementById("variants-wrong-penalty-toggle");
-var vAutoNormSel = document.getElementById("variants-auto-normal-toggle");
-var vNormDelayIn = document.getElementById("variants-normal-delay-input");
-if (tIn) tIn.value = timerDuration;
-if (dIn) dIn.value = originalDelay;
-if (mIn) mIn.value = mixMode ? "mixed" : "normal";
-if (modeSel) modeSel.value = gameMode;
-if (streamSel) streamSel.value = streamAudioToPlayers ? "true" : "false";
-if (chatModeSel) chatModeSel.value = chatMode;
-if (scoreSel) scoreSel.value = showScoreToPlayers ? "true" : "false";
-if (opponentScoreSel) opponentScoreSel.value = showOpponentScore ? "true" : "false";
-if (jokerToggle) jokerToggle.value = jokerEnabled ? "true" : "false";
-if (jokerChanceSel) jokerChanceSel.value = jokerChance.toString();
-if (defPtsIn) defPtsIn.value = defaultCorrectPoints;
-if (vTimerIn) vTimerIn.value = variantsTimerDuration;
-if (vPenaltySel) vPenaltySel.value = variantsPenaltyEnabled ? "true" : "false";
-if (vWrongPenaltySel) vWrongPenaltySel.value = variantsWrongPenaltyEnabled ? "true" : "false";
-if (vAutoNormSel) vAutoNormSel.value = variantsAutoNormalEnabled ? "true" : "false";
-if (vNormDelayIn) vNormDelayIn.value = variantsNormalDelay;
-toggleInteractiveSettingsVisibility();
-if (statusEl) { var currentVer = localStorage.getItem('app_version') || '11'; statusEl.textContent = "Текущая версия: v" + currentVer; }
-if (sMod) { sMod.classList.add("active"); }
+  var tIn = document.getElementById("timer-input");
+  var dIn = document.getElementById("original-delay-input");
+  var mIn = document.getElementById("mix-mode");
+  var modeSel = document.getElementById("game-mode-toggle");
+  var streamSel = document.getElementById("stream-audio-toggle");
+  var chatModeSel = document.getElementById("chat-mode-toggle");
+  var scoreSel = document.getElementById("show-score-toggle");
+  var opponentScoreSel = document.getElementById("show-opponent-score-toggle");
+  var jokerToggle = document.getElementById("joker-toggle");
+  var jokerChanceSel = document.getElementById("joker-chance");
+  var sMod = document.getElementById("settings-modal");
+  var statusEl = document.getElementById("manual-update-status");
+  var defPtsIn = document.getElementById("default-correct-pts-input");
+  var vTimerIn = document.getElementById("variants-timer-input");
+  var vPenaltySel = document.getElementById("variants-penalty-toggle");
+  var vWrongPenaltySel = document.getElementById("variants-wrong-penalty-toggle");
+  var vAutoNormSel = document.getElementById("variants-auto-normal-toggle");
+  var vNormDelayIn = document.getElementById("variants-normal-delay-input");
+
+  if (tIn) tIn.value = timerDuration;
+  if (dIn) dIn.value = originalDelay;
+  if (mIn) mIn.value = mixMode ? "mixed" : "normal";
+  if (modeSel) modeSel.value = gameMode;
+  if (streamSel) streamSel.value = streamAudioToPlayers ? "true" : "false";
+  if (chatModeSel) chatModeSel.value = chatMode;
+  if (scoreSel) scoreSel.value = showScoreToPlayers ? "true" : "false";
+  if (opponentScoreSel) opponentScoreSel.value = showOpponentScore ? "true" : "false";
+  if (jokerToggle) jokerToggle.value = jokerEnabled ? "true" : "false";
+  if (jokerChanceSel) jokerChanceSel.value = jokerChance.toString();
+  if (defPtsIn) defPtsIn.value = defaultCorrectPoints;
+  if (vTimerIn) vTimerIn.value = variantsTimerDuration;
+  if (vPenaltySel) vPenaltySel.value = variantsPenaltyEnabled ? "true" : "false";
+  if (vWrongPenaltySel) vWrongPenaltySel.value = variantsWrongPenaltyEnabled ? "true" : "false";
+  if (vAutoNormSel) vAutoNormSel.value = variantsAutoNormalEnabled ? "true" : "false";
+  if (vNormDelayIn) vNormDelayIn.value = variantsNormalDelay;
+
+  toggleInteractiveSettingsVisibility();
+  if (statusEl) { var currentVer = localStorage.getItem('app_version') || '11'; statusEl.textContent = "Текущая версия: v" + currentVer; }
+  if (sMod) { sMod.classList.add("active"); }
 }
+
 function closeSettings() {
-var sMod = document.getElementById("settings-modal");
-if (sMod) { sMod.classList.remove("active"); }
-if (document.activeElement && typeof document.activeElement.blur === "function") { document.activeElement.blur(); }
+  var sMod = document.getElementById("settings-modal");
+  if (sMod) { sMod.classList.remove("active"); }
+  if (document.activeElement && typeof document.activeElement.blur === "function") { document.activeElement.blur(); }
 }
+
 function openQrModal() {
-updateQuickLinkDisplays();
-var modal = document.getElementById("qr-modal");
-if (modal) modal.classList.add("active");
+  updateQuickLinkDisplays();
+  var modal = document.getElementById("qr-modal");
+  if (modal) modal.classList.add("active");
 }
 function closeQrModal() { var modal = document.getElementById("qr-modal"); if (modal) modal.classList.remove("active"); }
 function generateNewRoomPin() { var newPin = Math.floor(1000 + Math.random() * 9000).toString(); localStorage.setItem("host_room_pin", newPin); return newPin; }
+
 function updateHostChatButtonVisibility() {
-var btn = document.getElementById("host-chat-toggle-btn");
-if (!btn) return;
-btn.style.display = (isInteractiveMode && chatMode !== "disabled") ? "flex" : "none";
-if (chatMode === "disabled" || !isInteractiveMode) {
-var box = document.getElementById("host-chat-box");
-if (box) box.style.display = "none";
-hostChatOpen = false;
+  var btn = document.getElementById("host-chat-toggle-btn");
+  if (!btn) return;
+  btn.style.display = (isInteractiveMode && chatMode !== "disabled") ? "flex" : "none";
+  if (chatMode === "disabled" || !isInteractiveMode) {
+    var box = document.getElementById("host-chat-box");
+    if (box) box.style.display = "none";
+    hostChatOpen = false;
+  }
 }
-}
+
 function resetBuzzer() {
-if (isInteractiveMode && roomRef) {
-roomRef.child("buzzer").set({ locked: false, pressedBy: null, pressedByName: null, passedBy: [] });
+  if (isInteractiveMode && roomRef) {
+    roomRef.child("buzzer").set({ locked: false, pressedBy: null, pressedByName: null, passedBy: [] });
+  }
 }
-}
+
 function forceStopAllSounds() {
-if (originalTimeout) { clearTimeout(originalTimeout); originalTimeout = null; }
-if (variantsAutoNormalTimeout) { clearTimeout(variantsAutoNormalTimeout); variantsAutoNormalTimeout = null; }
-["audio-revers", "audio-normal", "audio-winner", "audio-lost", "audio-ring", "audio-start", "audio-final", "audio-game-over"].forEach(function(id) {
-var el = document.getElementById(id);
-if (el) { try { el.pause(); } catch(e) {} try { el.currentTime = 0; } catch(e) {} }
-});
-stopTimer();
+  if (originalTimeout) { clearTimeout(originalTimeout); originalTimeout = null; }
+  if (variantsAutoNormalTimeout) { clearTimeout(variantsAutoNormalTimeout); variantsAutoNormalTimeout = null; }
+  ["audio-revers", "audio-normal", "audio-winner", "audio-lost", "audio-ring", "audio-start", "audio-final", "audio-game-over"].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) { try { el.pause(); } catch(e) {} try { el.currentTime = 0; } catch(e) {} }
+  });
+  stopTimer();
 }
+
 function showJokerAnimation(teamName) {
-var overlay = document.getElementById("joker-overlay");
-var teamNameEl = document.getElementById("joker-team-name");
-teamNameEl.textContent = teamName ? ("🏆 " + teamName + " 🏆") : "";
-overlay.classList.add("active");
-for (var i = 0; i < 50; i++) {
-var confetti = document.createElement("div");
-confetti.className = "joker-confetti";
-confetti.style.left = Math.random() * 100 + "%";
-confetti.style.background = ["#ffd700", "#ff8c00", "#ff0055", "#00e5ff", "#00ff66"][Math.floor(Math.random() * 5)];
-confetti.style.animationDelay = Math.random() * 0.5 + "s";
-confetti.style.animationDuration = (2 + Math.random() * 2) + "s";
-overlay.appendChild(confetti);
-setTimeout(function(c) { if (c.parentNode) c.parentNode.removeChild(c); }, 4000, confetti);
+  var overlay = document.getElementById("joker-overlay");
+  var teamNameEl = document.getElementById("joker-team-name");
+  teamNameEl.textContent = teamName ? ("🏆 " + teamName + " 🏆") : "";
+  overlay.classList.add("active");
+  for (var i = 0; i < 50; i++) {
+    var confetti = document.createElement("div");
+    confetti.className = "joker-confetti";
+    confetti.style.left = Math.random() * 100 + "%";
+    confetti.style.background = ["#ffd700", "#ff8c00", "#ff0055", "#00e5ff", "#00ff66"][Math.floor(Math.random() * 5)];
+    confetti.style.animationDelay = Math.random() * 0.5 + "s";
+    confetti.style.animationDuration = (2 + Math.random() * 2) + "s";
+    overlay.appendChild(confetti);
+    setTimeout(function(c) { if (c.parentNode) c.parentNode.removeChild(c); }, 4000, confetti);
+  }
+  playJokerSound();
+  if (navigator.vibrate) navigator.vibrate([100, 50, 100, 50, 200]);
+  setTimeout(function() {
+    overlay.classList.remove("active");
+    var remaining = overlay.querySelectorAll(".joker-confetti");
+    remaining.forEach(function(c) { if (c.parentNode) c.parentNode.removeChild(c); });
+  }, 3500);
 }
-playJokerSound();
-if (navigator.vibrate) navigator.vibrate([100, 50, 100, 50, 200]);
-setTimeout(function() {
-overlay.classList.remove("active");
-var remaining = overlay.querySelectorAll(".joker-confetti");
-remaining.forEach(function(c) { if (c.parentNode) c.parentNode.removeChild(c); });
-}, 3500);
-}
+
 function lockTrackControls() {
-if (gameSessionStarted) { applyLockUI(); return; }
-gameSessionStarted = true;
-applyLockUI();
-saveState();
+  if (gameSessionStarted) { applyLockUI(); return; }
+  gameSessionStarted = true;
+  applyLockUI();
+  saveState();
 }
+
 function applyLockUI() {
-var loadBtn = document.getElementById("load-songs-btn");
-var shuffleBtn = document.getElementById("shuffle-btn");
-if (loadBtn) {
-loadBtn.disabled = true;
-loadBtn.innerHTML = '<i class="fas fa-lock"></i> Игра начата (загрузка заблокирована)';
+  var loadBtn = document.getElementById("load-songs-btn");
+  var shuffleBtn = document.getElementById("shuffle-btn");
+  if (loadBtn) {
+    loadBtn.disabled = true;
+    loadBtn.innerHTML = '<i class="fas fa-lock"></i> Игра начата (загрузка заблокирована)';
+  }
+  if (shuffleBtn) {
+    shuffleBtn.disabled = true;
+    shuffleBtn.style.opacity = 0.4;
+    shuffleBtn.style.cursor = "not-allowed";
+    shuffleBtn.textContent = '🔒 Перемешивание заблокировано';
+  }
 }
-if (shuffleBtn) {
-shuffleBtn.disabled = true;
-shuffleBtn.style.opacity = 0.4;
-shuffleBtn.style.cursor = "not-allowed";
-shuffleBtn.textContent = '🔒 Перемешивание заблокировано';
-}
-}
+
 function initHostRoom() {
-if (!isInteractiveMode) return;
-if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
-db = firebase.database();
-currentRoomPin = localStorage.getItem("host_room_pin");
-if (!currentRoomPin) { currentRoomPin = generateNewRoomPin(); }
-document.getElementById("host-pin").textContent = currentRoomPin;
-updateQuickLinkDisplays();
-roomRef = db.ref("rooms/" + currentRoomPin);
-roomRef.update({
-status: "idle", showScore: showScoreToPlayers, showOpponentScore: showOpponentScore,
-streamAudio: streamAudioToPlayers, chatMode: chatMode, gameMode: gameMode,
-buzzer: { locked: true, pressedBy: null, passedBy: [] }, revealedTrack: "",
-systemSounds: soundUrls, timerState: { active: false, value: 0 },
-audioSync: { trackSessionId: "", reversUrl: "", normalUrl: "", duration: 0, currentTime: 0, playAction: "stop", startAt: 0, isJoker: false, jokerEnabled: jokerEnabled },
-variantsRound: { active: false, correctTrack: "", options: [], answeringTeam: null, answeringTeamName: "", selectedOption: null, isFinal: false, askConfirm: false, attemptsLeft: 2, isRevealed: false, isCorrect: false, roundTimer: variantsTimerDuration, timerDeadline: 0, penaltyEnabled: variantsPenaltyEnabled }
-});
-teamsData = [];
-renderHostTeamsList();
-renderScoreboardGrid();
-updateHostChatButtonVisibility();
-initEmojiPicker("host-emoji-popover", "host-chat-input");
-listenToChatMessages();
-roomRef.child("teams").on("value", function(snapshot) {
-var rawTeams = snapshot.val() || {};
-var cloudKeys = Object.keys(rawTeams);
-if (cloudKeys.length > 0) {
-teamsData = cloudKeys.map(function(key) {
-return { id: key, name: rawTeams[key].name || "Команда", score: typeof rawTeams[key].score !== 'undefined' ? rawTeams[key].score : 0, readyToPlay: rawTeams[key].readyToPlay || false, online: rawTeams[key].online !== false };
-});
-} else { teamsData = []; }
-renderHostTeamsList();
-renderScoreboardGrid();
-});
-roomRef.child("buzzer").on("value", function(snapshot) {
-var buzzer = snapshot.val();
-if (!buzzer) return;
-if (buzzer.locked && buzzer.pressedByName) { handleBuzzerTriggered(buzzer.pressedBy, buzzer.pressedByName); }
-if (isVariantsMode && buzzer.lastPassAt && buzzer.lastPassAt > lastHandledPassAt) {
-lastHandledPassAt = buzzer.lastPassAt;
-showPassWavePopup(buzzer.lastPassTeamName || "Команда", buzzer.lastPassType === "timeout");
-checkAllTeamsPassed(buzzer.passedBy || []);
+  if (!isInteractiveMode) return;
+  if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
+  db = firebase.database();
+  currentRoomPin = localStorage.getItem("host_room_pin");
+  if (!currentRoomPin) { currentRoomPin = generateNewRoomPin(); }
+  document.getElementById("host-pin").textContent = currentRoomPin;
+  updateQuickLinkDisplays();
+  roomRef = db.ref("rooms/" + currentRoomPin);
+  roomRef.update({
+    status: "idle", showScore: showScoreToPlayers, showOpponentScore: showOpponentScore,
+    streamAudio: streamAudioToPlayers, chatMode: chatMode, gameMode: gameMode,
+    buzzer: { locked: true, pressedBy: null, passedBy: [] }, revealedTrack: "",
+    systemSounds: soundUrls, timerState: { active: false, value: 0 },
+    audioSync: { trackSessionId: "", reversUrl: "", normalUrl: "", duration: 0, currentTime: 0, playAction: "stop", startAt: 0, isJoker: false, jokerEnabled: jokerEnabled },
+    variantsRound: { active: false, correctTrack: "", options: [], answeringTeam: null, answeringTeamName: "", selectedOption: null, isFinal: false, askConfirm: false, attemptsLeft: 2, isRevealed: false, isCorrect: false, roundTimer: variantsTimerDuration, timerDeadline: 0, penaltyEnabled: variantsPenaltyEnabled }
+  });
+  teamsData = [];
+  renderHostTeamsList();
+  renderScoreboardGrid();
+  updateHostChatButtonVisibility();
+  initEmojiPicker("host-emoji-popover", "host-chat-input");
+  listenToChatMessages();
+  roomRef.child("teams").on("value", function(snapshot) {
+    var rawTeams = snapshot.val() || {};
+    var cloudKeys = Object.keys(rawTeams);
+    if (cloudKeys.length > 0) {
+      teamsData = cloudKeys.map(function(key) {
+        return { id: key, name: rawTeams[key].name || "Команда", score: typeof rawTeams[key].score !== 'undefined' ? rawTeams[key].score : 0, readyToPlay: rawTeams[key].readyToPlay || false, online: rawTeams[key].online !== false };
+      });
+    } else { teamsData = []; }
+    renderHostTeamsList();
+    renderScoreboardGrid();
+  });
+  roomRef.child("buzzer").on("value", function(snapshot) {
+    var buzzer = snapshot.val();
+    if (!buzzer) return;
+    if (buzzer.locked && buzzer.pressedByName) { handleBuzzerTriggered(buzzer.pressedBy, buzzer.pressedByName); }
+    if (isVariantsMode && buzzer.lastPassAt && buzzer.lastPassAt > lastHandledPassAt) {
+      lastHandledPassAt = buzzer.lastPassAt;
+      showPassWavePopup(buzzer.lastPassTeamName || "Команда", buzzer.lastPassType === "timeout");
+      checkAllTeamsPassed(buzzer.passedBy || []);
+    }
+  });
+  roomRef.child("variantsRound").on("value", function(snapshot) {
+    var vr = snapshot.val();
+    if (vr) {
+      variantsState = vr;
+      updateVariantsHostUI();
+    }
+  });
 }
-});
-roomRef.child("variantsRound").on("value", function(snapshot) {
-var vr = snapshot.val();
-if (vr) {
-variantsState = vr;
-updateVariantsHostUI();
-}
-});
-}
+
 function cleanSongTitle(str) {
-if (!str) return "";
-return str.replace(/\s*[\(\[](remix|feat|ft|radio|edit|cover|version|mix|dj|prod).*?[\)\]]/gi, '').trim();
+  if (!str) return "";
+  return str.replace(/\s*[\(\[](remix|feat|ft|radio|edit|cover|version|mix|dj|prod).*?[\)\]]/gi, '').trim();
 }
+
 function extractArtistName(trackTitle) {
-if (!trackTitle) return "";
-if (trackTitle.indexOf(" - ") !== -1) return trackTitle.split(" - ")[0].trim();
-if (trackTitle.indexOf(" — ") !== -1) return trackTitle.split(" — ")[0].trim();
-return "";
+  if (!trackTitle) return "";
+  if (trackTitle.indexOf(" - ") !== -1) return trackTitle.split(" - ")[0].trim();
+  if (trackTitle.indexOf(" — ") !== -1) return trackTitle.split(" — ")[0].trim();
+  return "";
 }
+
 async function fetchLastFmSimilar(artist) {
-try {
-var url = "https://ws.audioscrobbler.com/2.0/?method=artist.getsimilar&artist=" + encodeURIComponent(artist) + "&api_key=" + LASTFM_API_KEY + "&format=json&limit=25";
-var res = await fetch(url);
-if (!res.ok) return [];
-var data = await res.json();
-if (data && data.similarartists && Array.isArray(data.similarartists.artist)) {
-return data.similarartists.artist.map(function(a) { return a.name; });
+  try {
+    var url = "https://ws.audioscrobbler.com/2.0/?method=artist.getsimilar&artist=" + encodeURIComponent(artist) + "&api_key=" + LASTFM_API_KEY + "&format=json&limit=25";
+    var res = await fetch(url);
+    if (!res.ok) return [];
+    var data = await res.json();
+    if (data && data.similarartists && Array.isArray(data.similarartists.artist)) {
+      return data.similarartists.artist.map(function(a) { return a.name; });
+    }
+  } catch(e) {
+    console.warn("Last.fm getsimilar error:", e);
+  }
+  return [];
 }
-} catch(e) {
-console.warn("Last.fm getsimilar error:", e);
-}
-return [];
-}
+
 async function fetchLastFmTopTrack(artist) {
-try {
-var url = "https://ws.audioscrobbler.com/2.0/?method=artist.gettoptracks&artist=" + encodeURIComponent(artist) + "&api_key=" + LASTFM_API_KEY + "&format=json&limit=5";
-var res = await fetch(url);
-if (!res.ok) return null;
-var data = await res.json();
-if (data && data.toptracks && Array.isArray(data.toptracks.track) && data.toptracks.track.length > 0) {
-var randomTrack = data.toptracks.track[Math.floor(Math.random() * Math.min(3, data.toptracks.track.length))];
-return cleanSongTitle(randomTrack.name);
+  try {
+    var url = "https://ws.audioscrobbler.com/2.0/?method=artist.gettoptracks&artist=" + encodeURIComponent(artist) + "&api_key=" + LASTFM_API_KEY + "&format=json&limit=5";
+    var res = await fetch(url);
+    if (!res.ok) return null;
+    var data = await res.json();
+    if (data && data.toptracks && Array.isArray(data.toptracks.track) && data.toptracks.track.length > 0) {
+      var randomTrack = data.toptracks.track[Math.floor(Math.random() * Math.min(3, data.toptracks.track.length))];
+      return cleanSongTitle(randomTrack.name);
+    }
+  } catch(e) {
+    console.warn("Last.fm gettoptracks error:", e);
+  }
+  return null;
 }
-} catch(e) {
-console.warn("Last.fm gettoptracks error:", e);
-}
-return null;
-}
+
 async function fetchTrackVariants(trackName) {
-var correctTitle = trackName.trim();
-var originalArtist = extractArtistName(correctTitle);
-var isRussianTrack = /[а-яА-ЯёЁ]/.test(correctTitle) || (selectedFolder && selectedFolder.indexOf("Русские") !== -1);
-var distractors = [];
-var usedArtists = new Set();
-if (originalArtist) usedArtists.add(originalArtist.toLowerCase());
-if (originalArtist) {
-var similarArtists = await fetchLastFmSimilar(originalArtist);
-similarArtists = similarArtists.filter(function(art) {
-if (!art) return false;
-var artLower = art.toLowerCase();
-if (usedArtists.has(artLower)) return false;
-var hasCyr = /[а-яА-ЯёЁ]/.test(art);
-if (isRussianTrack && !hasCyr) return false;
-if (!isRussianTrack && hasCyr) return false;
-return true;
-});
-similarArtists.sort(function() { return Math.random() - 0.5; });
-for (var i = 0; i < similarArtists.length; i++) {
-if (distractors.length >= 3) break;
-var simArt = similarArtists[i];
-var topSong = await fetchLastFmTopTrack(simArt);
-if (topSong) {
-var optionCandidate = simArt + " — " + topSong;
-if (optionCandidate.toLowerCase() !== correctTitle.toLowerCase()) {
-usedArtists.add(simArt.toLowerCase());
-distractors.push(optionCandidate);
+  var correctTitle = trackName.trim();
+  var originalArtist = extractArtistName(correctTitle);
+  var isRussianTrack = /[а-яА-ЯёЁ]/.test(correctTitle) || (selectedFolder && selectedFolder.indexOf("Русские") !== -1);
+  var distractors = [];
+  var usedArtists = new Set();
+  if (originalArtist) usedArtists.add(originalArtist.toLowerCase());
+  if (originalArtist) {
+    var similarArtists = await fetchLastFmSimilar(originalArtist);
+    similarArtists = similarArtists.filter(function(art) {
+      if (!art) return false;
+      var artLower = art.toLowerCase();
+      if (usedArtists.has(artLower)) return false;
+      var hasCyr = /[а-яА-ЯёЁ]/.test(art);
+      if (isRussianTrack && !hasCyr) return false;
+      if (!isRussianTrack && hasCyr) return false;
+      return true;
+    });
+    similarArtists.sort(function() { return Math.random() - 0.5; });
+    for (var i = 0; i < similarArtists.length; i++) {
+      if (distractors.length >= 3) break;
+      var simArt = similarArtists[i];
+      var topSong = await fetchLastFmTopTrack(simArt);
+      if (topSong) {
+        var optionCandidate = simArt + " — " + topSong;
+        if (optionCandidate.toLowerCase() !== correctTitle.toLowerCase()) {
+          usedArtists.add(simArt.toLowerCase());
+          distractors.push(optionCandidate);
+        }
+      }
+    }
+  }
+  var allFileNames = Object.keys(files).sort(function() { return Math.random() - 0.5; });
+  for (var j = 0; j < allFileNames.length; j++) {
+    if (distractors.length >= 3) break;
+    var localName = allFileNames[j].trim();
+    var localArt = extractArtistName(localName).toLowerCase();
+    if (localName.toLowerCase() === correctTitle.toLowerCase()) continue;
+    if (localArt && usedArtists.has(localArt)) continue;
+    var localHasCyr = /[а-яА-ЯёЁ]/.test(localName);
+    if (isRussianTrack && !localHasCyr) continue;
+    if (!isRussianTrack && localHasCyr) continue;
+    if (localArt) usedArtists.add(localArt);
+    distractors.push(localName);
+  }
+  for (var k = 0; k < allFileNames.length; k++) {
+    if (distractors.length >= 3) break;
+    var fn = allFileNames[k].trim();
+    if (fn.toLowerCase() !== correctTitle.toLowerCase() && distractors.indexOf(fn) === -1) {
+      distractors.push(fn);
+    }
+  }
+  var finalOptions = [correctTitle].concat(distractors.slice(0, 3));
+  finalOptions.sort(function() { return Math.random() - 0.5; });
+  return {
+    correct: correctTitle,
+    options: finalOptions
+  };
 }
-}
-}
-}
-var allFileNames = Object.keys(files).sort(function() { return Math.random() - 0.5; });
-for (var j = 0; j < allFileNames.length; j++) {
-if (distractors.length >= 3) break;
-var localName = allFileNames[j].trim();
-var localArt = extractArtistName(localName).toLowerCase();
-if (localName.toLowerCase() === correctTitle.toLowerCase()) continue;
-if (localArt && usedArtists.has(localArt)) continue;
-var localHasCyr = /[а-яА-ЯёЁ]/.test(localName);
-if (isRussianTrack && !localHasCyr) continue;
-if (!isRussianTrack && localHasCyr) continue;
-if (localArt) usedArtists.add(localArt);
-distractors.push(localName);
-}
-for (var k = 0; k < allFileNames.length; k++) {
-if (distractors.length >= 3) break;
-var fn = allFileNames[k].trim();
-if (fn.toLowerCase() !== correctTitle.toLowerCase() && distractors.indexOf(fn) === -1) {
-distractors.push(fn);
-}
-}
-var finalOptions = [correctTitle].concat(distractors.slice(0, 3));
-finalOptions.sort(function() { return Math.random() - 0.5; });
-return {
-correct: correctTitle,
-options: finalOptions
-};
-}
+
 async function prepareVariantsForCurrentTrack(trackName) {
-if (!isVariantsMode || !roomRef) return;
-var vData = await fetchTrackVariants(trackName);
-variantsState = {
-active: false,
-correctTrack: vData.correct,
-options: vData.options,
-answeringTeam: null,
-answeringTeamName: "",
-selectedOption: null,
-isFinal: false,
-askConfirm: false,
-attemptsLeft: 2,
-isRevealed: false,
-isCorrect: false,
-roundTimer: variantsTimerDuration,
-timerDeadline: 0,
-penaltyEnabled: variantsPenaltyEnabled
-};
-roomRef.child("variantsRound").set(variantsState);
-renderHostVariantsGrid(vData.options, null, false);
-document.getElementById("variants-answering-badge").textContent = "Ожидание ответа...";
-document.getElementById("variants-host-buttons").style.display = "none";
-var judgeEl = document.getElementById("host-judge-indicator");
-if (judgeEl) { judgeEl.className = "host-judge-indicator"; judgeEl.style.display = "none"; }
+  if (!isVariantsMode || !roomRef) return;
+  var vData = await fetchTrackVariants(trackName);
+  variantsState = {
+    active: false,
+    correctTrack: vData.correct,
+    options: vData.options,
+    answeringTeam: null,
+    answeringTeamName: "",
+    selectedOption: null,
+    isFinal: false,
+    askConfirm: false,
+    attemptsLeft: 2,
+    isRevealed: false,
+    isCorrect: false,
+    roundTimer: variantsTimerDuration,
+    timerDeadline: 0,
+    penaltyEnabled: variantsPenaltyEnabled
+  };
+  roomRef.child("variantsRound").set(variantsState);
+  renderHostVariantsGrid(vData.options, null, false);
+  document.getElementById("variants-answering-badge").textContent = "Ожидание ответа...";
+  document.getElementById("variants-host-buttons").style.display = "none";
+  var judgeEl = document.getElementById("host-judge-indicator");
+  if (judgeEl) { judgeEl.className = "host-judge-indicator"; judgeEl.style.display = "none"; }
 }
+
 function updateVariantsHostUI() {
-if (!isVariantsMode) return;
-var badge = document.getElementById("variants-answering-badge");
-var btnRow = document.getElementById("variants-host-buttons");
-var btnAsk = document.getElementById("btn-ask-sure");
-var btnLock = document.getElementById("btn-lock-choice");
-var judgeEl = document.getElementById("host-judge-indicator");
-if (variantsState.selectedOption) {
-var isSelectedCorrect = variantsState.selectedOption.toLowerCase() === (variantsState.correctTrack || "").toLowerCase();
-if (judgeEl) {
-judgeEl.className = "host-judge-indicator " + (isSelectedCorrect ? "correct" : "wrong");
-judgeEl.innerHTML = isSelectedCorrect
-? '<i class="fas fa-check-circle"></i> Верно! (Команда выбрала правильный ответ)'
-: '<i class="fas fa-times-circle"></i> Неверно! (Команда ошиблась)';
-judgeEl.style.display = "block";
+  if (!isVariantsMode) return;
+  var badge = document.getElementById("variants-answering-badge");
+  var btnRow = document.getElementById("variants-host-buttons");
+  var btnAsk = document.getElementById("btn-ask-sure");
+  var btnLock = document.getElementById("btn-lock-choice");
+  var judgeEl = document.getElementById("host-judge-indicator");
+  if (variantsState.selectedOption) {
+    var isSelectedCorrect = variantsState.selectedOption.toLowerCase() === (variantsState.correctTrack || "").toLowerCase();
+    if (judgeEl) {
+      judgeEl.className = "host-judge-indicator " + (isSelectedCorrect ? "correct" : "wrong");
+      judgeEl.innerHTML = isSelectedCorrect
+        ? '<i class="fas fa-check-circle"></i> Верно! (Команда выбрала правильный ответ)'
+        : '<i class="fas fa-times-circle"></i> Неверно! (Команда ошиблась)';
+      judgeEl.style.display = "block";
+    }
+  } else {
+    if (judgeEl) judgeEl.style.display = "none";
+  }
+  if (variantsState.active && variantsState.answeringTeamName) {
+    badge.textContent = "Отвечает: " + variantsState.answeringTeamName;
+    if (!variantsState.isFinal && !variantsState.isRevealed) {
+      btnRow.style.display = "flex";
+      btnAsk.disabled = !variantsState.selectedOption;
+      btnLock.disabled = !variantsState.selectedOption;
+    } else if (variantsState.isFinal && !variantsState.isRevealed) {
+      btnRow.style.display = "none";
+      badge.textContent = "🔒 Ответ " + variantsState.answeringTeamName + " зафиксирован!";
+      if (variantsAutoNormalEnabled && !variantsAutoNormalTimeout) {
+        variantsAutoNormalTimeout = setTimeout(function() {
+          variantsAutoNormalTimeout = null;
+          var isCorrect = (variantsState.selectedOption || "").toLowerCase() === (variantsState.correctTrack || "").toLowerCase();
+          playSound(isCorrect ? 'winner' : 'lost');
+        }, Math.max(500, variantsNormalDelay * 1000));
+      }
+    } else if (variantsState.isRevealed) {
+      btnRow.style.display = "none";
+      badge.textContent = variantsState.isCorrect ? "🎉 ОТВЕТ ВЕРНЫЙ!" : "❌ ОТВЕТ НЕВЕРНЫЙ!";
+    }
+  } else {
+    badge.textContent = "Ожидание нажатия кнопки...";
+    btnRow.style.display = "none";
+    if (judgeEl) judgeEl.style.display = "none";
+  }
+  renderHostVariantsGrid(variantsState.options || [], variantsState.selectedOption, variantsState.isFinal);
 }
-} else {
-if (judgeEl) judgeEl.style.display = "none";
-}
-if (variantsState.active && variantsState.answeringTeamName) {
-badge.textContent = "Отвечает: " + variantsState.answeringTeamName;
-if (!variantsState.isFinal && !variantsState.isRevealed) {
-btnRow.style.display = "flex";
-btnAsk.disabled = !variantsState.selectedOption;
-btnLock.disabled = !variantsState.selectedOption;
-} else if (variantsState.isFinal && !variantsState.isRevealed) {
-btnRow.style.display = "none";
-badge.textContent = "🔒 Ответ " + variantsState.answeringTeamName + " зафиксирован!";
-if (variantsAutoNormalEnabled && !variantsAutoNormalTimeout) {
-variantsAutoNormalTimeout = setTimeout(function() {
-variantsAutoNormalTimeout = null;
-var isCorrect = (variantsState.selectedOption || "").toLowerCase() === (variantsState.correctTrack || "").toLowerCase();
-playSound(isCorrect ? 'winner' : 'lost');
-}, Math.max(500, variantsNormalDelay * 1000));
-}
-} else if (variantsState.isRevealed) {
-btnRow.style.display = "none";
-badge.textContent = variantsState.isCorrect ? "🎉 ОТВЕТ ВЕРНЫЙ!" : "❌ ОТВЕТ НЕВЕРНЫЙ!";
-}
-} else {
-badge.textContent = "Ожидание нажатия кнопки...";
-btnRow.style.display = "none";
-if (judgeEl) judgeEl.style.display = "none";
-}
-renderHostVariantsGrid(variantsState.options || [], variantsState.selectedOption, variantsState.isFinal);
-}
+
 function renderHostVariantsGrid(options, selected, isFinal) {
-var grid = document.getElementById("variants-host-grid");
-if (!grid) return;
-grid.innerHTML = "";
-options.forEach(function(opt) {
-var card = document.createElement("div");
-card.className = "variant-card-host";
-if (variantsState.isRevealed && opt.toLowerCase() === (variantsState.correctTrack || "").toLowerCase()) {
-card.className += " correct-reveal";
-card.innerHTML = "✅ " + opt;
-} else if (opt === selected) {
-card.className += isFinal ? " locked" : " selected";
-card.innerHTML = (isFinal ? "🔒 " : "👉 ") + opt;
-} else {
-card.textContent = opt;
+  var grid = document.getElementById("variants-host-grid");
+  if (!grid) return;
+  grid.innerHTML = "";
+  options.forEach(function(opt) {
+    var card = document.createElement("div");
+    card.className = "variant-card-host";
+    if (variantsState.isRevealed && opt.toLowerCase() === (variantsState.correctTrack || "").toLowerCase()) {
+      card.className += " correct-reveal";
+      card.innerHTML = "✅ " + opt;
+    } else if (opt === selected) {
+      card.className += isFinal ? " locked" : " selected";
+      card.innerHTML = (isFinal ? "🔒 " : "👉 ") + opt;
+    } else {
+      card.textContent = opt;
+    }
+    grid.appendChild(card);
+  });
 }
-grid.appendChild(card);
-});
-}
+
 function sendSureConfirmationRequest() {
-if (!roomRef || !variantsState.selectedOption) return;
-roomRef.child("variantsRound").update({ askConfirm: true });
-showActionNotification("❓ Запрос «Уверены?» отправлен команде!");
+  if (!roomRef || !variantsState.selectedOption) return;
+  roomRef.child("variantsRound").update({ askConfirm: true });
+  showActionNotification("❓ Запрос «Уверены?» отправлен команде!");
 }
+
 function lockVariantByHost() {
-if (!roomRef || !variantsState.selectedOption) return;
-roomRef.child("variantsRound").update({ isFinal: true, askConfirm: false });
-showActionNotification("🔒 Ответ зафиксирован ведущим!");
+  if (!roomRef || !variantsState.selectedOption) return;
+  roomRef.child("variantsRound").update({ isFinal: true, askConfirm: false });
+  showActionNotification("🔒 Ответ зафиксирован ведущим!");
 }
+
 function renderHostTeamsList() {
-var container = document.getElementById("host-teams-container");
-if (!container) return;
-if (teamsData.length === 0) {
-container.innerHTML = '<div style="color:var(--text-dim); font-size:0.9em;"><i class="fas fa-spinner fa-spin" style="margin-right:6px;"></i>Ожидание подключения участников...</div>';
-return;
+  var container = document.getElementById("host-teams-container");
+  if (!container) return;
+  if (teamsData.length === 0) {
+    container.innerHTML = '<div style="color:var(--text-dim); font-size:0.9em;"><i class="fas fa-spinner fa-spin" style="margin-right:6px;"></i>Ожидание подключения участников...</div>';
+    return;
+  }
+  container.innerHTML = "";
+  teamsData.forEach(function(t) {
+    var pill = document.createElement("div");
+    var isOnline = t.online !== false;
+    pill.className = "team-pill " + (isOnline ? "ready" : "offline");
+    var statusIcon = isOnline ? '<i class="fas fa-circle" style="font-size:0.6em; color:var(--neon-lime);"></i>' : '<i class="far fa-circle" style="font-size:0.6em; color:var(--neon-pink);"></i>';
+    var statusText = isOnline ? "" : " <span style='font-size:0.75em; opacity:0.8;'>(вышел)</span>";
+    pill.innerHTML = statusIcon + ' ' + t.name + ' (' + formatScore(t.score) + ')' + statusText;
+    container.appendChild(pill);
+  });
 }
-container.innerHTML = "";
-teamsData.forEach(function(t) {
-var pill = document.createElement("div");
-var isOnline = t.online !== false;
-pill.className = "team-pill " + (isOnline ? "ready" : "offline");
-var statusIcon = isOnline ? '<i class="fas fa-circle" style="font-size:0.6em; color:var(--neon-lime);"></i>' : '<i class="far fa-circle" style="font-size:0.6em; color:var(--neon-pink);"></i>';
-var statusText = isOnline ? "" : " <span style='font-size:0.75em; opacity:0.8;'>(вышел)</span>";
-pill.innerHTML = statusIcon + ' ' + t.name + ' (' + formatScore(t.score) + ')' + statusText;
-container.appendChild(pill);
-});
-}
+
 function renderOfflineTeamsInputs() {
-var container = document.getElementById("teams-input-container");
-if (!container) return;
-container.innerHTML = "";
-teamsData.forEach(function(t, idx) {
-var row = document.createElement("div"); row.className = "team-input-row";
-var input = document.createElement("input"); input.type = "text"; input.value = t.name; input.placeholder = "Команда " + (idx + 1); input.id = "input-team-" + idx;
-row.appendChild(input);
-if (teamsData.length > 2) {
-var delBtn = document.createElement("button"); delBtn.className = "btn-del-team"; delBtn.innerHTML = '<i class="fas fa-trash-alt"></i>';
-delBtn.onclick = function() { removeOfflineTeam(idx); }; row.appendChild(delBtn);
+  var container = document.getElementById("teams-input-container");
+  if (!container) return;
+  container.innerHTML = "";
+  teamsData.forEach(function(t, idx) {
+    var row = document.createElement("div"); row.className = "team-input-row";
+    var input = document.createElement("input"); input.type = "text"; input.value = t.name; input.placeholder = "Команда " + (idx + 1); input.id = "input-team-" + idx;
+    row.appendChild(input);
+    if (teamsData.length > 2) {
+      var delBtn = document.createElement("button"); delBtn.className = "btn-del-team"; delBtn.innerHTML = '<i class="fas fa-trash-alt"></i>';
+      delBtn.onclick = function() { removeOfflineTeam(idx); }; row.appendChild(delBtn);
+    }
+    container.appendChild(row);
+  });
 }
-container.appendChild(row);
-});
-}
+
 function addNewOfflineTeam() {
-var newIdx = teamsData.length + 1;
-teamsData.push({ id: "team_" + Date.now() + "_" + Math.random().toString(36).substr(2, 4), name: "Команда " + newIdx, score: 0, online: true });
-renderOfflineTeamsInputs(); renderScoreboardGrid(); saveState();
+  var newIdx = teamsData.length + 1;
+  teamsData.push({ id: "team_" + Date.now() + "_" + Math.random().toString(36).substr(2, 4), name: "Команда " + newIdx, score: 0, online: true });
+  renderOfflineTeamsInputs(); renderScoreboardGrid(); saveState();
 }
+
 function removeOfflineTeam(index) {
-if (teamsData.length <= 2) return;
-teamsData.splice(index, 1);
-renderOfflineTeamsInputs(); renderScoreboardGrid(); saveState();
+  if (teamsData.length <= 2) return;
+  teamsData.splice(index, 1);
+  renderOfflineTeamsInputs(); renderScoreboardGrid(); saveState();
 }
+
 function saveOfflineTeams() {
-teamsData.forEach(function(t, idx) {
-var el = document.getElementById("input-team-" + idx);
-if (el && el.value.trim()) { t.name = el.value.trim(); }
-});
-renderScoreboardGrid(); saveState();
-showActionNotification('✅ Составы команд сохранены!');
+  teamsData.forEach(function(t, idx) {
+    var el = document.getElementById("input-team-" + idx);
+    if (el && el.value.trim()) { t.name = el.value.trim(); }
+  });
+  renderScoreboardGrid(); saveState();
+  showActionNotification('✅ Составы команд сохранены!');
 }
+
 function toggleAllTeamsView() {
-showAllOnlineTeams = !showAllOnlineTeams;
-var btn = document.getElementById("toggle-all-teams-btn");
-if (btn) {
-btn.innerHTML = showAllOnlineTeams ? 'Свернуть ▴' : 'Все команды ▾';
+  showAllOnlineTeams = !showAllOnlineTeams;
+  var btn = document.getElementById("toggle-all-teams-btn");
+  if (btn) {
+    btn.innerHTML = showAllOnlineTeams ? 'Свернуть ▴' : 'Все команды ▾';
+  }
+  renderScoreboardGrid();
 }
-renderScoreboardGrid();
-}
+
 function renderScoreboardGrid() {
-var grid = document.getElementById("teams-scoreboard-grid");
-var toggleBtn = document.getElementById("toggle-all-teams-btn");
-if (!grid) return;
-grid.innerHTML = "";
-if (isInteractiveMode && teamsData.length === 0) {
-grid.innerHTML = '<div style="color:var(--text-dim); text-align:center; grid-column: 1 / -1; padding:20px;">Участники пока не подключились к комнате</div>';
-if (toggleBtn) toggleBtn.style.display = "none";
-return;
+  var grid = document.getElementById("teams-scoreboard-grid");
+  var toggleBtn = document.getElementById("toggle-all-teams-btn");
+  if (!grid) return;
+  grid.innerHTML = "";
+  if (isInteractiveMode && teamsData.length === 0) {
+    grid.innerHTML = '<div style="color:var(--text-dim); text-align:center; grid-column: 1 / -1; padding:20px;">Участники пока не подключились к комнате</div>';
+    if (toggleBtn) toggleBtn.style.display = "none";
+    return;
+  }
+  var isOnlineMode = (gameMode !== "offline");
+  if (toggleBtn) {
+    toggleBtn.style.display = (isOnlineMode && teamsData.length > 1) ? "block" : "none";
+  }
+  var teamsToDisplay = [];
+  if (isOnlineMode && !showAllOnlineTeams) {
+    if (activeTeamId) {
+      var focusedTeam = teamsData.find(function(t) { return t.id === activeTeamId; });
+      if (focusedTeam) teamsToDisplay = [focusedTeam];
+    }
+    if (teamsToDisplay.length === 0) {
+      grid.innerHTML = '<div style="color:var(--text-dim); text-align:center; grid-column: 1 / -1; padding:16px; font-size:0.9em;"><i class="fas fa-hourglass-start" style="margin-right:6px;"></i>Ожидание раунда / ответа команды...</div>';
+      return;
+    }
+  } else {
+    teamsToDisplay = teamsData;
+  }
+  teamsToDisplay.forEach(function(t) {
+    var isOffline = (t.online === false);
+    var group = document.createElement("div");
+    group.className = "score-team-group" + (activeTeamId === t.id ? " active" : "");
+    if (isOffline) { group.style.opacity = "0.65"; group.style.borderColor = "rgba(255, 0, 85, 0.3)"; }
+    group.id = "score-card-" + t.id;
+    group.onclick = function() { manualActivateTeam(t.id); };
+    var labelPrefix = isOffline ? "⚠️ " : "";
+    var labelSuffix = isOffline ? " (не в сети)" : "";
+    group.innerHTML =
+      '<div class="score-team-header">' +
+      '<div class="score-team-label">' + labelPrefix + t.name + labelSuffix + '</div>' +
+      '<div class="score-display">' + formatScore(t.score) + '</div>' +
+      '</div>' +
+      '<div class="score-btn-row remove">' +
+      '<button class="btn remove" onclick="event.stopPropagation(); changeScore(\'' + t.id + '\', -0.5)">-0.5</button>' +
+      '<button class="btn remove" onclick="event.stopPropagation(); changeScore(\'' + t.id + '\', -1)">-1</button>' +
+      '<button class="btn remove" onclick="event.stopPropagation(); changeScore(\'' + t.id + '\', -2)">-2</button>' +
+      '</div>' +
+      '<div class="score-btn-row add">' +
+      '<button class="btn add" onclick="event.stopPropagation(); changeScore(\'' + t.id + '\', 0.5)">+0.5</button>' +
+      '<button class="btn add" onclick="event.stopPropagation(); changeScore(\'' + t.id + '\', 1)">+1</button>' +
+      '<button class="btn add" onclick="event.stopPropagation(); changeScore(\'' + t.id + '\', 2)">+2</button>' +
+      '</div>';
+    grid.appendChild(group);
+  });
 }
-var isOnlineMode = (gameMode !== "offline");
-if (toggleBtn) {
-toggleBtn.style.display = (isOnlineMode && teamsData.length > 1) ? "block" : "none";
-}
-var teamsToDisplay = [];
-if (isOnlineMode && !showAllOnlineTeams) {
-if (activeTeamId) {
-var focusedTeam = teamsData.find(function(t) { return t.id === activeTeamId; });
-if (focusedTeam) teamsToDisplay = [focusedTeam];
-}
-if (teamsToDisplay.length === 0) {
-grid.innerHTML = '<div style="color:var(--text-dim); text-align:center; grid-column: 1 / -1; padding:16px; font-size:0.9em;"><i class="fas fa-hourglass-start" style="margin-right:6px;"></i>Ожидание раунда / ответа команды...</div>';
-return;
-}
-} else {
-teamsToDisplay = teamsData;
-}
-teamsToDisplay.forEach(function(t) {
-var isOffline = (t.online === false);
-var group = document.createElement("div");
-group.className = "score-team-group" + (activeTeamId === t.id ? " active" : "");
-if (isOffline) { group.style.opacity = "0.65"; group.style.borderColor = "rgba(255, 0, 85, 0.3)"; }
-group.id = "score-card-" + t.id;
-group.onclick = function() { manualActivateTeam(t.id); };
-var labelPrefix = isOffline ? "⚠️ " : "";
-var labelSuffix = isOffline ? " (не в сети)" : "";
-group.innerHTML =
-'<div class="score-team-header">' +
-'<div class="score-team-label">' + labelPrefix + t.name + labelSuffix + '</div>' +
-'<div class="score-display">' + formatScore(t.score) + '</div>' +
-'</div>' +
-'<div class="score-btn-row remove">' +
-'<button class="btn remove" onclick="event.stopPropagation(); changeScore(\'' + t.id + '\', -0.5)">-0.5</button>' +
-'<button class="btn remove" onclick="event.stopPropagation(); changeScore(\'' + t.id + '\', -1)">-1</button>' +
-'<button class="btn remove" onclick="event.stopPropagation(); changeScore(\'' + t.id + '\', -2)">-2</button>' +
-'</div>' +
-'<div class="score-btn-row add">' +
-'<button class="btn add" onclick="event.stopPropagation(); changeScore(\'' + t.id + '\', 0.5)">+0.5</button>' +
-'<button class="btn add" onclick="event.stopPropagation(); changeScore(\'' + t.id + '\', 1)">+1</button>' +
-'<button class="btn add" onclick="event.stopPropagation(); changeScore(\'' + t.id + '\', 2)">+2</button>' +
-'</div>';
-grid.appendChild(group);
-});
-}
+
 function showWaveHandPopup(teamName) {
-var popup = document.getElementById("buzzer-wave-popup");
-var teamText = document.getElementById("buzzer-wave-team");
-var emojiEl = document.getElementById("wave-hand-emoji");
-if (!popup || !teamText) return;
-if (emojiEl) emojiEl.textContent = "👋";
-teamText.innerHTML = '<span>' + teamName + '</span> отвечает!';
-popup.style.display = "flex"; popup.offsetHeight; popup.classList.add("show");
-if (buzzerWaveTimer) clearTimeout(buzzerWaveTimer);
-buzzerWaveTimer = setTimeout(function() {
-popup.classList.remove("show");
-setTimeout(function() { if (!popup.classList.contains("show")) popup.style.display = "none"; }, 250);
-}, 2400);
+  var popup = document.getElementById("buzzer-wave-popup");
+  var teamText = document.getElementById("buzzer-wave-team");
+  var emojiEl = document.getElementById("wave-hand-emoji");
+  if (!popup || !teamText) return;
+  if (emojiEl) emojiEl.textContent = "👋";
+  teamText.innerHTML = '<span>' + teamName + '</span> отвечает!';
+  popup.style.display = "flex"; popup.offsetHeight; popup.classList.add("show");
+  if (buzzerWaveTimer) clearTimeout(buzzerWaveTimer);
+  buzzerWaveTimer = setTimeout(function() {
+    popup.classList.remove("show");
+    setTimeout(function() { if (!popup.classList.contains("show")) popup.style.display = "none"; }, 250);
+  }, 2400);
 }
+
 function showPassWavePopup(teamName, isTimeout) {
-var popup = document.getElementById("buzzer-wave-popup");
-var teamText = document.getElementById("buzzer-wave-team");
-var emojiEl = document.getElementById("wave-hand-emoji");
-if (!popup || !teamText) return;
-if (emojiEl) emojiEl.textContent = isTimeout ? "⏰" : "⏭️";
-teamText.innerHTML = '<span>' + teamName + '</span> ' + (isTimeout ? 'время вышло!' : 'пропускает ход!');
-popup.style.display = "flex"; popup.offsetHeight; popup.classList.add("show");
-if (buzzerWaveTimer) clearTimeout(buzzerWaveTimer);
-buzzerWaveTimer = setTimeout(function() {
-popup.classList.remove("show");
-setTimeout(function() { if (!popup.classList.contains("show")) { popup.style.display = "none"; if (emojiEl) emojiEl.textContent = "👋"; } }, 250);
-}, 2400);
+  var popup = document.getElementById("buzzer-wave-popup");
+  var teamText = document.getElementById("buzzer-wave-team");
+  var emojiEl = document.getElementById("wave-hand-emoji");
+  if (!popup || !teamText) return;
+  if (emojiEl) emojiEl.textContent = isTimeout ? "⏰" : "⏭️";
+  teamText.innerHTML = '<span>' + teamName + '</span> ' + (isTimeout ? 'время вышло!' : 'пропускает ход!');
+  popup.style.display = "flex"; popup.offsetHeight; popup.classList.add("show");
+  if (buzzerWaveTimer) clearTimeout(buzzerWaveTimer);
+  buzzerWaveTimer = setTimeout(function() {
+    popup.classList.remove("show");
+    setTimeout(function() { if (!popup.classList.contains("show")) { popup.style.display = "none"; if (emojiEl) emojiEl.textContent = "👋"; } }, 250);
+  }, 2400);
 }
+
 function checkAllTeamsPassed(passedBy) {
-var onlineTeams = teamsData.filter(function(t) { return t.online !== false; });
-if (onlineTeams.length === 0) return;
-var allPassed = onlineTeams.every(function(t) { return passedBy.indexOf(t.id) !== -1; });
-if (allPassed) {
-showActionNotification("⏰ Все команды пропустили ход!");
-setTimeout(function() { playSound('lost'); }, 1200);
+  var onlineTeams = teamsData.filter(function(t) { return t.online !== false; });
+  if (onlineTeams.length === 0) return;
+  var allPassed = onlineTeams.every(function(t) { return passedBy.indexOf(t.id) !== -1; });
+  if (allPassed) {
+    showActionNotification("⏰ Все команды пропустили ход!");
+    setTimeout(function() { playSound('lost'); }, 1200);
+  }
 }
-}
+
 function hideBuzzerAlert() { var popup = document.getElementById("buzzer-wave-popup"); if (popup) { popup.classList.remove("show"); popup.style.display = "none"; } }
+
 function handleBuzzerTriggered(teamId, teamName) {
-var r = document.getElementById("audio-revers");
-if (r && !r.paused) { r.pause(); document.getElementById("revers-play-icon").classList.replace("fa-pause", "fa-play"); }
-stopTimer();
-if (isInteractiveMode && roomRef) { roomRef.child("audioSync").update({ playAction: "pause", currentTime: r ? r.currentTime : 0 }); }
-activateTeam(teamId);
-if (soundUrls.ring) { var a = document.getElementById("audio-ring"); a.src = soundUrls.ring; a.currentTime = 0; a.play().catch(function() {}); }
-showWaveHandPopup(teamName);
-if (isVariantsMode && roomRef) {
-var deadline = Date.now() + (variantsTimerDuration * 1000);
-roomRef.child("variantsRound").update({
-active: true,
-answeringTeam: teamId,
-answeringTeamName: teamName,
-roundTimer: variantsTimerDuration,
-timerDeadline: deadline,
-penaltyEnabled: variantsPenaltyEnabled
-});
+  var r = document.getElementById("audio-revers");
+  if (r && !r.paused) { r.pause(); document.getElementById("revers-play-icon").classList.replace("fa-pause", "fa-play"); }
+  stopTimer();
+  if (isInteractiveMode && roomRef) { roomRef.child("audioSync").update({ playAction: "pause", currentTime: r ? r.currentTime : 0 }); }
+  activateTeam(teamId);
+  if (soundUrls.ring) { var a = document.getElementById("audio-ring"); a.src = soundUrls.ring; a.currentTime = 0; a.play().catch(function() {}); }
+  showWaveHandPopup(teamName);
+  scrollToVariantsBlock();
+  if (isVariantsMode && roomRef) {
+    var deadline = Date.now() + (variantsTimerDuration * 1000);
+    roomRef.child("variantsRound").update({
+      active: true,
+      answeringTeam: teamId,
+      answeringTeamName: teamName,
+      roundTimer: variantsTimerDuration,
+      timerDeadline: deadline,
+      penaltyEnabled: variantsPenaltyEnabled
+    });
+  }
 }
-}
+
 function toggleHostChat() {
-if (chatMode === "disabled" || !isInteractiveMode) return;
-var chatBox = document.getElementById("host-chat-box");
-var toggleBtn = document.getElementById("host-chat-toggle-btn");
-hostChatOpen = !hostChatOpen;
-chatBox.style.display = hostChatOpen ? "flex" : "none";
-if (hostChatOpen) {
-hostUnreadCount = 0; updateHostUnreadBadge(); toggleBtn.classList.remove("has-pulse");
-var msgs = document.getElementById("host-chat-messages"); msgs.scrollTop = msgs.scrollHeight;
-document.getElementById("host-chat-input").focus();
-} else { document.getElementById("host-emoji-popover").style.display = "none"; }
+  if (chatMode === "disabled" || !isInteractiveMode) return;
+  var chatBox = document.getElementById("host-chat-box");
+  var toggleBtn = document.getElementById("host-chat-toggle-btn");
+  hostChatOpen = !hostChatOpen;
+  chatBox.style.display = hostChatOpen ? "flex" : "none";
+  if (hostChatOpen) {
+    hostUnreadCount = 0; updateHostUnreadBadge(); toggleBtn.classList.remove("has-pulse");
+    var msgs = document.getElementById("host-chat-messages"); msgs.scrollTop = msgs.scrollHeight;
+    document.getElementById("host-chat-input").focus();
+  } else { document.getElementById("host-emoji-popover").style.display = "none"; }
 }
 function updateHostUnreadBadge() {
-var badge = document.getElementById("host-unread-badge");
-if (!badge) return;
-if (hostUnreadCount > 0) { badge.textContent = hostUnreadCount; badge.style.display = "inline-block"; }
-else { badge.style.display = "none"; }
+  var badge = document.getElementById("host-unread-badge");
+  if (!badge) return;
+  if (hostUnreadCount > 0) { badge.textContent = hostUnreadCount; badge.style.display = "inline-block"; }
+  else { badge.style.display = "none"; }
 }
 function listenToChatMessages() {
-if (!roomRef) return;
-var chatRef = roomRef.child("chat");
-var msgContainer = document.getElementById("host-chat-messages");
-var toggleBtn = document.getElementById("host-chat-toggle-btn");
-chatRef.limitToLast(50).on("child_added", function(snapshot) {
-var msg = snapshot.val();
-if (!msg) return;
-var row = document.createElement("div");
-row.className = "chat-msg-row" + (msg.isHost ? " host-author" : "") + (msg.isSystem ? " system-event" : "");
-if (msg.isSystem) { row.innerHTML = '<div class="body">🔔 ' + msg.text + '</div>'; }
-else { row.innerHTML = '<div class="author">' + msg.author + '</div><div class="bubble">' + msg.text + '</div>'; }
-msgContainer.appendChild(row); msgContainer.scrollTop = msgContainer.scrollHeight;
-if (!hostChatOpen && !msg.isHost && chatMode !== "disabled") {
-hostUnreadCount++; updateHostUnreadBadge(); toggleBtn.classList.add("has-pulse");
-if (navigator.vibrate) navigator.vibrate([30, 40, 30]);
-playMessageNotificationSound();
-}
-});
+  if (!roomRef) return;
+  var chatRef = roomRef.child("chat");
+  var msgContainer = document.getElementById("host-chat-messages");
+  var toggleBtn = document.getElementById("host-chat-toggle-btn");
+  chatRef.limitToLast(50).on("child_added", function(snapshot) {
+    var msg = snapshot.val();
+    if (!msg) return;
+    var row = document.createElement("div");
+    row.className = "chat-msg-row" + (msg.isHost ? " host-author" : "") + (msg.isSystem ? " system-event" : "");
+    if (msg.isSystem) { row.innerHTML = '<div class="body">🔔 ' + msg.text + '</div>'; }
+    else { row.innerHTML = '<div class="author">' + msg.author + '</div><div class="bubble">' + msg.text + '</div>'; }
+    msgContainer.appendChild(row); msgContainer.scrollTop = msgContainer.scrollHeight;
+    if (!hostChatOpen && !msg.isHost && chatMode !== "disabled") {
+      hostUnreadCount++; updateHostUnreadBadge(); toggleBtn.classList.add("has-pulse");
+      if (navigator.vibrate) navigator.vibrate([30, 40, 30]);
+      playMessageNotificationSound();
+    }
+  });
 }
 function sendHostChatMessage() {
-var input = document.getElementById("host-chat-input");
-var text = input.value.trim();
-if (!text || !roomRef) return;
-roomRef.child("chat").push({ author: "🎙 Ведущий", text: text, isHost: true, time: Date.now() });
-input.value = ""; document.getElementById("host-emoji-popover").style.display = "none";
+  var input = document.getElementById("host-chat-input");
+  var text = input.value.trim();
+  if (!text || !roomRef) return;
+  roomRef.child("chat").push({ author: "🎙 Ведущий", text: text, isHost: true, time: Date.now() });
+  input.value = ""; document.getElementById("host-emoji-popover").style.display = "none";
 }
 function sendQuickReply(replyText) {
-if (!roomRef) return;
-roomRef.child("chat").push({ author: "🎙️ Ведущий", text: replyText, isHost: true, time: Date.now() });
+  if (!roomRef) return;
+  roomRef.child("chat").push({ author: "🎙️ Ведущий", text: replyText, isHost: true, time: Date.now() });
 }
 async function manualCheckAppUpdate() {
-var statusEl = document.getElementById("manual-update-status");
-var btn = document.getElementById("manual-check-update-btn");
-if (!statusEl) return;
-statusEl.textContent = "Проверка..."; btn.disabled = true;
-try {
-var res = await fetch("version.json?t=" + Date.now());
-if (!res.ok) throw new Error("Файл не найден");
-var data = await res.json();
-var localVer = parseInt(localStorage.getItem('app_version')) || 0;
-var remoteVer = parseInt(data.nativeVersion) || 0;
-if (remoteVer > localVer) {
-statusEl.textContent = "Обновление до v" + remoteVer + "...";
-localStorage.setItem('app_version', remoteVer);
-if ('caches' in window) { var keys = await caches.keys(); await Promise.all(keys.map(function(k) { return caches.delete(k); })); }
-if ('serviceWorker' in navigator) { var registrations = await navigator.serviceWorker.getRegistrations(); for (var reg of registrations) { await reg.update(); } }
-setTimeout(function() { window.location.reload(true); }, 800);
-} else { statusEl.textContent = "Актуальная версия (v" + (localVer || remoteVer) + ")"; btn.disabled = false; }
-} catch(e) { statusEl.textContent = "Ошибка проверки сети"; btn.disabled = false; }
+  var statusEl = document.getElementById("manual-update-status");
+  var btn = document.getElementById("manual-check-update-btn");
+  if (!statusEl) return;
+  statusEl.textContent = "Проверка..."; btn.disabled = true;
+  try {
+    var res = await fetch("version.json?t=" + Date.now());
+    if (!res.ok) throw new Error("Файл не найден");
+    var data = await res.json();
+    var localVer = parseInt(localStorage.getItem('app_version')) || 0;
+    var remoteVer = parseInt(data.nativeVersion) || 0;
+    if (remoteVer > localVer) {
+      statusEl.textContent = "Обновление до v" + remoteVer + "...";
+      localStorage.setItem('app_version', remoteVer);
+      if ('caches' in window) { var keys = await caches.keys(); await Promise.all(keys.map(function(k) { return caches.delete(k); })); }
+      if ('serviceWorker' in navigator) { var registrations = await navigator.serviceWorker.getRegistrations(); for (var reg of registrations) { await reg.update(); } }
+      setTimeout(function() { window.location.reload(true); }, 800);
+    } else { statusEl.textContent = "Актуальная версия (v" + (localVer || remoteVer) + ")"; btn.disabled = false; }
+  } catch(e) { statusEl.textContent = "Ошибка проверки сети"; btn.disabled = false; }
 }
 function formatScore(val) {
-var num = parseFloat(val);
-if (isNaN(num)) num = 0;
-var formatted = Number.isInteger(num) ? num.toString() : num.toFixed(1);
-return formatted.replace('.', ',');
+  var num = parseFloat(val);
+  if (isNaN(num)) num = 0;
+  var formatted = Number.isInteger(num) ? num.toString() : num.toFixed(1);
+  return formatted.replace('.', ',');
 }
 function unlockMobileAudio() {
-var audios = ['audio-revers', 'audio-normal', 'audio-winner', 'audio-lost', 'audio-ring', 'audio-start', 'audio-final', 'audio-game-over'];
-audios.forEach(function(id) { var a = document.getElementById(id); if (a) { a.play().catch(function() {}); a.pause(); } });
+  var audios = ['audio-revers', 'audio-normal', 'audio-winner', 'audio-lost', 'audio-ring', 'audio-start', 'audio-final', 'audio-game-over'];
+  audios.forEach(function(id) { var a = document.getElementById(id); if (a) { a.play().catch(function() {}); a.pause(); } });
 }
 document.addEventListener('click', unlockMobileAudio, { once: true });
 document.addEventListener('touchstart', unlockMobileAudio, { once: true });
 window.addEventListener('load', function() {
-restoreSession();
-applyGameModeUI();
-if (!isInteractiveMode) { renderOfflineTeamsInputs(); }
-renderScoreboardGrid();
-initHostRoom();
+  restoreSession();
+  applyGameModeUI();
+  if (!isInteractiveMode) { renderOfflineTeamsInputs(); }
+  renderScoreboardGrid();
+  initHostRoom();
 });
 function applyGameModeUI() {
-var onlineSec = document.getElementById("host-online-section");
-var localSec = document.getElementById("local-teams-section");
-var sub = document.getElementById("game-subtitle");
-var varSec = document.getElementById("variants-control-section");
-if (isInteractiveMode) {
-onlineSec.style.display = "block";
-localSec.style.display = "none";
-if (isVariantsMode) { sub.textContent = "🎯 Режим «Варианты»"; }
-else { sub.textContent = "Интерактивный режим ведущего"; }
-} else {
-onlineSec.style.display = "none";
-localSec.style.display = "block";
-sub.textContent = "Угадай трек наоборот";
-}
-if (varSec) { varSec.style.display = isVariantsMode ? "block" : "none"; }
-if (gameSessionStarted) { applyLockUI(); }
-updateFolderSelectOptions();
+  var onlineSec = document.getElementById("host-online-section");
+  var localSec = document.getElementById("local-teams-section");
+  var sub = document.getElementById("game-subtitle");
+  var varSec = document.getElementById("variants-control-section");
+  if (isInteractiveMode) {
+    onlineSec.style.display = "block";
+    localSec.style.display = "none";
+    if (isVariantsMode) { sub.textContent = "🎯 Режим «Варианты»"; }
+    else { sub.textContent = "Интерактивный режим ведущего"; }
+  } else {
+    onlineSec.style.display = "none";
+    localSec.style.display = "block";
+    sub.textContent = "Угадай трек наоборот";
+  }
+  if (varSec) { varSec.style.display = isVariantsMode ? "block" : "none"; }
+  if (gameSessionStarted) { applyLockUI(); }
+  updateFolderSelectOptions();
 }
 function updateFolderSelectOptions() {
-var sel = document.getElementById("folder-select");
-if (!sel) return;
-var currentVal = sel.value || selectedFolder;
-sel.innerHTML = '<option value="">-- Выберите категорию --</option>' +
-'<option value="/Зарубежные">🎵 Зарубежные</option>' +
-'<option value="/Русские">🇷🇺 Русские</option>';
-if (isVariantsMode) {
-var opt = document.createElement("option");
-opt.value = "/MODE_Варианты";
-opt.textContent = "🎯 MODE_Варианты";
-sel.appendChild(opt);
-}
-var found = false;
-for (var i = 0; i < sel.options.length; i++) {
-if (sel.options[i].value === currentVal) { found = true; break; }
-}
-if (found) {
-sel.value = currentVal;
-} else {
-sel.value = "";
-selectedFolder = "";
-}
-updateFolderSection();
+  var sel = document.getElementById("folder-select");
+  if (!sel) return;
+  var currentVal = sel.value || selectedFolder;
+  sel.innerHTML = '<option value="">-- Выберите категорию --</option>' +
+    '<option value="/Зарубежные">🎵 Зарубежные</option>' +
+    '<option value="/Русские">🇷🇺 Русские</option>';
+  if (isVariantsMode) {
+    var opt = document.createElement("option");
+    opt.value = "/MODE_Варианты";
+    opt.textContent = "🎯 MODE_Варианты";
+    sel.appendChild(opt);
+  }
+  var found = false;
+  for (var i = 0; i < sel.options.length; i++) {
+    if (sel.options[i].value === currentVal) { found = true; break; }
+  }
+  if (found) {
+    sel.value = currentVal;
+  } else {
+    sel.value = "";
+    selectedFolder = "";
+  }
+  updateFolderSection();
 }
 function restoreSession() {
-var saved = localStorage.getItem('reversQuiz');
-if (saved) {
-try {
-var data = JSON.parse(saved);
-if (data.gameMode) { gameMode = data.gameMode; }
-else if (data.isInteractiveMode === true) { gameMode = "interactive"; }
-else { gameMode = "offline"; }
-isInteractiveMode = (gameMode !== "offline");
-isVariantsMode = (gameMode === "variants");
-showScoreToPlayers = data.showScoreToPlayers !== false;
-showOpponentScore = data.showOpponentScore !== false;
-streamAudioToPlayers = data.streamAudioToPlayers === true;
-chatMode = data.chatMode || "disabled";
-jokerEnabled = data.jokerEnabled === true;
-jokerChance = typeof data.jokerChance !== 'undefined' ? data.jokerChance : 0.2;
-defaultCorrectPoints = typeof data.defaultCorrectPoints !== 'undefined' ? parseFloat(data.defaultCorrectPoints) : 1;
-gameSessionStarted = data.gameSessionStarted === true;
-variantsTimerDuration = typeof data.variantsTimerDuration !== 'undefined' ? data.variantsTimerDuration : 5;
-variantsPenaltyEnabled = data.variantsPenaltyEnabled === true;
-variantsWrongPenaltyEnabled = data.variantsWrongPenaltyEnabled === true;
-variantsAutoNormalEnabled = data.variantsAutoNormalEnabled === true;
-variantsNormalDelay = typeof data.variantsNormalDelay !== 'undefined' ? data.variantsNormalDelay : 1;
-if (Array.isArray(data.teamsData) && data.teamsData.length >= 2) { teamsData = data.teamsData; }
-playedTracks = new Set(data.playedTracks || []);
-selectedFolder = data.selectedFolder || "";
-timerDuration = typeof data.timerDuration !== 'undefined' ? data.timerDuration : 10;
-originalDelay = typeof data.originalDelay !== 'undefined' ? data.originalDelay : 1;
-mixMode = data.mixMode || false;
-activeTeamId = data.activeTeamId || null;
-lastPlayedTrack = data.lastPlayedTrack || null;
-trackOrder = data.trackOrder || {};
-files = data.files || {};
-if (Object.keys(files).length > 0) {
-var qArea = document.getElementById("quiz-area");
-if (qArea) qArea.style.display = "block";
-generateSongButtons();
-updateTrackCounter();
-updateShuffleButtonState();
-updateNextTrackButton();
-preloadAllSounds();
-}
-} catch(e) { console.warn("Ошибка восстановления сессии:", e); }
-}
+  var saved = localStorage.getItem('reversQuiz');
+  if (saved) {
+    try {
+      var data = JSON.parse(saved);
+      if (data.gameMode) { gameMode = data.gameMode; }
+      else if (data.isInteractiveMode === true) { gameMode = "interactive"; }
+      else { gameMode = "offline"; }
+      isInteractiveMode = (gameMode !== "offline");
+      isVariantsMode = (gameMode === "variants");
+      showScoreToPlayers = data.showScoreToPlayers !== false;
+      showOpponentScore = data.showOpponentScore !== false;
+      streamAudioToPlayers = data.streamAudioToPlayers === true;
+      chatMode = data.chatMode || "disabled";
+      jokerEnabled = data.jokerEnabled === true;
+      jokerChance = typeof data.jokerChance !== 'undefined' ? data.jokerChance : 0.2;
+      defaultCorrectPoints = typeof data.defaultCorrectPoints !== 'undefined' ? parseFloat(data.defaultCorrectPoints) : 1;
+      gameSessionStarted = data.gameSessionStarted === true;
+      variantsTimerDuration = typeof data.variantsTimerDuration !== 'undefined' ? data.variantsTimerDuration : 5;
+      variantsPenaltyEnabled = data.variantsPenaltyEnabled === true;
+      variantsWrongPenaltyEnabled = data.variantsWrongPenaltyEnabled === true;
+      variantsAutoNormalEnabled = data.variantsAutoNormalEnabled === true;
+      variantsNormalDelay = typeof data.variantsNormalDelay !== 'undefined' ? data.variantsNormalDelay : 1;
+      if (Array.isArray(data.teamsData) && data.teamsData.length >= 2) { teamsData = data.teamsData; }
+      playedTracks = new Set(data.playedTracks || []);
+      selectedFolder = data.selectedFolder || "";
+      timerDuration = typeof data.timerDuration !== 'undefined' ? data.timerDuration : 10;
+      originalDelay = typeof data.originalDelay !== 'undefined' ? data.originalDelay : 1;
+      mixMode = data.mixMode || false;
+      activeTeamId = data.activeTeamId || null;
+      lastPlayedTrack = data.lastPlayedTrack || null;
+      trackOrder = data.trackOrder || {};
+      files = data.files || {};
+      if (Object.keys(files).length > 0) {
+        var qArea = document.getElementById("quiz-area");
+        if (qArea) qArea.style.display = "block";
+        generateSongButtons();
+        updateTrackCounter();
+        updateShuffleButtonState();
+        updateNextTrackButton();
+        preloadAllSounds();
+      }
+    } catch(e) { console.warn("Ошибка восстановления сессии:", e); }
+  }
 }
 function saveState() {
-try {
-var state = {
-gameMode: gameMode, isInteractiveMode: isInteractiveMode,
-showScoreToPlayers: showScoreToPlayers, showOpponentScore: showOpponentScore,
-streamAudioToPlayers: streamAudioToPlayers, chatMode: chatMode,
-jokerEnabled: jokerEnabled, jokerChance: jokerChance,
-defaultCorrectPoints: defaultCorrectPoints,
-gameSessionStarted: gameSessionStarted,
-variantsTimerDuration: variantsTimerDuration,
-variantsPenaltyEnabled: variantsPenaltyEnabled,
-variantsWrongPenaltyEnabled: variantsWrongPenaltyEnabled,
-variantsAutoNormalEnabled: variantsAutoNormalEnabled,
-variantsNormalDelay: variantsNormalDelay,
-teamsData: teamsData, playedTracks: Array.from(playedTracks),
-selectedFolder: selectedFolder, timerDuration: timerDuration,
-originalDelay: originalDelay, mixMode: mixMode,
-activeTeamId: activeTeamId, lastPlayedTrack: lastPlayedTrack,
-trackOrder: trackOrder, files: files
-};
-localStorage.setItem('reversQuiz', JSON.stringify(state));
-} catch(e) { console.warn("Ошибка сохранения:", e); }
+  try {
+    var state = {
+      gameMode: gameMode, isInteractiveMode: isInteractiveMode,
+      showScoreToPlayers: showScoreToPlayers, showOpponentScore: showOpponentScore,
+      streamAudioToPlayers: streamAudioToPlayers, chatMode: chatMode,
+      jokerEnabled: jokerEnabled, jokerChance: jokerChance,
+      defaultCorrectPoints: defaultCorrectPoints,
+      gameSessionStarted: gameSessionStarted,
+      variantsTimerDuration: variantsTimerDuration,
+      variantsPenaltyEnabled: variantsPenaltyEnabled,
+      variantsWrongPenaltyEnabled: variantsWrongPenaltyEnabled,
+      variantsAutoNormalEnabled: variantsAutoNormalEnabled,
+      variantsNormalDelay: variantsNormalDelay,
+      teamsData: teamsData, playedTracks: Array.from(playedTracks),
+      selectedFolder: selectedFolder, timerDuration: timerDuration,
+      originalDelay: originalDelay, mixMode: mixMode,
+      activeTeamId: activeTeamId, lastPlayedTrack: lastPlayedTrack,
+      trackOrder: trackOrder, files: files
+    };
+    localStorage.setItem('reversQuiz', JSON.stringify(state));
+  } catch(e) { console.warn("Ошибка сохранения:", e); }
 }
 async function preloadAllSounds() {
-try {
-var rootUrl = "https://cloud-api.yandex.net/v1/disk/public/resources?public_key=" + encodeURIComponent(PUBLIC_KEY) + "&limit=100";
-var response = await fetch(rootUrl);
-var data = await response.json();
-var items = (data._embedded && data._embedded.items) || [];
-items.forEach(function(f) {
-var n = f.name.toLowerCase();
-if (n.indexOf("time_start") !== -1 && n.endsWith(".mp3")) soundUrls.start = f.file;
-if (n.indexOf("time_final") !== -1 && n.endsWith(".mp3")) soundUrls.final = f.file;
-if (n.indexOf("winner") !== -1 && n.endsWith(".mp3")) soundUrls.winner = f.file;
-if (n.indexOf("lost") !== -1 && n.endsWith(".mp3")) soundUrls.lost = f.file;
-if (n.indexOf("ring_score") !== -1 && n.endsWith(".mp3")) soundUrls.ring = f.file;
-if (n.indexOf("game_over") !== -1 && n.endsWith(".mp3")) { soundUrls.gameOver = f.file; var aGameOver = document.getElementById("audio-game-over"); if (aGameOver) { aGameOver.src = f.file; aGameOver.load(); } }
-});
-if (isInteractiveMode && roomRef) { roomRef.child("systemSounds").set(soundUrls); }
-} catch (e) { console.error("Ошибка загрузки системных звуков:", e); }
+  try {
+    var rootUrl = "https://cloud-api.yandex.net/v1/disk/public/resources?public_key=" + encodeURIComponent(PUBLIC_KEY) + "&limit=100";
+    var response = await fetch(rootUrl);
+    var data = await response.json();
+    var items = (data._embedded && data._embedded.items) || [];
+    items.forEach(function(f) {
+      var n = f.name.toLowerCase();
+      if (n.indexOf("time_start") !== -1 && n.endsWith(".mp3")) soundUrls.start = f.file;
+      if (n.indexOf("time_final") !== -1 && n.endsWith(".mp3")) soundUrls.final = f.file;
+      if (n.indexOf("winner") !== -1 && n.endsWith(".mp3")) soundUrls.winner = f.file;
+      if (n.indexOf("lost") !== -1 && n.endsWith(".mp3")) soundUrls.lost = f.file;
+      if (n.indexOf("ring_score") !== -1 && n.endsWith(".mp3")) soundUrls.ring = f.file;
+      if (n.indexOf("game_over") !== -1 && n.endsWith(".mp3")) { soundUrls.gameOver = f.file; var aGameOver = document.getElementById("audio-game-over"); if (aGameOver) { aGameOver.src = f.file; aGameOver.load(); } }
+    });
+    if (isInteractiveMode && roomRef) { roomRef.child("systemSounds").set(soundUrls); }
+  } catch (e) { console.error("Ошибка загрузки системных звуков:", e); }
 }
 function awardJokerPoints(teamId) {
-var team = teamsData.find(function(t) { return t.id === teamId; });
-if (!team) return;
-var currentScore = parseFloat(team.score) || 0;
-var jokerPoints = 3;
-var newScore = Math.round((currentScore + jokerPoints) * 10) / 10;
-team.score = newScore;
-renderScoreboardGrid();
-saveState();
-if (soundUrls.ring) {
-var a = document.getElementById("audio-ring");
-a.src = soundUrls.ring;
-a.currentTime = 0;
-a.play().catch(function() {});
-}
-showNotification('+3 ДЖОКЕР! (' + team.name + ')', true);
-if (isInteractiveMode && roomRef) {
-roomRef.child("teams/" + teamId).update({ score: team.score, lastScoreDelta: jokerPoints, lastScoreChangeAt: Date.now() });
-roomRef.child("audioSync").update({ systemTrigger: { type: "joker", time: Date.now() } });
-}
+  var team = teamsData.find(function(t) { return t.id === teamId; });
+  if (!team) return;
+  var currentScore = parseFloat(team.score) || 0;
+  var jokerPoints = 3;
+  var newScore = Math.round((currentScore + jokerPoints) * 10) / 10;
+  team.score = newScore;
+  renderScoreboardGrid();
+  saveState();
+  if (soundUrls.ring) {
+    var a = document.getElementById("audio-ring");
+    a.src = soundUrls.ring;
+    a.currentTime = 0;
+    a.play().catch(function() {});
+  }
+  showNotification('+3 ДЖОКЕР! (' + team.name + ')', true);
+  if (isInteractiveMode && roomRef) {
+    roomRef.child("teams/" + teamId).update({ score: team.score, lastScoreDelta: jokerPoints, lastScoreChangeAt: Date.now() });
+    roomRef.child("audioSync").update({ systemTrigger: { type: "joker", time: Date.now() } });
+  }
 }
 function playSound(type) {
-var url = type === 'winner' ? soundUrls.winner : soundUrls.lost;
-var audio = document.getElementById(type === 'winner' ? 'audio-winner' : 'audio-lost');
-hideBuzzerAlert();
-var r = document.getElementById("audio-revers");
-if (r) { r.pause(); var rIcon = document.getElementById("revers-play-icon"); if (rIcon) rIcon.classList.replace("fa-pause", "fa-play"); }
-stopTimer(); hideTrackPopup();
-if (url && audio) { audio.src = url; audio.currentTime = 0; audio.play().catch(function() {}); }
-else { showActionNotification(type === 'winner' ? '🎉 Правильно!' : '😢 Мимо!'); }
-if (type === 'winner' && activeTeamId) {
-var team = teamsData.find(function(t) { return t.id === activeTeamId; });
-if (team) {
-if (currentTrackIsJoker) {
-awardJokerPoints(activeTeamId);
-showJokerAnimation(team.name);
-} else if (isInteractiveMode && defaultCorrectPoints > 0) {
-changeScore(activeTeamId, defaultCorrectPoints);
-}
-}
-}
-if (type === 'lost' && isVariantsMode && variantsWrongPenaltyEnabled) {
-var ansTeamId = variantsState.answeringTeam;
-var selOpt = variantsState.selectedOption;
-if (ansTeamId && selOpt) {
-changeScore(ansTeamId, -0.5);
-}
-}
-if (isVariantsMode && roomRef) {
-var isAnswerCorrect = (type === 'winner');
-roomRef.child("variantsRound").update({
-isRevealed: true,
-isCorrect: isAnswerCorrect,
-isFinal: true
-});
-}
-if (isInteractiveMode && roomRef) {
-roomRef.update({
-status: "reveal",
-revealedTrack: currentTrackName || "",
-buzzer: { locked: true, pressedBy: null, passedBy: [] }
-});
-if (streamAudioToPlayers) {
-roomRef.child("audioSync").update({ systemTrigger: { type: type, time: Date.now() } });
-}
-}
-if (originalTimeout) { clearTimeout(originalTimeout); originalTimeout = null; }
-var delayMs = Math.max(0, originalDelay * 1000);
-originalTimeout = setTimeout(function() { startOriginalPlayback(); originalTimeout = null; }, delayMs);
+  var url = type === 'winner' ? soundUrls.winner : soundUrls.lost;
+  var audio = document.getElementById(type === 'winner' ? 'audio-winner' : 'audio-lost');
+  hideBuzzerAlert();
+  var r = document.getElementById("audio-revers");
+  if (r) { r.pause(); var rIcon = document.getElementById("revers-play-icon"); if (rIcon) rIcon.classList.replace("fa-pause", "fa-play"); }
+  stopTimer(); hideTrackPopup();
+  if (url && audio) { audio.src = url; audio.currentTime = 0; audio.play().catch(function() {}); }
+  else { showActionNotification(type === 'winner' ? '🎉 Правильно!' : '😢 Мимо!'); }
+  if (type === 'winner' && activeTeamId) {
+    var team = teamsData.find(function(t) { return t.id === activeTeamId; });
+    if (team) {
+      if (currentTrackIsJoker) {
+        awardJokerPoints(activeTeamId);
+        showJokerAnimation(team.name);
+      } else if (isInteractiveMode && defaultCorrectPoints > 0) {
+        changeScore(activeTeamId, defaultCorrectPoints);
+      }
+    }
+  }
+  if (type === 'lost' && isVariantsMode && variantsWrongPenaltyEnabled) {
+    var ansTeamId = variantsState.answeringTeam;
+    var selOpt = variantsState.selectedOption;
+    if (ansTeamId && selOpt) {
+      changeScore(ansTeamId, -0.5);
+    }
+  }
+  if (isVariantsMode && roomRef) {
+    var isAnswerCorrect = (type === 'winner');
+    roomRef.child("variantsRound").update({
+      isRevealed: true,
+      isCorrect: isAnswerCorrect,
+      isFinal: true
+    });
+  }
+  if (isInteractiveMode && roomRef) {
+    roomRef.update({
+      status: "reveal",
+      revealedTrack: currentTrackName || "",
+      buzzer: { locked: true, pressedBy: null, passedBy: [] }
+    });
+    if (streamAudioToPlayers) {
+      roomRef.child("audioSync").update({ systemTrigger: { type: type, time: Date.now() } });
+    }
+  }
+  if (originalTimeout) { clearTimeout(originalTimeout); originalTimeout = null; }
+  var delayMs = Math.max(0, originalDelay * 1000);
+  originalTimeout = setTimeout(function() { startOriginalPlayback(); originalTimeout = null; }, delayMs);
+  scrollToPlayerBlock();
 }
 async function playNormalWithAutoRecovery(audioEl, normalUrl, trackName) {
-var normalIcon = document.getElementById("normal-play-icon");
-try {
-if (!audioEl.src || audioEl.src === "" || audioEl.src === window.location.href) { audioEl.src = normalUrl; audioEl.load(); }
-audioEl.currentTime = 0;
-var p = audioEl.play();
-if (p !== undefined) { await p; }
-if (normalIcon) normalIcon.classList.replace("fa-play", "fa-pause");
-updateNormalProgress();
-return true;
-} catch (err) {
-console.warn("Мягкий перезапуск аудио оригинала:", err);
-try {
-var folder = selectedFolder || (mixMode ? "/Русские" : "");
-var targetPath = folder + "/" + trackName + "_NORMAL.mp3";
-var url = "https://cloud-api.yandex.net/v1/disk/public/resources/download?public_key=" + encodeURIComponent(PUBLIC_KEY) + "&path=" + encodeURIComponent(targetPath);
-var res = await fetch(url);
-if (!res.ok && mixMode) { targetPath = "/Зарубежные/" + trackName + "_NORMAL.mp3"; url = "https://cloud-api.yandex.net/v1/disk/public/resources/download?public_key=" + encodeURIComponent(PUBLIC_KEY) + "&path=" + encodeURIComponent(targetPath); res = await fetch(url); }
-var data = await res.json();
-if (data && data.href) {
-audioEl.src = data.href; audioEl.load(); audioEl.currentTime = 0; await audioEl.play();
-if (normalIcon) normalIcon.classList.replace("fa-play", "fa-pause");
-updateNormalProgress();
-if (files[trackName]) files[trackName].normal = data.href;
-return true;
-}
-} catch (recoverErr) { console.error("Восстановление трека не удалось:", recoverErr); }
-return false;
-}
+  var normalIcon = document.getElementById("normal-play-icon");
+  try {
+    if (!audioEl.src || audioEl.src === "" || audioEl.src === window.location.href) { audioEl.src = normalUrl; audioEl.load(); }
+    audioEl.currentTime = 0;
+    var p = audioEl.play();
+    if (p !== undefined) { await p; }
+    if (normalIcon) normalIcon.classList.replace("fa-play", "fa-pause");
+    updateNormalProgress();
+    return true;
+  } catch (err) {
+    console.warn("Мягкий перезапуск аудио оригинала:", err);
+    try {
+      var folder = selectedFolder || (mixMode ? "/Русские" : "");
+      var targetPath = folder + "/" + trackName + "_NORMAL.mp3";
+      var url = "https://cloud-api.yandex.net/v1/disk/public/resources/download?public_key=" + encodeURIComponent(PUBLIC_KEY) + "&path=" + encodeURIComponent(targetPath);
+      var res = await fetch(url);
+      if (!res.ok && mixMode) { targetPath = "/Зарубежные/" + trackName + "_NORMAL.mp3"; url = "https://cloud-api.yandex.net/v1/disk/public/resources/download?public_key=" + encodeURIComponent(PUBLIC_KEY) + "&path=" + encodeURIComponent(targetPath); res = await fetch(url); }
+      var data = await res.json();
+      if (data && data.href) {
+        audioEl.src = data.href; audioEl.load(); audioEl.currentTime = 0; await audioEl.play();
+        if (normalIcon) normalIcon.classList.replace("fa-play", "fa-pause");
+        updateNormalProgress();
+        if (files[trackName]) files[trackName].normal = data.href;
+        return true;
+      }
+    } catch (recoverErr) { console.error("Восстановление трека не удалось:", recoverErr); }
+    return false;
+  }
 }
 async function startOriginalPlayback() {
-var p = document.getElementById("original-player");
-var b = document.getElementById("normal-toggle");
-var a = ensureAudioPlayer("audio-normal");
-var trackObj = files[currentTrackName];
-if (!currentTrackName || !trackObj || !trackObj.normal) { console.warn("Файл оригинала не найден для:", currentTrackName); return; }
-if (p) p.style.display = "block";
-if (b) b.textContent = "Скрыть оригинал";
-var success = await playNormalWithAutoRecovery(a, trackObj.normal, currentTrackName);
-if (success && isInteractiveMode && roomRef && streamAudioToPlayers) { roomRef.child("audioSync").update({ playAction: "play_normal", currentTime: 0, startAt: Date.now() + 150 }); }
+  var p = document.getElementById("original-player");
+  var b = document.getElementById("normal-toggle");
+  var a = ensureAudioPlayer("audio-normal");
+  var trackObj = files[currentTrackName];
+  if (!currentTrackName || !trackObj || !trackObj.normal) { console.warn("Файл оригинала не найден для:", currentTrackName); return; }
+  if (p) p.style.display = "block";
+  if (b) b.textContent = "Скрыть оригинал";
+  var success = await playNormalWithAutoRecovery(a, trackObj.normal, currentTrackName);
+  if (success && isInteractiveMode && roomRef && streamAudioToPlayers) { roomRef.child("audioSync").update({ playAction: "play_normal", currentTime: 0, startAt: Date.now() + 150 }); }
 }
 function formatTime(seconds) {
-if (!isFinite(seconds) || isNaN(seconds) || seconds < 0) { return "00:00"; }
-seconds = Math.floor(seconds);
-var mins = Math.floor(seconds / 60);
-var secs = seconds % 60;
-return String(mins).padStart(2, '0') + ":" + String(secs).padStart(2, '0');
+  if (!isFinite(seconds) || isNaN(seconds) || seconds < 0) { return "00:00"; }
+  seconds = Math.floor(seconds);
+  var mins = Math.floor(seconds / 60);
+  var secs = seconds % 60;
+  return String(mins).padStart(2, '0') + ":" + String(secs).padStart(2, '0');
 }
 function updateReversDurationDisplay() {
-var a = document.getElementById("audio-revers");
-var durEl = document.getElementById("revers-duration");
-if (a && durEl && isFinite(a.duration) && a.duration > 0) { durEl.textContent = formatTime(a.duration); return true; }
-return false;
+  var a = document.getElementById("audio-revers");
+  var durEl = document.getElementById("revers-duration");
+  if (a && durEl && isFinite(a.duration) && a.duration > 0) { durEl.textContent = formatTime(a.duration); return true; }
+  return false;
 }
 function updateFolderSection() {
-var folderSection = document.getElementById("folder-section");
-if (folderSection) { folderSection.style.display = mixMode ? "none" : "block"; }
+  var folderSection = document.getElementById("folder-section");
+  if (folderSection) { folderSection.style.display = mixMode ? "none" : "block"; }
 }
 async function fetchFolderFiles(path) {
-var limit = 100; var offset = 0; var allItems = []; var filesMap = {};
-try {
-while (true) {
-var url = "https://cloud-api.yandex.net/v1/disk/public/resources?public_key=" + encodeURIComponent(PUBLIC_KEY) + "&path=" + encodeURIComponent(path) + "&limit=" + limit + "&offset=" + offset;
-var response = await fetch(url);
-if (!response.ok) break;
-var data = await response.json();
-var items = (data._embedded && data._embedded.items) || [];
-if (!items || items.length === 0) break;
-allItems.push.apply(allItems, items);
-if (items.length < limit) break;
-offset += limit;
-}
-var mp3Files = allItems.filter(function(f) { return f.name && f.name.toLowerCase().endsWith('.mp3'); });
-mp3Files.forEach(function(file) {
-var rawName = file.name.trim();
-var isRevers = /_REVERS\.mp3$/i.test(rawName);
-var isNormal = /_NORMAL\.mp3$/i.test(rawName);
-var cleanName = rawName.replace(/_(REVERS|NORMAL)\.mp3$/i, "").replace(/[\u200E\u200F\u00A0]/g, "").trim();
-if (!filesMap[cleanName]) { filesMap[cleanName] = {}; }
-if (isRevers) { filesMap[cleanName].revers = file.file; }
-else if (isNormal) { filesMap[cleanName].normal = file.file; }
-});
-var keys = Object.keys(filesMap);
-keys.forEach(function(k) {
-if (!filesMap[k].normal) {
-var match = keys.find(function(candidate) { return candidate !== k && candidate.toLowerCase() === k.toLowerCase() && filesMap[candidate].normal; });
-if (match) { filesMap[k].normal = filesMap[match].normal; }
-}
-});
-return filesMap;
-} catch (e) { console.error("Ошибка загрузки папки:", e); return {}; }
+  var limit = 100; var offset = 0; var allItems = []; var filesMap = {};
+  try {
+    while (true) {
+      var url = "https://cloud-api.yandex.net/v1/disk/public/resources?public_key=" + encodeURIComponent(PUBLIC_KEY) + "&path=" + encodeURIComponent(path) + "&limit=" + limit + "&offset=" + offset;
+      var response = await fetch(url);
+      if (!response.ok) break;
+      var data = await response.json();
+      var items = (data._embedded && data._embedded.items) || [];
+      if (!items || items.length === 0) break;
+      allItems.push.apply(allItems, items);
+      if (items.length < limit) break;
+      offset += limit;
+    }
+    var mp3Files = allItems.filter(function(f) { return f.name && f.name.toLowerCase().endsWith('.mp3'); });
+    mp3Files.forEach(function(file) {
+      var rawName = file.name.trim();
+      var isRevers = /_REVERS\.mp3$/i.test(rawName);
+      var isNormal = /_NORMAL\.mp3$/i.test(rawName);
+      var cleanName = rawName.replace(/_(REVERS|NORMAL)\.mp3$/i, "").replace(/[\u200E\u200F\u00A0]/g, "").trim();
+      if (!filesMap[cleanName]) { filesMap[cleanName] = {}; }
+      if (isRevers) { filesMap[cleanName].revers = file.file; }
+      else if (isNormal) { filesMap[cleanName].normal = file.file; }
+    });
+    var keys = Object.keys(filesMap);
+    keys.forEach(function(k) {
+      if (!filesMap[k].normal) {
+        var match = keys.find(function(candidate) { return candidate !== k && candidate.toLowerCase() === k.toLowerCase() && filesMap[candidate].normal; });
+        if (match) { filesMap[k].normal = filesMap[match].normal; }
+      }
+    });
+    return filesMap;
+  } catch (e) { console.error("Ошибка загрузки папки:", e); return {}; }
 }
 async function loadFiles() {
-if (gameSessionStarted) {
-showActionNotification("🔒 Игра уже начата — загрузка треков заблокирована.");
-return;
-}
-var loadBtn = document.getElementById("load-songs-btn");
-loadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Загрузка...';
-try {
-var allFiles = {};
-if (mixMode) {
-var rPromise = fetchFolderFiles("/Русские").catch(function() { return {}; });
-var fPromise = fetchFolderFiles("/Зарубежные").catch(function() { return {}; });
-var results = await Promise.all([rPromise, fPromise]);
-var rFiles = results[0]; var fFiles = results[1];
-var rNames = Object.keys(rFiles); var fNames = Object.keys(fFiles);
-var mergedNames = Array.from(new Set(rNames.concat(fNames))).sort(function() { return Math.random() - 0.5; });
-var mixedFiles = {}; var newTrackOrder = {};
-mergedNames.forEach(function(name, idx) { mixedFiles[name] = Object.assign({}, rFiles[name] || {}, fFiles[name] || {}); newTrackOrder[name] = idx + 1; });
-allFiles = mixedFiles; trackOrder = newTrackOrder;
-} else {
-var path = document.getElementById("folder-select").value;
-if (!path) { loadBtn.innerHTML = '<i class="fas fa-cloud-download-alt"></i> Загрузить треки'; return alert("Выберите категорию!"); }
-selectedFolder = path;
-allFiles = await fetchFolderFiles(path);
-var names = Object.keys(allFiles).sort(function() { return Math.random() - 0.5; });
-trackOrder = {};
-names.forEach(function(name, idx) { trackOrder[name] = idx + 1; });
-}
-if (Object.keys(allFiles).length === 0) { loadBtn.innerHTML = '<i class="fas fa-cloud-download-alt"></i> Загрузить треки'; return alert("Файлы не найдены."); }
-files = allFiles;
-lastPlayedTrack = null;
-playedTracks.clear();
-updateTrackCounter();
-document.getElementById("quiz-area").style.display = "block";
-generateSongButtons();
-updateShuffleButtonState();
-saveState();
-preloadAllSounds();
-showActionNotification('✅ Треки загружены и перемешаны!');
-} catch (e) {
-console.error("КРИТИЧЕСКАЯ ОШИБКА ЗАГРУЗКИ:", e);
-alert("Ошибка загрузки.");
-}
-if (!gameSessionStarted) {
-loadBtn.innerHTML = '<i class="fas fa-cloud-download-alt"></i> Загрузить треки';
-}
+  if (gameSessionStarted) {
+    showActionNotification("🔒 Игра уже начата — загрузка треков заблокирована.");
+    return;
+  }
+  var loadBtn = document.getElementById("load-songs-btn");
+  loadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Загрузка...';
+  try {
+    var allFiles = {};
+    if (mixMode) {
+      var rPromise = fetchFolderFiles("/Русские").catch(function() { return {}; });
+      var fPromise = fetchFolderFiles("/Зарубежные").catch(function() { return {}; });
+      var results = await Promise.all([rPromise, fPromise]);
+      var rFiles = results[0]; var fFiles = results[1];
+      var rNames = Object.keys(rFiles); var fNames = Object.keys(fFiles);
+      var mergedNames = Array.from(new Set(rNames.concat(fNames))).sort(function() { return Math.random() - 0.5; });
+      var mixedFiles = {}; var newTrackOrder = {};
+      mergedNames.forEach(function(name, idx) { mixedFiles[name] = Object.assign({}, rFiles[name] || {}, fFiles[name] || {}); newTrackOrder[name] = idx + 1; });
+      allFiles = mixedFiles; trackOrder = newTrackOrder;
+    } else {
+      var path = document.getElementById("folder-select").value;
+      if (!path) { loadBtn.innerHTML = '<i class="fas fa-cloud-download-alt"></i> Загрузить треки'; return alert("Выберите категорию!"); }
+      selectedFolder = path;
+      allFiles = await fetchFolderFiles(path);
+      var names = Object.keys(allFiles).sort(function() { return Math.random() - 0.5; });
+      trackOrder = {};
+      names.forEach(function(name, idx) { trackOrder[name] = idx + 1; });
+    }
+    if (Object.keys(allFiles).length === 0) { loadBtn.innerHTML = '<i class="fas fa-cloud-download-alt"></i> Загрузить треки'; return alert("Файлы не найдены."); }
+    files = allFiles;
+    lastPlayedTrack = null;
+    playedTracks.clear();
+    updateTrackCounter();
+    document.getElementById("quiz-area").style.display = "block";
+    generateSongButtons();
+    updateShuffleButtonState();
+    saveState();
+    preloadAllSounds();
+    showActionNotification('✅ Треки загружены и перемешаны!');
+  } catch (e) {
+    console.error("КРИТИЧЕСКАЯ ОШИБКА ЗАГРУЗКИ:", e);
+    alert("Ошибка загрузки.");
+  }
+  if (!gameSessionStarted) {
+    loadBtn.innerHTML = '<i class="fas fa-cloud-download-alt"></i> Загрузить треки';
+  }
 }
 function updateShuffleButtonState() {
-var shuffleBtn = document.getElementById("shuffle-btn");
-var hasStarted = lastPlayedTrack !== null;
-if (gameSessionStarted) return;
-if (shuffleBtn) {
-shuffleBtn.disabled = hasStarted;
-shuffleBtn.style.opacity = hasStarted ? 0.4 : 1;
-shuffleBtn.style.cursor = hasStarted ? "not-allowed" : "pointer";
-shuffleBtn.textContent = hasStarted ? '❌ Игра начата' : '🔄 Перемешать треки';
-}
+  var shuffleBtn = document.getElementById("shuffle-btn");
+  var hasStarted = lastPlayedTrack !== null;
+  if (gameSessionStarted) return;
+  if (shuffleBtn) {
+    shuffleBtn.disabled = hasStarted;
+    shuffleBtn.style.opacity = hasStarted ? 0.4 : 1;
+    shuffleBtn.style.cursor = hasStarted ? "not-allowed" : "pointer";
+    shuffleBtn.textContent = hasStarted ? '❌ Игра начата' : '🔄 Перемешать треки';
+  }
 }
 function shuffleTracks() {
-if (gameSessionStarted) { showActionNotification('🔒 Перемешивание заблокировано: игра начата.'); return; }
-if (lastPlayedTrack !== null) { showActionNotification('❌ Нельзя перемешивать после начала!'); return; }
-var names = Object.keys(files);
-var shuffled = names.slice().sort(function() { return Math.random() - 0.5; });
-trackOrder = {};
-shuffled.forEach(function(name, index) { trackOrder[name] = index + 1; });
-generateSongButtons(); saveState();
-showActionNotification('✅ Треки перемешаны!');
-updateNextTrackButton();
+  if (gameSessionStarted) { showActionNotification('🔒 Перемешивание заблокировано: игра начата.'); return; }
+  if (lastPlayedTrack !== null) { showActionNotification('❌ Нельзя перемешивать после начала!'); return; }
+  var names = Object.keys(files);
+  var shuffled = names.slice().sort(function() { return Math.random() - 0.5; });
+  trackOrder = {};
+  shuffled.forEach(function(name, index) { trackOrder[name] = index + 1; });
+  generateSongButtons(); saveState();
+  showActionNotification('✅ Треки перемешаны!');
+  updateNextTrackButton();
 }
 function showActionNotification(text) {
-var notif = document.getElementById("action-notification");
-if (notif) { notif.textContent = text; notif.classList.add("show"); setTimeout(function() { notif.classList.remove("show"); }, 2000); }
+  var notif = document.getElementById("action-notification");
+  if (notif) { notif.textContent = text; notif.classList.add("show"); setTimeout(function() { notif.classList.remove("show"); }, 2000); }
 }
 function generateSongButtons() {
-var container = document.getElementById("song-buttons");
-if (!container) return;
-container.innerHTML = "";
-var sortedNames = Object.keys(files).sort(function(a, b) { return (trackOrder[a] || 0) - (trackOrder[b] || 0); });
-sortedNames.forEach(function(name) {
-var btn = document.createElement("button");
-btn.setAttribute("data-song", name);
-btn.onclick = function() { playTrack(name); };
-if (playedTracks.has(name)) btn.classList.add("played");
-var number = document.createElement("span"); number.className = "song-number"; number.textContent = trackOrder[name] || "?";
-var title = document.createElement("span"); title.className = "song-name"; title.textContent = name;
-btn.appendChild(number); btn.appendChild(title);
-container.appendChild(btn);
-});
-updateNextTrackButton();
+  var container = document.getElementById("song-buttons");
+  if (!container) return;
+  container.innerHTML = "";
+  var sortedNames = Object.keys(files).sort(function(a, b) { return (trackOrder[a] || 0) - (trackOrder[b] || 0); });
+  sortedNames.forEach(function(name) {
+    var btn = document.createElement("button");
+    btn.setAttribute("data-song", name);
+    btn.onclick = function() { playTrack(name); };
+    if (playedTracks.has(name)) btn.classList.add("played");
+    var number = document.createElement("span"); number.className = "song-number"; number.textContent = trackOrder[name] || "?";
+    var title = document.createElement("span"); title.className = "song-name"; title.textContent = name;
+    btn.appendChild(number); btn.appendChild(title);
+    container.appendChild(btn);
+  });
+  updateNextTrackButton();
 }
 function purgeAudioBuffer(audioEl) { if (audioEl) { audioEl.pause(); audioEl.currentTime = 0; } }
+
 function playTrack(name) {
-hideBuzzerAlert();
-if (originalTimeout) { clearTimeout(originalTimeout); originalTimeout = null; }
-if (variantsAutoNormalTimeout) { clearTimeout(variantsAutoNormalTimeout); variantsAutoNormalTimeout = null; }
-hideOriginal(); stopAllSounds(); hideTrackPopup();
-if (isInteractiveMode) { clearTeamHighlight(); }
-if (!isInteractiveMode && name !== lastPlayedTrack) {
-if (lastPlayedTrack !== null) { cycleNextOfflineTeam(); }
-lastPlayedTrack = name;
+  hideBuzzerAlert();
+  if (originalTimeout) { clearTimeout(originalTimeout); originalTimeout = null; }
+  if (variantsAutoNormalTimeout) { clearTimeout(variantsAutoNormalTimeout); variantsAutoNormalTimeout = null; }
+  hideOriginal(); stopAllSounds(); hideTrackPopup();
+  if (isInteractiveMode) { clearTeamHighlight(); }
+  if (!isInteractiveMode && name !== lastPlayedTrack) {
+    if (lastPlayedTrack !== null) { cycleNextOfflineTeam(); }
+    lastPlayedTrack = name;
+  }
+  var audioRevers = ensureAudioPlayer("audio-revers");
+  var audioNormal = ensureAudioPlayer("audio-normal");
+  purgeAudioBuffer(audioRevers); purgeAudioBuffer(audioNormal);
+  audioNormal.src = ""; audioNormal.preload = "none";
+  document.getElementById("revers-current-time").textContent = "00:00";
+  document.getElementById("revers-duration").textContent = "00:00";
+  currentTrackName = name;
+  var track = files[name];
+  currentTrackIsJoker = false;
+  if (jokerEnabled && track && track.revers) {
+    currentTrackIsJoker = Math.random() < jokerChance;
+    if (currentTrackIsJoker) { console.log("🃏 ДЖОКЕР активирован для трека:", name); }
+  }
+  if (isVariantsMode) {
+    prepareVariantsForCurrentTrack(name);
+  }
+  if (track && track.revers) {
+    audioRevers.src = track.revers; audioRevers.preload = "auto"; audioRevers.load();
+    audioRevers.onended = function() { if (timerDuration > 0) startTimer(); hideTrackPopup(); };
+    audioRevers.ondurationchange = function() {
+      if (audioRevers.duration && !isNaN(audioRevers.duration) && isFinite(audioRevers.duration)) {
+        document.getElementById("revers-duration").textContent = formatTime(audioRevers.duration);
+        if (isInteractiveMode && roomRef) {
+          roomRef.child("audioSync").update({ duration: audioRevers.duration });
+        }
+      }
+    };
+    audioRevers.onplaying = function() {
+      updateReversDurationDisplay();
+      if (track.normal && currentTrackName === name) {
+        audioNormal.src = track.normal; audioNormal.preload = "auto"; audioNormal.load();
+        audioNormal.ondurationchange = function() {
+          if (audioNormal.duration && !isNaN(audioNormal.duration) && isFinite(audioNormal.duration)) {
+            document.getElementById("normal-duration").textContent = formatTime(audioNormal.duration);
+          }
+        };
+      }
+      scrollToVariantsBlock();
+    };
+    var newTrackSessionId = "track_" + Date.now();
+    var hasStartedThisTrack = false;
+    function launchReversPlayback(dur) {
+      if (hasStartedThisTrack) return;
+      hasStartedThisTrack = true;
+      document.getElementById("revers-duration").textContent = formatTime(dur);
+      if (isInteractiveMode && roomRef) {
+        teamsData.forEach(function(t) { roomRef.child("teams/" + t.id + "/readyToPlay").set(false); });
+        roomRef.update({
+          status: "idle", revealedTrack: "", timerState: { active: false, value: 0 },
+          buzzer: { locked: false, pressedBy: null, pressedByName: null, passedBy: [] }
+        });
+        roomRef.child("audioSync").set({
+          trackSessionId: newTrackSessionId, reversUrl: track.revers || "", normalUrl: track.normal || "",
+          duration: dur, currentTime: 0, playAction: "prepare", startAt: 0,
+          isJoker: currentTrackIsJoker,
+          jokerEnabled: jokerEnabled
+        });
+      }
+      toggleRevers();
+    }
+    audioRevers.oncanplay = function() {
+      audioRevers.oncanplay = null;
+      var dur = (isFinite(audioRevers.duration) && audioRevers.duration > 0) ? audioRevers.duration : 0;
+      launchReversPlayback(dur);
+    };
+    setTimeout(function() { if (!hasStartedThisTrack && currentTrackName === name) { launchReversPlayback(audioRevers.duration || 0); } }, 1200);
+    var playerContainer = document.getElementById("revers-player-container");
+    if (playerContainer) {
+      if (currentTrackIsJoker) { playerContainer.classList.add("joker-active"); }
+      else { playerContainer.classList.remove("joker-active"); }
+    }
+  }
+  updateShuffleButtonState(); updateNextTrackButton(); saveState();
 }
-var audioRevers = ensureAudioPlayer("audio-revers");
-var audioNormal = ensureAudioPlayer("audio-normal");
-purgeAudioBuffer(audioRevers); purgeAudioBuffer(audioNormal);
-audioNormal.src = ""; audioNormal.preload = "none";
-document.getElementById("revers-current-time").textContent = "00:00";
-document.getElementById("revers-duration").textContent = "00:00";
-currentTrackName = name;
-var track = files[name];
-currentTrackIsJoker = false;
-if (jokerEnabled && track && track.revers) {
-currentTrackIsJoker = Math.random() < jokerChance;
-if (currentTrackIsJoker) { console.log("🃏 ДЖОКЕР активирован для трека:", name); }
-}
-if (isVariantsMode) {
-prepareVariantsForCurrentTrack(name);
-}
-if (track && track.revers) {
-audioRevers.src = track.revers; audioRevers.preload = "auto"; audioRevers.load();
-audioRevers.onended = function() { if (timerDuration > 0) startTimer(); hideTrackPopup(); };
-audioRevers.ondurationchange = function() {
-if (audioRevers.duration && !isNaN(audioRevers.duration) && isFinite(audioRevers.duration)) {
-document.getElementById("revers-duration").textContent = formatTime(audioRevers.duration);
-if (isInteractiveMode && roomRef) {
-roomRef.child("audioSync").update({ duration: audioRevers.duration });
-}
-}
-};
-audioRevers.onplaying = function() {
-updateReversDurationDisplay();
-if (track.normal && currentTrackName === name) {
-audioNormal.src = track.normal; audioNormal.preload = "auto"; audioNormal.load();
-audioNormal.ondurationchange = function() {
-if (audioNormal.duration && !isNaN(audioNormal.duration) && isFinite(audioNormal.duration)) {
-document.getElementById("normal-duration").textContent = formatTime(audioNormal.duration);
-}
-};
-}
-};
-var newTrackSessionId = "track_" + Date.now();
-var hasStartedThisTrack = false;
-function launchReversPlayback(dur) {
-if (hasStartedThisTrack) return;
-hasStartedThisTrack = true;
-document.getElementById("revers-duration").textContent = formatTime(dur);
-if (isInteractiveMode && roomRef) {
-teamsData.forEach(function(t) { roomRef.child("teams/" + t.id + "/readyToPlay").set(false); });
-roomRef.update({
-status: "idle", revealedTrack: "", timerState: { active: false, value: 0 },
-buzzer: { locked: false, pressedBy: null, pressedByName: null, passedBy: [] }
-});
-roomRef.child("audioSync").set({
-trackSessionId: newTrackSessionId, reversUrl: track.revers || "", normalUrl: track.normal || "",
-duration: dur, currentTime: 0, playAction: "prepare", startAt: 0,
-isJoker: currentTrackIsJoker,
-jokerEnabled: jokerEnabled
-});
-}
-toggleRevers();
-}
-audioRevers.oncanplay = function() {
-audioRevers.oncanplay = null;
-var dur = (isFinite(audioRevers.duration) && audioRevers.duration > 0) ? audioRevers.duration : 0;
-launchReversPlayback(dur);
-};
-setTimeout(function() { if (!hasStartedThisTrack && currentTrackName === name) { launchReversPlayback(audioRevers.duration || 0); } }, 1200);
-var playerContainer = document.getElementById("revers-player-container");
-if (playerContainer) {
-if (currentTrackIsJoker) { playerContainer.classList.add("joker-active"); }
-else { playerContainer.classList.remove("joker-active"); }
-}
-}
-updateShuffleButtonState(); updateNextTrackButton(); saveState();
-}
+
 function playNextTrack() {
-var allNames = Object.keys(files).sort(function(a, b) { return (trackOrder[a] || 0) - (trackOrder[b] || 0); });
-var unplayed = allNames.filter(function(name) { return !playedTracks.has(name); });
-if (unplayed.length === 0) { showActionNotification('❗ Все треки сыграны'); return; }
-var nextTrack = unplayed[0];
-playTrack(nextTrack);
+  var allNames = Object.keys(files).sort(function(a, b) { return (trackOrder[a] || 0) - (trackOrder[b] || 0); });
+  var unplayed = allNames.filter(function(name) { return !playedTracks.has(name); });
+  if (unplayed.length === 0) { showActionNotification('❗ Все треки сыграны'); return; }
+  var nextTrack = unplayed[0];
+  playTrack(nextTrack);
 }
+
 function updateNextTrackButton() {
-var btn = document.getElementById("next-track-btn");
-if (!btn) return;
-var allNames = Object.keys(files);
-var unplayed = allNames.filter(function(name) { return !playedTracks.has(name); });
-btn.disabled = unplayed.length === 0;
+  var btn = document.getElementById("next-track-btn");
+  if (!btn) return;
+  var allNames = Object.keys(files);
+  var unplayed = allNames.filter(function(name) { return !playedTracks.has(name); });
+  btn.disabled = unplayed.length === 0;
 }
+
 function showTrackPopup(name) { var popup = document.getElementById("track-name-popup"); if (popup) { popup.textContent = name; popup.style.opacity = 1; } }
 function hideTrackPopup() { var popup = document.getElementById("track-name-popup"); if (popup) popup.style.opacity = 0; }
+
 function toggleRevers() {
-var audio = document.getElementById("audio-revers");
-var normal = document.getElementById("audio-normal");
-var icon = document.getElementById("revers-play-icon");
-if (!normal.paused) { normal.pause(); document.getElementById("normal-play-icon").classList.replace("fa-pause", "fa-play"); }
-if (audio.paused) {
-stopTimer(); hideBuzzerAlert();
-if (audio.currentTime > 0) { resumeSynchronizedPlayback(); }
-else { startSynchronizedPlayback(); }
-} else {
-audio.pause(); icon.classList.replace("fa-pause", "fa-play"); hideTrackPopup();
-if (isInteractiveMode && roomRef) { roomRef.child("audioSync").update({ playAction: "pause", currentTime: audio.currentTime }); }
+  var audio = document.getElementById("audio-revers");
+  var normal = document.getElementById("audio-normal");
+  var icon = document.getElementById("revers-play-icon");
+  if (!normal.paused) { normal.pause(); document.getElementById("normal-play-icon").classList.replace("fa-pause", "fa-play"); }
+  if (audio.paused) {
+    stopTimer(); hideBuzzerAlert();
+    if (audio.currentTime > 0) { resumeSynchronizedPlayback(); }
+    else { startSynchronizedPlayback(); }
+  } else {
+    audio.pause(); icon.classList.replace("fa-pause", "fa-play"); hideTrackPopup();
+    if (isInteractiveMode && roomRef) { roomRef.child("audioSync").update({ playAction: "pause", currentTime: audio.currentTime }); }
+  }
+  updateShuffleButtonState(); updateNextTrackButton();
 }
-updateShuffleButtonState(); updateNextTrackButton();
-}
+
 function startSynchronizedPlayback() {
-var audio = document.getElementById("audio-revers");
-var icon = document.getElementById("revers-play-icon");
-clearTeamHighlight();
-audio.currentTime = 0;
-audio.play().then(function() {
-icon.classList.replace("fa-play", "fa-pause");
-showTrackPopup(currentTrackName);
-updateReversProgress();
-if (isInteractiveMode && roomRef) {
-roomRef.update({ status: "playing", revealedTrack: "", timerState: { active: false, value: 0 } });
-roomRef.child("audioSync").update({
-playAction: streamAudioToPlayers ? "play_revers" : "play_silent",
-startAt: Date.now() + 100,
-duration: audio.duration || 0,
-currentTime: 0,
-isJoker: currentTrackIsJoker,
-jokerEnabled: jokerEnabled
-});
+  var audio = document.getElementById("audio-revers");
+  var icon = document.getElementById("revers-play-icon");
+  clearTeamHighlight();
+  audio.currentTime = 0;
+  audio.play().then(function() {
+    icon.classList.replace("fa-play", "fa-pause");
+    showTrackPopup(currentTrackName);
+    updateReversProgress();
+    scrollToVariantsBlock();
+    if (isInteractiveMode && roomRef) {
+      roomRef.update({ status: "playing", revealedTrack: "", timerState: { active: false, value: 0 } });
+      roomRef.child("audioSync").update({
+        playAction: streamAudioToPlayers ? "play_revers" : "play_silent",
+        startAt: Date.now() + 100,
+        duration: audio.duration || 0,
+        currentTime: 0,
+        isJoker: currentTrackIsJoker,
+        jokerEnabled: jokerEnabled
+      });
+    }
+  }).catch(function(err) { console.warn("Воспроизведение ведущего ожидает разрешения:", err); });
 }
-}).catch(function(err) { console.warn("Воспроизведение ведущего ожидает разрешения:", err); });
-}
+
 function resumeSynchronizedPlayback() {
-var audio = document.getElementById("audio-revers");
-var icon = document.getElementById("revers-play-icon");
-var serverStartAt = Date.now() + 150;
-if (isInteractiveMode && roomRef) {
-roomRef.update({ status: "playing", timerState: { active: false, value: 0 } });
-roomRef.child("audioSync").update({ playAction: streamAudioToPlayers ? "resume_revers" : "resume_silent", currentTime: audio.currentTime, duration: audio.duration || 0, startAt: serverStartAt, isJoker: currentTrackIsJoker, jokerEnabled: jokerEnabled });
+  var audio = document.getElementById("audio-revers");
+  var icon = document.getElementById("revers-play-icon");
+  var serverStartAt = Date.now() + 150;
+  if (isInteractiveMode && roomRef) {
+    roomRef.update({ status: "playing", timerState: { active: false, value: 0 } });
+    roomRef.child("audioSync").update({ playAction: streamAudioToPlayers ? "resume_revers" : "resume_silent", currentTime: audio.currentTime, duration: audio.duration || 0, startAt: serverStartAt, isJoker: currentTrackIsJoker, jokerEnabled: jokerEnabled });
+  }
+  var delayStart = Math.max(0, serverStartAt - Date.now());
+  setTimeout(function() {
+    audio.play().then(function() {
+      icon.classList.replace("fa-play", "fa-pause");
+      showTrackPopup(currentTrackName);
+      updateReversProgress();
+      scrollToVariantsBlock();
+    }).catch(function(err) { console.warn("Возобновление:", err); });
+  }, delayStart);
 }
-var delayStart = Math.max(0, serverStartAt - Date.now());
-setTimeout(function() {
-audio.play().then(function() { icon.classList.replace("fa-play", "fa-pause"); showTrackPopup(currentTrackName); updateReversProgress(); }).catch(function(err) { console.warn("Возобновление:", err); });
-}, delayStart);
-}
+
 function cycleNextOfflineTeam() {
-if (teamsData.length === 0) return;
-var currIdx = teamsData.findIndex(function(t) { return t.id === activeTeamId; });
-if (currIdx === -1) currIdx = 0;
-var nextIdx = (currIdx + 1) % teamsData.length;
-activateTeam(teamsData[nextIdx].id);
+  if (teamsData.length === 0) return;
+  var currIdx = teamsData.findIndex(function(t) { return t.id === activeTeamId; });
+  if (currIdx === -1) currIdx = 0;
+  var nextIdx = (currIdx + 1) % teamsData.length;
+  activateTeam(teamsData[nextIdx].id);
 }
+
 function manualActivateTeam(teamId) { activateTeam(teamId); saveState(); }
+
 function activateTeam(teamId) {
-activeTeamId = teamId;
-document.querySelectorAll('.score-team-group').forEach(function(el) { el.classList.remove('active'); });
-var activeCard = document.getElementById('score-card-' + teamId);
-if (activeCard) { activeCard.classList.add('active'); }
-renderScoreboardGrid();
+  activeTeamId = teamId;
+  document.querySelectorAll('.score-team-group').forEach(function(el) { el.classList.remove('active'); });
+  var activeCard = document.getElementById('score-card-' + teamId);
+  if (activeCard) { activeCard.classList.add('active'); }
+  renderScoreboardGrid();
 }
+
 function clearTeamHighlight() {
-activeTeamId = null;
-document.querySelectorAll('.score-team-group').forEach(function(el) { el.classList.remove('active'); });
-renderScoreboardGrid();
+  activeTeamId = null;
+  document.querySelectorAll('.score-team-group').forEach(function(el) { el.classList.remove('active'); });
+  renderScoreboardGrid();
 }
+
 function changeScore(teamId, delta) {
-var team = teamsData.find(function(t) { return t.id === teamId; });
-if (!team) return;
-var currentScore = parseFloat(team.score) || 0;
-var newScore = Math.round((currentScore + delta) * 10) / 10;
-team.score = newScore;
-renderScoreboardGrid(); saveState();
-if (delta > 0) {
-if (soundUrls.ring) { var a = document.getElementById("audio-ring"); a.src = soundUrls.ring; a.currentTime = 0; a.play().catch(function() {}); }
-showNotification('+' + formatScore(delta) + ' (' + team.name + ')', true);
-} else { showNotification(formatScore(delta) + ' (' + team.name + ')', false); }
-if (isInteractiveMode && roomRef) {
-roomRef.child("teams/" + teamId).update({ score: team.score, lastScoreDelta: delta, lastScoreChangeAt: Date.now() });
-if (streamAudioToPlayers && delta > 0) { roomRef.child("audioSync").update({ systemTrigger: { type: "ring", time: Date.now() } }); }
+  var team = teamsData.find(function(t) { return t.id === teamId; });
+  if (!team) return;
+  var currentScore = parseFloat(team.score) || 0;
+  var newScore = Math.round((currentScore + delta) * 10) / 10;
+  team.score = newScore;
+  renderScoreboardGrid(); saveState();
+  if (delta > 0) {
+    if (soundUrls.ring) { var a = document.getElementById("audio-ring"); a.src = soundUrls.ring; a.currentTime = 0; a.play().catch(function() {}); }
+    showNotification('+' + formatScore(delta) + ' (' + team.name + ')', true);
+  } else { showNotification(formatScore(delta) + ' (' + team.name + ')', false); }
+  if (isInteractiveMode && roomRef) {
+    roomRef.child("teams/" + teamId).update({ score: team.score, lastScoreDelta: delta, lastScoreChangeAt: Date.now() });
+    if (streamAudioToPlayers && delta > 0) { roomRef.child("audioSync").update({ systemTrigger: { type: "ring", time: Date.now() } }); }
+  }
 }
-}
+
 function showOriginal() {
-var p = document.getElementById("original-player");
-var b = document.getElementById("normal-toggle");
-p.style.display = p.style.display === "none" ? "block" : "none";
-b.textContent = p.style.display === "none" ? "Показать оригинал" : "Скрыть оригинал";
-if (p.style.display === "none") document.getElementById("audio-normal").pause();
+  var p = document.getElementById("original-player");
+  var b = document.getElementById("normal-toggle");
+  p.style.display = p.style.display === "none" ? "block" : "none";
+  b.textContent = p.style.display === "none" ? "Показать оригинал" : "Скрыть оригинал";
+  if (p.style.display === "none") document.getElementById("audio-normal").pause();
 }
+
 function hideOriginal() {
-var p = document.getElementById("original-player");
-p.style.display = "none";
-document.getElementById("normal-toggle").textContent = "Показать оригинал";
-document.getElementById("audio-normal").pause();
-document.getElementById("normal-play-icon").classList.replace("fa-pause", "fa-play");
+  var p = document.getElementById("original-player");
+  p.style.display = "none";
+  document.getElementById("normal-toggle").textContent = "Показать оригинал";
+  document.getElementById("audio-normal").pause();
+  document.getElementById("normal-play-icon").classList.replace("fa-pause", "fa-play");
 }
+
 async function toggleNormal() {
-var a = ensureAudioPlayer("audio-normal");
-var r = document.getElementById("audio-revers");
-var i = document.getElementById("normal-play-icon");
-if (a.paused) {
-if (originalTimeout) { clearTimeout(originalTimeout); originalTimeout = null; }
-if (variantsAutoNormalTimeout) { clearTimeout(variantsAutoNormalTimeout); variantsAutoNormalTimeout = null; }
-stopTimer(); hideBuzzerAlert(); hideTrackPopup();
-if (r && !r.paused) { r.pause(); var rIcon = document.getElementById("revers-play-icon"); if (rIcon) rIcon.classList.replace("fa-pause", "fa-play"); }
-var trackObj = files[currentTrackName];
-if (!trackObj || !trackObj.normal) { showActionNotification("⚠️ Оригинал трека не найден"); return; }
-if (isInteractiveMode && roomRef) { roomRef.update({ status: "reveal", revealedTrack: currentTrackName || "", buzzer: { locked: true, pressedBy: null, passedBy: [] } }); }
-var success = await playNormalWithAutoRecovery(a, trackObj.normal, currentTrackName);
-if (success && isInteractiveMode && roomRef && streamAudioToPlayers) { roomRef.child("audioSync").update({ playAction: "play_normal", currentTime: 0, startAt: Date.now() + 150 }); }
-} else {
-a.pause();
-if (i) i.classList.replace("fa-play", "fa-pause");
-if (isInteractiveMode && roomRef && streamAudioToPlayers) { roomRef.child("audioSync").update({ playAction: "pause" }); }
+  var a = ensureAudioPlayer("audio-normal");
+  var r = document.getElementById("audio-revers");
+  var i = document.getElementById("normal-play-icon");
+  if (a.paused) {
+    if (originalTimeout) { clearTimeout(originalTimeout); originalTimeout = null; }
+    if (variantsAutoNormalTimeout) { clearTimeout(variantsAutoNormalTimeout); variantsAutoNormalTimeout = null; }
+    stopTimer(); hideBuzzerAlert(); hideTrackPopup();
+    if (r && !r.paused) { r.pause(); var rIcon = document.getElementById("revers-play-icon"); if (rIcon) rIcon.classList.replace("fa-pause", "fa-play"); }
+    var trackObj = files[currentTrackName];
+    if (!trackObj || !trackObj.normal) { showActionNotification("⚠️ Оригинал трека не найден"); return; }
+    if (isInteractiveMode && roomRef) { roomRef.update({ status: "reveal", revealedTrack: currentTrackName || "", buzzer: { locked: true, pressedBy: null, passedBy: [] } }); }
+    var success = await playNormalWithAutoRecovery(a, trackObj.normal, currentTrackName);
+    if (success && isInteractiveMode && roomRef && streamAudioToPlayers) { roomRef.child("audioSync").update({ playAction: "play_normal", currentTime: 0, startAt: Date.now() + 150 }); }
+  } else {
+    a.pause();
+    if (i) i.classList.replace("fa-play", "fa-pause");
+    if (isInteractiveMode && roomRef && streamAudioToPlayers) { roomRef.child("audioSync").update({ playAction: "pause" }); }
+  }
 }
-}
+
 function updateReversProgress() {
-var a = document.getElementById("audio-revers");
-var fill = document.getElementById("revers-progress-fill");
-var currentTimeEl = document.getElementById("revers-current-time");
-var duration = (isFinite(a.duration) && a.duration > 0) ? a.duration : 0;
-var progress = duration > 0 ? (a.currentTime / duration) : 0;
-fill.style.width = (progress * 100 || 0) + "%";
-currentTimeEl.textContent = formatTime(a.currentTime);
-if (!a.paused) requestAnimationFrame(updateReversProgress);
+  var a = document.getElementById("audio-revers");
+  var fill = document.getElementById("revers-progress-fill");
+  var currentTimeEl = document.getElementById("revers-current-time");
+  var duration = (isFinite(a.duration) && a.duration > 0) ? a.duration : 0;
+  var progress = duration > 0 ? (a.currentTime / duration) : 0;
+  fill.style.width = (progress * 100 || 0) + "%";
+  currentTimeEl.textContent = formatTime(a.currentTime);
+  if (!a.paused) requestAnimationFrame(updateReversProgress);
 }
+
 function updateNormalProgress() {
-var a = document.getElementById("audio-normal");
-var fill = document.getElementById("normal-progress-fill");
-var currentTimeEl = document.getElementById("normal-current-time");
-var duration = (isFinite(a.duration) && a.duration > 0) ? a.duration : 0;
-var progress = duration > 0 ? (a.currentTime / duration) : 0;
-fill.style.width = (progress * 100 || 0) + "%";
-currentTimeEl.textContent = formatTime(a.currentTime);
-if (!a.paused) requestAnimationFrame(updateNormalProgress);
+  var a = document.getElementById("audio-normal");
+  var fill = document.getElementById("normal-progress-fill");
+  var currentTimeEl = document.getElementById("normal-current-time");
+  var duration = (isFinite(a.duration) && a.duration > 0) ? a.duration : 0;
+  var progress = duration > 0 ? (a.currentTime / duration) : 0;
+  fill.style.width = (progress * 100 || 0) + "%";
+  currentTimeEl.textContent = formatTime(a.currentTime);
+  if (!a.paused) requestAnimationFrame(updateNormalProgress);
 }
+
 function seekRevers(e) { var bar = document.getElementById("revers-progress-bar"); var audio = document.getElementById("audio-revers"); var percent = e.offsetX / bar.offsetWidth; audio.currentTime = percent * audio.duration; }
 function seekNormal(e) { var bar = document.getElementById("normal-progress-bar"); var audio = document.getElementById("audio-normal"); var percent = e.offsetX / bar.offsetWidth; audio.currentTime = percent * audio.duration; }
+
 function markAsPlayed() {
-if (currentTrackName && !playedTracks.has(currentTrackName)) {
-playedTracks.add(currentTrackName); updateTrackCounter(); saveState();
-document.querySelectorAll('[data-song="' + currentTrackName + '"]').forEach(function(btn) { btn.classList.add("played"); btn.disabled = true; });
-updateNextTrackButton();
-}
+  if (currentTrackName && !playedTracks.has(currentTrackName)) {
+    playedTracks.add(currentTrackName); updateTrackCounter(); saveState();
+    document.querySelectorAll('[data-song="' + currentTrackName + '"]').forEach(function(btn) { btn.classList.add("played"); btn.disabled = true; });
+    updateNextTrackButton();
+  }
 }
 document.getElementById("audio-revers").addEventListener("playing", markAsPlayed);
+
 function showNotification(text, isAddition) {
-if (typeof isAddition === 'undefined') isAddition = true;
-var notif = document.getElementById("score-notification");
-if (notif) {
-notif.innerHTML = text;
-notif.style.color = isAddition ? 'var(--neon-lime)' : 'var(--neon-pink)';
-notif.style.borderColor = isAddition ? 'var(--neon-lime)' : 'var(--neon-pink)';
-notif.classList.add("show");
-setTimeout(function() { notif.classList.remove("show"); }, 1200);
+  if (typeof isAddition === 'undefined') isAddition = true;
+  var notif = document.getElementById("score-notification");
+  if (notif) {
+    notif.innerHTML = text;
+    notif.style.color = isAddition ? 'var(--neon-lime)' : 'var(--neon-pink)';
+    notif.style.borderColor = isAddition ? 'var(--neon-lime)' : 'var(--neon-pink)';
+    notif.classList.add("show");
+    setTimeout(function() { notif.classList.remove("show"); }, 1200);
+  }
 }
-}
+
 function stopAllSounds() {
-if (originalTimeout) { clearTimeout(originalTimeout); originalTimeout = null; }
-if (variantsAutoNormalTimeout) { clearTimeout(variantsAutoNormalTimeout); variantsAutoNormalTimeout = null; }
-["audio-revers", "audio-normal", "audio-winner", "audio-lost", "audio-ring", "audio-start", "audio-final", "audio-game-over"].forEach(function(id) {
-var el = document.getElementById(id); if (el) { el.pause(); el.currentTime = 0; }
-});
-stopTimer();
+  if (originalTimeout) { clearTimeout(originalTimeout); originalTimeout = null; }
+  if (variantsAutoNormalTimeout) { clearTimeout(variantsAutoNormalTimeout); variantsAutoNormalTimeout = null; }
+  ["audio-revers", "audio-normal", "audio-winner", "audio-lost", "audio-ring", "audio-start", "audio-final", "audio-game-over"].forEach(function(id) {
+    var el = document.getElementById(id); if (el) { el.pause(); el.currentTime = 0; }
+  });
+  stopTimer();
 }
+
 function updateTrackCounter() {
-var counter = document.getElementById("track-counter");
-if (counter) { counter.textContent = Object.keys(files).length - playedTracks.size; }
-updateNextTrackButton();
+  var counter = document.getElementById("track-counter");
+  if (counter) { counter.textContent = Object.keys(files).length - playedTracks.size; }
+  updateNextTrackButton();
 }
+
 function endQuiz() {
-localStorage.removeItem('reversQuiz');
-forceStopAllSounds();
-var aGameOver = document.getElementById("audio-game-over");
-if (aGameOver && soundUrls.gameOver) { aGameOver.currentTime = 0; aGameOver.play().catch(function() {}); }
-purgeAudioBuffer(document.getElementById("audio-revers"));
-purgeAudioBuffer(document.getElementById("audio-normal"));
-var sortedTeams = teamsData.slice().sort(function(a, b) { return b.score - a.score; });
-var winnerText = (sortedTeams[0] && sortedTeams[1] && sortedTeams[0].score === sortedTeams[1].score) ? "Боевая ничья!" : (sortedTeams[0] ? sortedTeams[0].name + " побеждает!" : "Игра завершена");
-if (isInteractiveMode && roomRef) {
-roomRef.update({
-status: "game_over", revealedTrack: "",
-leaderboard: sortedTeams.map(function(t) { return { name: t.name, score: t.score }; }),
-audioSync: { trackSessionId: "", reversUrl: "", normalUrl: "", duration: 0, currentTime: 0, playAction: "stop", systemTrigger: { type: "gameOver", time: Date.now() }, startAt: 0, isJoker: false, jokerEnabled: jokerEnabled },
-variantsRound: { active: false, correctTrack: "", options: [], answeringTeam: null, answeringTeamName: "", selectedOption: null, isFinal: false, askConfirm: false, attemptsLeft: 2, isRevealed: false, isCorrect: false, roundTimer: variantsTimerDuration, timerDeadline: 0, penaltyEnabled: variantsPenaltyEnabled }
-});
+  localStorage.removeItem('reversQuiz');
+  forceStopAllSounds();
+  var aGameOver = document.getElementById("audio-game-over");
+  if (aGameOver && soundUrls.gameOver) { aGameOver.currentTime = 0; aGameOver.play().catch(function() {}); }
+  purgeAudioBuffer(document.getElementById("audio-revers"));
+  purgeAudioBuffer(document.getElementById("audio-normal"));
+  var sortedTeams = teamsData.slice().sort(function(a, b) { return b.score - a.score; });
+  var winnerText = (sortedTeams[0] && sortedTeams[1] && sortedTeams[0].score === sortedTeams[1].score) ? "Боевая ничья!" : (sortedTeams[0] ? sortedTeams[0].name + " побеждает!" : "Игра завершена");
+  if (isInteractiveMode && roomRef) {
+    roomRef.update({
+      status: "game_over", revealedTrack: "",
+      leaderboard: sortedTeams.map(function(t) { return { name: t.name, score: t.score }; }),
+      audioSync: { trackSessionId: "", reversUrl: "", normalUrl: "", duration: 0, currentTime: 0, playAction: "stop", systemTrigger: { type: "gameOver", time: Date.now() }, startAt: 0, isJoker: false, jokerEnabled: jokerEnabled },
+      variantsRound: { active: false, correctTrack: "", options: [], answeringTeam: null, answeringTeamName: "", selectedOption: null, isFinal: false, askConfirm: false, attemptsLeft: 2, isRevealed: false, isCorrect: false, roundTimer: variantsTimerDuration, timerDeadline: 0, penaltyEnabled: variantsPenaltyEnabled }
+    });
+  }
+  localStorage.removeItem("host_room_pin");
+  var quizArea = document.getElementById("quiz-area");
+  quizArea.innerHTML = '';
+  var resultDiv = document.createElement('div');
+  resultDiv.className = 'winner-screen';
+  var topScore = sortedTeams[0] ? sortedTeams[0].score : 0;
+  var scoreListHtml = sortedTeams.map(function(t, idx) {
+    var isTieWinner = (t.score === topScore);
+    var rankBadge = isTieWinner ? '🤝 ' : (idx + 1) + '. ';
+    return '<div>' + rankBadge + t.name + ': <strong>' + formatScore(t.score) + '</strong></div>';
+  }).join('');
+  resultDiv.innerHTML = '<h2>🏆 Итоги битвы:<br><strong>' + winnerText + '</strong></h2><div class="final-scores">' + scoreListHtml + '</div>';
+  quizArea.appendChild(resultDiv);
+  var restartBtn = document.createElement("button");
+  restartBtn.innerHTML = '<i class="fas fa-redo"></i> Новая игра';
+  restartBtn.style.cssText = 'width: 100%; padding: 16px; margin-top: 24px; background: var(--neon-cyan); color: #000; font-size: 15px; text-transform: uppercase; letter-spacing: 1px;';
+  restartBtn.onclick = function() { location.reload(); };
+  quizArea.appendChild(restartBtn);
 }
-localStorage.removeItem("host_room_pin");
-var quizArea = document.getElementById("quiz-area");
-quizArea.innerHTML = '';
-var resultDiv = document.createElement('div');
-resultDiv.className = 'winner-screen';
-var topScore = sortedTeams[0] ? sortedTeams[0].score : 0;
-var scoreListHtml = sortedTeams.map(function(t, idx) {
-var isTieWinner = (t.score === topScore);
-var rankBadge = isTieWinner ? '🤝 ' : (idx + 1) + '. ';
-return '<div>' + rankBadge + t.name + ': <strong>' + formatScore(t.score) + '</strong></div>';
-}).join('');
-resultDiv.innerHTML = '<h2>🏆 Итоги битвы:<br><strong>' + winnerText + '</strong></h2><div class="final-scores">' + scoreListHtml + '</div>';
-quizArea.appendChild(resultDiv);
-var restartBtn = document.createElement("button");
-restartBtn.innerHTML = '<i class="fas fa-redo"></i> Новая игра';
-restartBtn.style.cssText = 'width: 100%; padding: 16px; margin-top: 24px; background: var(--neon-cyan); color: #000; font-size: 15px; text-transform: uppercase; letter-spacing: 1px;';
-restartBtn.onclick = function() { location.reload(); };
-quizArea.appendChild(restartBtn);
-}
+
 function toggleInteractiveSettingsVisibility() {
-var modeSel = document.getElementById("game-mode-toggle");
-var subSettings = document.getElementById("interactive-sub-settings");
-var varSettings = document.getElementById("variants-sub-settings");
-if (modeSel) {
-if (subSettings) subSettings.style.display = (modeSel.value !== "offline") ? "flex" : "none";
-if (varSettings) varSettings.style.display = (modeSel.value === "variants") ? "flex" : "none";
+  var modeSel = document.getElementById("game-mode-toggle");
+  var subSettings = document.getElementById("interactive-sub-settings");
+  var varSettings = document.getElementById("variants-sub-settings");
+  if (modeSel) {
+    if (subSettings) subSettings.style.display = (modeSel.value !== "offline") ? "flex" : "none";
+    if (varSettings) varSettings.style.display = (modeSel.value === "variants") ? "flex" : "none";
+  }
 }
-}
+
 function setSettings() {
-try {
-var inputTimer = document.getElementById("timer-input");
-var inputDelay = document.getElementById("original-delay-input");
-var mode = document.getElementById("mix-mode").value;
-var newGameMode = document.getElementById("game-mode-toggle").value;
-var newStreamAudio = document.getElementById("stream-audio-toggle").value === "true";
-var newChatMode = document.getElementById("chat-mode-toggle").value;
-var newShowScore = document.getElementById("show-score-toggle").value === "true";
-var newShowOpponent = document.getElementById("show-opponent-score-toggle").value === "true";
-var newJokerEnabled = document.getElementById("joker-toggle").value === "true";
-var newJokerChance = parseFloat(document.getElementById("joker-chance").value);
-var vTimerVal = parseInt(document.getElementById("variants-timer-input").value) || 5;
-var vPenaltyVal = document.getElementById("variants-penalty-toggle").value === "true";
-var vWrongPenaltyVal = document.getElementById("variants-wrong-penalty-toggle").value === "true";
-var vAutoNormVal = document.getElementById("variants-auto-normal-toggle").value === "true";
-var vNormDelayVal = parseFloat(document.getElementById("variants-normal-delay-input").value);
-if (isNaN(vNormDelayVal) || vNormDelayVal < 0) vNormDelayVal = 1;
-var defPtsVal = parseFloat(document.getElementById("default-correct-pts-input").value);
-if (isNaN(defPtsVal) || defPtsVal < 0) defPtsVal = 1;
-defaultCorrectPoints = defPtsVal;
-var valTimer = parseInt(inputTimer.value);
-var valDelay = parseFloat(inputDelay.value);
-if (isNaN(valTimer) || valTimer < 1 || valTimer > 300) return alert("Таймер: от 1 до 300 сек.");
-if (isNaN(valDelay) || valDelay < 0 || valDelay > 30) return alert("Задержка оригинала: от 0 до 30 сек.");
-var needReload = (newGameMode !== gameMode);
-gameMode = newGameMode;
-isInteractiveMode = (gameMode !== "offline");
-isVariantsMode = (gameMode === "variants");
-timerDuration = valTimer;
-originalDelay = valDelay;
-mixMode = mode === "mixed";
-streamAudioToPlayers = newStreamAudio;
-chatMode = newChatMode;
-showScoreToPlayers = newShowScore;
-showOpponentScore = newShowOpponent;
-jokerEnabled = newJokerEnabled;
-jokerChance = newJokerChance;
-variantsTimerDuration = vTimerVal;
-variantsPenaltyEnabled = vPenaltyVal;
-variantsWrongPenaltyEnabled = vWrongPenaltyVal;
-variantsAutoNormalEnabled = vAutoNormVal;
-variantsNormalDelay = vNormDelayVal;
-if (isInteractiveMode && roomRef) {
-roomRef.update({ showScore: showScoreToPlayers, showOpponentScore: showOpponentScore, streamAudio: streamAudioToPlayers, chatMode: chatMode, gameMode: gameMode, systemSounds: soundUrls });
-roomRef.child("audioSync").update({ jokerEnabled: jokerEnabled });
-if (isVariantsMode) {
-roomRef.child("variantsRound").update({
-roundTimer: variantsTimerDuration,
-penaltyEnabled: variantsPenaltyEnabled
-});
+  try {
+    var inputTimer = document.getElementById("timer-input");
+    var inputDelay = document.getElementById("original-delay-input");
+    var mode = document.getElementById("mix-mode").value;
+    var newGameMode = document.getElementById("game-mode-toggle").value;
+    var newStreamAudio = document.getElementById("stream-audio-toggle").value === "true";
+    var newChatMode = document.getElementById("chat-mode-toggle").value;
+    var newShowScore = document.getElementById("show-score-toggle").value === "true";
+    var newShowOpponent = document.getElementById("show-opponent-score-toggle").value === "true";
+    var newJokerEnabled = document.getElementById("joker-toggle").value === "true";
+    var newJokerChance = parseFloat(document.getElementById("joker-chance").value);
+    var vTimerVal = parseInt(document.getElementById("variants-timer-input").value) || 5;
+    var vPenaltyVal = document.getElementById("variants-penalty-toggle").value === "true";
+    var vWrongPenaltyVal = document.getElementById("variants-wrong-penalty-toggle").value === "true";
+    var vAutoNormVal = document.getElementById("variants-auto-normal-toggle").value === "true";
+    var vNormDelayVal = parseFloat(document.getElementById("variants-normal-delay-input").value);
+    if (isNaN(vNormDelayVal) || vNormDelayVal < 0) vNormDelayVal = 1;
+    var defPtsVal = parseFloat(document.getElementById("default-correct-pts-input").value);
+    if (isNaN(defPtsVal) || defPtsVal < 0) defPtsVal = 1;
+    defaultCorrectPoints = defPtsVal;
+    var valTimer = parseInt(inputTimer.value);
+    var valDelay = parseFloat(inputDelay.value);
+    if (isNaN(valTimer) || valTimer < 1 || valTimer > 300) return alert("Таймер: от 1 до 300 сек.");
+    if (isNaN(valDelay) || valDelay < 0 || valDelay > 30) return alert("Задержка оригинала: от 0 до 30 сек.");
+    var needReload = (newGameMode !== gameMode);
+    gameMode = newGameMode;
+    isInteractiveMode = (gameMode !== "offline");
+    isVariantsMode = (gameMode === "variants");
+    timerDuration = valTimer;
+    originalDelay = valDelay;
+    mixMode = mode === "mixed";
+    streamAudioToPlayers = newStreamAudio;
+    chatMode = newChatMode;
+    showScoreToPlayers = newShowScore;
+    showOpponentScore = newShowOpponent;
+    jokerEnabled = newJokerEnabled;
+    jokerChance = newJokerChance;
+    variantsTimerDuration = vTimerVal;
+    variantsPenaltyEnabled = vPenaltyVal;
+    variantsWrongPenaltyEnabled = vWrongPenaltyVal;
+    variantsAutoNormalEnabled = vAutoNormVal;
+    variantsNormalDelay = vNormDelayVal;
+    if (isInteractiveMode && roomRef) {
+      roomRef.update({ showScore: showScoreToPlayers, showOpponentScore: showOpponentScore, streamAudio: streamAudioToPlayers, chatMode: chatMode, gameMode: gameMode, systemSounds: soundUrls });
+      roomRef.child("audioSync").update({ jokerEnabled: jokerEnabled });
+      if (isVariantsMode) {
+        roomRef.child("variantsRound").update({
+          roundTimer: variantsTimerDuration,
+          penaltyEnabled: variantsPenaltyEnabled
+        });
+      }
+    }
+    saveState();
+    updateHostChatButtonVisibility();
+    if (needReload) { location.reload(); }
+    else { updateFolderSelectOptions(); applyGameModeUI(); showActionNotification('⚙️ Настройки сохранены'); }
+  } catch (err) { console.error("Ошибка при сохранении настроек:", err); }
+  finally { closeSettings(); }
 }
-}
-saveState();
-updateHostChatButtonVisibility();
-if (needReload) { location.reload(); }
-else { updateFolderSelectOptions(); applyGameModeUI(); showActionNotification('⚙️ Настройки сохранены'); }
-} catch (err) { console.error("Ошибка при сохранении настроек:", err); }
-finally { closeSettings(); }
-}
+
 function startTimer() {
-if (isTimerActive) return;
-stopTimerSounds();
-isTimerActive = true;
-timerValue = timerDuration;
-var circle = document.getElementById("timer-circle");
-if (circle) circle.classList.add("active");
-updateTimerDisplay();
-var aStart = document.getElementById("audio-start");
-var aFinal = document.getElementById("audio-final");
-if (soundUrls.start && aStart) { aStart.src = soundUrls.start; aStart.currentTime = 0; aStart.play().catch(function() {}); }
-if (isInteractiveMode && roomRef) { roomRef.child("timerState").set({ active: true, value: timerValue }); }
-timerInterval = setInterval(function() {
-timerValue--;
-updateTimerDisplay();
-if (isInteractiveMode && roomRef) { roomRef.child("timerState").update({ value: timerValue }); }
-if (timerValue === 1) {
-if (aStart) { aStart.pause(); aStart.currentTime = 0; }
-if (soundUrls.final && aFinal) {
-aFinal.src = soundUrls.final; aFinal.currentTime = 0;
-aFinal.onended = function() { isTimerActive = false; if (circle) circle.classList.remove("active"); };
-aFinal.play().catch(function() {});
+  if (isTimerActive) return;
+  stopTimerSounds();
+  isTimerActive = true;
+  timerValue = timerDuration;
+  var circle = document.getElementById("timer-circle");
+  if (circle) circle.classList.add("active");
+  updateTimerDisplay();
+  var aStart = document.getElementById("audio-start");
+  var aFinal = document.getElementById("audio-final");
+  if (soundUrls.start && aStart) { aStart.src = soundUrls.start; aStart.currentTime = 0; aStart.play().catch(function() {}); }
+  if (isInteractiveMode && roomRef) { roomRef.child("timerState").set({ active: true, value: timerValue }); }
+  timerInterval = setInterval(function() {
+    timerValue--;
+    updateTimerDisplay();
+    if (isInteractiveMode && roomRef) { roomRef.child("timerState").update({ value: timerValue }); }
+    if (timerValue === 1) {
+      if (aStart) { aStart.pause(); aStart.currentTime = 0; }
+      if (soundUrls.final && aFinal) {
+        aFinal.src = soundUrls.final; aFinal.currentTime = 0;
+        aFinal.onended = function() { isTimerActive = false; if (circle) circle.classList.remove("active"); };
+        aFinal.play().catch(function() {});
+      }
+    }
+    if (timerValue <= 0) {
+      clearInterval(timerInterval); timerInterval = null;
+      if (isInteractiveMode && roomRef) { roomRef.child("timerState").set({ active: false, value: 0 }); }
+      if (!soundUrls.final && circle) { isTimerActive = false; circle.classList.remove("active"); }
+    }
+  }, 1000);
 }
-}
-if (timerValue <= 0) {
-clearInterval(timerInterval); timerInterval = null;
-if (isInteractiveMode && roomRef) { roomRef.child("timerState").set({ active: false, value: 0 }); }
-if (!soundUrls.final && circle) { isTimerActive = false; circle.classList.remove("active"); }
-}
-}, 1000);
-}
+
 function stopTimerSounds() {
-var aStart = document.getElementById("audio-start");
-var aFinal = document.getElementById("audio-final");
-if (aStart) { aStart.pause(); aStart.currentTime = 0; }
-if (aFinal) { aFinal.onended = null; aFinal.pause(); aFinal.currentTime = 0; }
+  var aStart = document.getElementById("audio-start");
+  var aFinal = document.getElementById("audio-final");
+  if (aStart) { aStart.pause(); aStart.currentTime = 0; }
+  if (aFinal) { aFinal.onended = null; aFinal.pause(); aFinal.currentTime = 0; }
 }
+
 function stopTimer() {
-if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
-isTimerActive = false;
-stopTimerSounds();
-if (isInteractiveMode && roomRef) { roomRef.child("timerState").set({ active: false, value: 0 }); }
-var circle = document.getElementById("timer-circle");
-if (circle) { circle.classList.remove("active"); }
+  if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+  isTimerActive = false;
+  stopTimerSounds();
+  if (isInteractiveMode && roomRef) { roomRef.child("timerState").set({ active: false, value: 0 }); }
+  var circle = document.getElementById("timer-circle");
+  if (circle) { circle.classList.remove("active"); }
 }
+
 function updateTimerDisplay() {
-var el = document.getElementById("timer-circle");
-if (!el) return;
-el.textContent = timerValue;
-var isUrgent = timerValue <= 5;
-el.style.borderColor = isUrgent ? "var(--neon-pink)" : "var(--neon-cyan)";
-el.style.color = isUrgent ? "var(--neon-pink)" : "var(--neon-cyan)";
-el.style.boxShadow = isUrgent ? "0 0 20px rgba(255, 0, 85, 0.5)" : "0 0 20px rgba(0, 229, 255, 0.4)";
+  var el = document.getElementById("timer-circle");
+  if (!el) return;
+  el.textContent = timerValue;
+  var isUrgent = timerValue <= 5;
+  el.style.borderColor = isUrgent ? "var(--neon-pink)" : "var(--neon-cyan)";
+  el.style.color = isUrgent ? "var(--neon-pink)" : "var(--neon-cyan)";
+  el.style.boxShadow = isUrgent ? "0 0 20px rgba(255, 0, 85, 0.5)" : "0 0 20px rgba(0, 229, 255, 0.4)";
 }
 </script>
 </body>
