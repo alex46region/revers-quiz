@@ -73,6 +73,23 @@ h1 i { -webkit-text-fill-color: var(--neon-cyan); filter: drop-shadow(0 0 12px v
 @keyframes waveMotion { 0% { transform: rotate(0deg); } 15% { transform: rotate(16deg); } 30% { transform: rotate(-10deg); } 45% { transform: rotate(14deg); } 60% { transform: rotate(-6deg); } 75% { transform: rotate(10deg); } 100% { transform: rotate(0deg); } }
 .wave-team-badge { background: rgba(5, 6, 10, 0.9); backdrop-filter: blur(14px); border: 1px solid var(--neon-cyan); color: #fff; padding: 10px 22px; border-radius: 16px; font-family: 'Syne', sans-serif; font-size: clamp(0.95em, 3.2vw, 1.35em); font-weight: 800; text-transform: uppercase; letter-spacing: 1px; text-align: center; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8), 0 0 20px rgba(0, 229, 255, 0.3); max-width: 85vw; word-break: break-word; overflow-wrap: anywhere; line-height: 1.3; }
 .wave-team-badge span { color: var(--neon-cyan); text-shadow: 0 0 10px rgba(0, 229, 255, 0.5); }
+
+/* МОТИВАЦИОННЫЙ БАННЕР ВЕДУЩЕГО */
+.host-phrase-banner {
+  display: none; background: rgba(14, 18, 26, 0.92); border: 2px solid var(--neon-cyan);
+  border-radius: 16px; padding: 14px 18px; margin-bottom: 12px; text-align: center;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.7); animation: phraseFadeIn 0.3s ease;
+}
+.host-phrase-banner.scenario-1 { border-color: var(--neon-lime); box-shadow: 0 0 25px rgba(0, 255, 102, 0.35); }
+.host-phrase-banner.scenario-2 { border-color: var(--neon-pink); box-shadow: 0 0 25px rgba(255, 0, 85, 0.35); }
+.host-phrase-banner.scenario-3 { border-color: var(--neon-yellow); box-shadow: 0 0 25px rgba(255, 234, 0, 0.35); }
+.host-phrase-team { font-family: 'Orbitron', monospace; font-size: 0.82em; font-weight: 900; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 4px; }
+.host-phrase-banner.scenario-1 .host-phrase-team { color: var(--neon-lime); }
+.host-phrase-banner.scenario-2 .host-phrase-team { color: var(--neon-pink); }
+.host-phrase-banner.scenario-3 .host-phrase-team { color: var(--neon-yellow); }
+.host-phrase-text { font-size: 1.05em; font-weight: 700; color: #fff; line-height: 1.35; word-break: break-word; }
+@keyframes phraseFadeIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+
 input[type="text"], input[type="number"], select { width: 100%; padding: 14px 16px; background: var(--bg-deep); border: 1px solid var(--border-subtle); border-radius: 12px; color: var(--text-pure); font-size: 15px; outline: none; transition: 0.2s ease; }
 input[type="text"]:focus, input[type="number"]:focus, select:focus { border-color: var(--neon-cyan); box-shadow: 0 0 15px rgba(0, 229, 255, 0.2); }
 select { cursor: pointer; appearance: none; background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2300e5ff' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e"); background-repeat: no-repeat; background-position: right 14px center; background-size: 14px; }
@@ -88,7 +105,6 @@ button:active { transform: scale(0.98); }
 #load-songs-btn:disabled { opacity: 0.45; cursor: not-allowed; box-shadow: none; }
 #shuffle-btn { width: 100%; padding: 14px; background: transparent; border: 1px solid var(--border-subtle); color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; font-size: 14px; }
 
-/* УПРАВЛЕНИЕ СЧЕТОМ */
 .score-header-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
 .toggle-all-teams-btn { background: rgba(0, 229, 255, 0.1); border: 1px solid var(--neon-cyan); color: var(--neon-cyan); padding: 6px 14px; border-radius: 10px; font-size: 0.85em; text-transform: uppercase; cursor: pointer; }
 .score-controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; margin-top: 6px; }
@@ -270,12 +286,20 @@ button:active { transform: scale(0.98); }
 <div style="color:var(--text-dim); font-size:0.9em;">Ожидание подключения участников...</div>
 </div>
 </div>
+
 <div class="section" id="variants-control-section">
 <div class="variants-panel">
 <div class="variants-panel-title">
 <span><i class="fas fa-list-ul"></i> Режим «Варианты»</span>
 <span id="variants-answering-badge" style="font-size:0.8em; color:var(--neon-yellow);">Ожидание ответа...</span>
 </div>
+
+<!-- МОТИВАЦИОННЫЙ БАННЕР ВЕДУЩЕГО -->
+<div id="host-phrase-banner" class="host-phrase-banner">
+  <div class="host-phrase-team" id="host-phrase-team"></div>
+  <div class="host-phrase-text" id="host-phrase-text"></div>
+</div>
+
 <div id="host-judge-indicator" class="host-judge-indicator"></div>
 <div class="variants-grid-host" id="variants-host-grid"></div>
 <div class="variants-btn-row" id="variants-host-buttons" style="display:none;">
@@ -284,6 +308,7 @@ button:active { transform: scale(0.98); }
 </div>
 </div>
 </div>
+
 <div class="section" id="local-teams-section">
 <h2 class="section-title"><i class="fas fa-users"></i> Команды игры</h2>
 <div class="teams-input-list" id="teams-input-container"></div>
@@ -621,6 +646,77 @@ function scrollToPlayerBlock() {
   }
 }
 
+/* ЗАГРУЗКА И ВЫБОР ФРАЗ ИЗ PHRASES.JSON */
+var phrasesData = null;
+var currentBannerPhraseTimeout = null;
+
+async function loadPhrasesData() {
+  try {
+    var res = await fetch("phrases.json?t=" + Date.now(), { cache: "no-store" });
+    if (res.ok) {
+      phrasesData = await res.json();
+    }
+  } catch(e) {
+    console.warn("Файл phrases.json не найден, используются дефолтные фразы:", e);
+  }
+}
+
+function getRandomPhrase(scenarioKey) {
+  var defaults = {
+    "scenario_1_correct": ["Гений чистой красоты! В яблочко!", "Уши-алмазы! Это было молниеносно!", "Музыкальный терминатор в деле!"],
+    "scenario_2_wrong": ["Эх, фальшивая нота! Но попытка зачётная!", "Мимо кассы... А ведь победа была так близко!", "Не угадали, зато красиво рисковали!"],
+    "scenario_3_timeout": ["Тик-так... Время вышло, поезд уехал!", "Слишком долгие раздумья! Кнопка уходит дальше!", "Секундомер не ждёт! Перехват хода!"]
+  };
+  var pool = (phrasesData && phrasesData[scenarioKey] && phrasesData[scenarioKey].length > 0)
+    ? phrasesData[scenarioKey]
+    : defaults[scenarioKey];
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+function triggerVariantBanner(scenario, teamId, teamName) {
+  if (!isInteractiveMode || !roomRef) return;
+  var keyMap = { 1: "scenario_1_correct", 2: "scenario_2_wrong", 3: "scenario_3_timeout" };
+  var scenarioKey = keyMap[scenario];
+  var phrase = getRandomPhrase(scenarioKey);
+
+  var bannerData = {
+    active: true,
+    scenario: scenario,
+    teamId: teamId || "",
+    teamName: teamName || "Команда",
+    phrase: phrase,
+    triggeredAt: Date.now()
+  };
+
+  roomRef.child("variantBanner").set(bannerData);
+  displayHostPhraseBanner(bannerData);
+
+  // Для сценария 3 (тайм-аут) баннер скрывается через 3 секунды у всех
+  if (scenario === 3) {
+    if (currentBannerPhraseTimeout) clearTimeout(currentBannerPhraseTimeout);
+    currentBannerPhraseTimeout = setTimeout(function() {
+      roomRef.child("variantBanner").update({ active: false });
+      hideHostPhraseBanner();
+    }, 3000);
+  }
+}
+
+function displayHostPhraseBanner(b) {
+  var el = document.getElementById("host-phrase-banner");
+  var teamEl = document.getElementById("host-phrase-team");
+  var textEl = document.getElementById("host-phrase-text");
+  if (!el || !teamEl || !textEl) return;
+  el.className = "host-phrase-banner scenario-" + b.scenario;
+  teamEl.textContent = "📢 " + b.teamName + ":";
+  textEl.textContent = "«" + b.phrase + "»";
+  el.style.display = "block";
+}
+
+function hideHostPhraseBanner() {
+  var el = document.getElementById("host-phrase-banner");
+  if (el) el.style.display = "none";
+}
+
 function ensureAudioPlayer(id) {
   var a = document.getElementById(id);
   if (!a) { a = document.createElement("audio"); a.id = id; a.style.display = "none"; a.setAttribute("playsinline", "true"); document.body.appendChild(a); }
@@ -847,7 +943,8 @@ function initHostRoom() {
     buzzer: { locked: true, pressedBy: null, passedBy: [] }, revealedTrack: "",
     systemSounds: soundUrls, timerState: { active: false, value: 0 },
     audioSync: { trackSessionId: "", reversUrl: "", normalUrl: "", duration: 0, currentTime: 0, playAction: "stop", startAt: 0, isJoker: false, jokerEnabled: jokerEnabled },
-    variantsRound: { active: false, correctTrack: "", options: [], answeringTeam: null, answeringTeamName: "", selectedOption: null, isFinal: false, askConfirm: false, attemptsLeft: 2, isRevealed: false, isCorrect: false, roundTimer: variantsTimerDuration, timerDeadline: 0, penaltyEnabled: variantsPenaltyEnabled }
+    variantsRound: { active: false, correctTrack: "", options: [], answeringTeam: null, answeringTeamName: "", selectedOption: null, isFinal: false, askConfirm: false, attemptsLeft: 2, isRevealed: false, isCorrect: false, roundTimer: variantsTimerDuration, timerDeadline: 0, penaltyEnabled: variantsPenaltyEnabled },
+    variantBanner: { active: false }
   });
   teamsData = [];
   renderHostTeamsList();
@@ -872,7 +969,14 @@ function initHostRoom() {
     if (buzzer.locked && buzzer.pressedByName) { handleBuzzerTriggered(buzzer.pressedBy, buzzer.pressedByName); }
     if (isVariantsMode && buzzer.lastPassAt && buzzer.lastPassAt > lastHandledPassAt) {
       lastHandledPassAt = buzzer.lastPassAt;
-      showPassWavePopup(buzzer.lastPassTeamName || "Команда", buzzer.lastPassType === "timeout");
+      var isTimeout = (buzzer.lastPassType === "timeout");
+      showPassWavePopup(buzzer.lastPassTeamName || "Команда", isTimeout);
+      
+      // СЦЕНАРИЙ 3: Если участник не успел ответить, запускаем баннер тайм-аута
+      if (isTimeout) {
+        triggerVariantBanner(3, buzzer.pressedBy, buzzer.lastPassTeamName || "Команда");
+      }
+      
       checkAllTeamsPassed(buzzer.passedBy || []);
     }
   });
@@ -1360,6 +1464,7 @@ function unlockMobileAudio() {
 document.addEventListener('click', unlockMobileAudio, { once: true });
 document.addEventListener('touchstart', unlockMobileAudio, { once: true });
 window.addEventListener('load', function() {
+  loadPhrasesData();
   restoreSession();
   applyGameModeUI();
   if (!isInteractiveMode) { renderOfflineTeamsInputs(); }
@@ -1526,12 +1631,16 @@ function playSound(type) {
   stopTimer(); hideTrackPopup();
   if (url && audio) { audio.src = url; audio.currentTime = 0; audio.play().catch(function() {}); }
   else { showActionNotification(type === 'winner' ? '🎉 Правильно!' : '😢 Мимо!'); }
+
+  var respondingTeamId = activeTeamId || variantsState.answeringTeam;
+  var respondingTeam = teamsData.find(function(t) { return t.id === respondingTeamId; });
+  var respondingTeamName = respondingTeam ? respondingTeam.name : (variantsState.answeringTeamName || "Команда");
+
   if (type === 'winner' && activeTeamId) {
-    var team = teamsData.find(function(t) { return t.id === activeTeamId; });
-    if (team) {
+    if (respondingTeam) {
       if (currentTrackIsJoker) {
         awardJokerPoints(activeTeamId);
-        showJokerAnimation(team.name);
+        showJokerAnimation(respondingTeam.name);
       } else if (isInteractiveMode && defaultCorrectPoints > 0) {
         changeScore(activeTeamId, defaultCorrectPoints);
       }
@@ -1551,6 +1660,12 @@ function playSound(type) {
       isCorrect: isAnswerCorrect,
       isFinal: true
     });
+
+    setTimeout(function() {
+      if (isVariantsMode && roomRef) {
+        triggerVariantBanner(isAnswerCorrect ? 1 : 2, respondingTeamId, respondingTeamName);
+      }
+    }, 2000);
   }
   if (isInteractiveMode && roomRef) {
     roomRef.update({
@@ -1753,6 +1868,8 @@ function purgeAudioBuffer(audioEl) { if (audioEl) { audioEl.pause(); audioEl.cur
 
 function playTrack(name) {
   hideBuzzerAlert();
+  hideHostPhraseBanner();
+  if (currentBannerPhraseTimeout) { clearTimeout(currentBannerPhraseTimeout); currentBannerPhraseTimeout = null; }
   if (originalTimeout) { clearTimeout(originalTimeout); originalTimeout = null; }
   if (variantsAutoNormalTimeout) { clearTimeout(variantsAutoNormalTimeout); variantsAutoNormalTimeout = null; }
   hideOriginal(); stopAllSounds(); hideTrackPopup();
@@ -1810,7 +1927,8 @@ function playTrack(name) {
         teamsData.forEach(function(t) { roomRef.child("teams/" + t.id + "/readyToPlay").set(false); });
         roomRef.update({
           status: "idle", revealedTrack: "", timerState: { active: false, value: 0 },
-          buzzer: { locked: false, pressedBy: null, pressedByName: null, passedBy: [] }
+          buzzer: { locked: false, pressedBy: null, pressedByName: null, passedBy: [] },
+          variantBanner: { active: false }
         });
         roomRef.child("audioSync").set({
           trackSessionId: newTrackSessionId, reversUrl: track.revers || "", normalUrl: track.normal || "",
