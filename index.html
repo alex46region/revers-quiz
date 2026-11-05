@@ -56,7 +56,6 @@ h1 i { -webkit-text-fill-color: var(--neon-cyan); filter: drop-shadow(0 0 12px v
 .qr-trigger-btn:active { background: var(--neon-yellow); color: #000; }
 .connected-teams-list { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
 
-/* АДАПТИВНОСТЬ ДЛИННЫХ ИМЕН КОМАНД */
 .team-pill {
   background: var(--bg-deep); border: 1px solid var(--border-subtle); border-radius: 10px;
   padding: 8px 14px; font-size: 0.88em; font-weight: 700; display: inline-flex;
@@ -83,7 +82,7 @@ h1 i { -webkit-text-fill-color: var(--neon-cyan); filter: drop-shadow(0 0 12px v
 .host-phrase-banner.scenario-1 { border-color: var(--neon-lime); box-shadow: 0 0 25px rgba(0, 255, 102, 0.35); }
 .host-phrase-banner.scenario-2 { border-color: var(--neon-pink); box-shadow: 0 0 25px rgba(255, 0, 85, 0.35); }
 .host-phrase-banner.scenario-3 { border-color: var(--neon-yellow); box-shadow: 0 0 25px rgba(255, 234, 0, 0.35); }
-.host-phrase-team { font-family: 'Orbitron', monospace; font-size: 0.82em; font-weight: 900; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 4px; }
+.host-phrase-team { font-family: 'Ubuntu Mono', monospace; font-size: 0.85em; font-weight: 900; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 4px; }
 .host-phrase-banner.scenario-1 .host-phrase-team { color: var(--neon-lime); }
 .host-phrase-banner.scenario-2 .host-phrase-team { color: var(--neon-pink); }
 .host-phrase-banner.scenario-3 .host-phrase-team { color: var(--neon-yellow); }
@@ -286,7 +285,6 @@ button:active { transform: scale(0.98); }
 <div style="color:var(--text-dim); font-size:0.9em;">Ожидание подключения участников...</div>
 </div>
 </div>
-
 <div class="section" id="variants-control-section">
 <div class="variants-panel">
 <div class="variants-panel-title">
@@ -308,7 +306,6 @@ button:active { transform: scale(0.98); }
 </div>
 </div>
 </div>
-
 <div class="section" id="local-teams-section">
 <h2 class="section-title"><i class="fas fa-users"></i> Команды игры</h2>
 <div class="teams-input-list" id="teams-input-container"></div>
@@ -691,11 +688,11 @@ function triggerVariantBanner(scenario, teamId, teamName) {
   roomRef.child("variantBanner").set(bannerData);
   displayHostPhraseBanner(bannerData);
 
-  // Для сценария 3 (тайм-аут) баннер скрывается через 3 секунды у всех
+  // Для сценария 3 (тайм-аут) баннер скрывается ровно через 3 секунды
   if (scenario === 3) {
     if (currentBannerPhraseTimeout) clearTimeout(currentBannerPhraseTimeout);
     currentBannerPhraseTimeout = setTimeout(function() {
-      roomRef.child("variantBanner").update({ active: false });
+      if (roomRef) roomRef.child("variantBanner").update({ active: false });
       hideHostPhraseBanner();
     }, 3000);
   }
@@ -768,11 +765,9 @@ function initEmojiPicker(containerId, inputId) {
     container.appendChild(s);
   });
 }
-function toggleHostEmojiPopover() { var p = document.getElementById("host-emoji-popover"); p.style.display = p.style.display === "grid" ? "none" : "grid"; }
+function toggleHostEmojiPopover() { var p = document.getElementById("host-emoji-popover"); if (p) p.style.display = p.style.display === "grid" ? "none" : "grid"; }
 
-function getPlayerDirectLink() {
-  return STATIC_PLAYER_URL;
-}
+function getPlayerDirectLink() { return STATIC_PLAYER_URL; }
 
 function updateQuickLinkDisplays() {
   var link = getPlayerDirectLink();
@@ -800,60 +795,140 @@ function fallbackCopyText(text) {
 }
 
 function openSettings() {
-  var tIn = document.getElementById("timer-input");
-  var dIn = document.getElementById("original-delay-input");
-  var mIn = document.getElementById("mix-mode");
-  var modeSel = document.getElementById("game-mode-toggle");
-  var streamSel = document.getElementById("stream-audio-toggle");
-  var chatModeSel = document.getElementById("chat-mode-toggle");
-  var scoreSel = document.getElementById("show-score-toggle");
-  var opponentScoreSel = document.getElementById("show-opponent-score-toggle");
-  var jokerToggle = document.getElementById("joker-toggle");
-  var jokerChanceSel = document.getElementById("joker-chance");
+  try {
+    var tIn = document.getElementById("timer-input");
+    var dIn = document.getElementById("original-delay-input");
+    var mIn = document.getElementById("mix-mode");
+    var modeSel = document.getElementById("game-mode-toggle");
+    var streamSel = document.getElementById("stream-audio-toggle");
+    var chatModeSel = document.getElementById("chat-mode-toggle");
+    var scoreSel = document.getElementById("show-score-toggle");
+    var opponentScoreSel = document.getElementById("show-opponent-score-toggle");
+    var jokerToggle = document.getElementById("joker-toggle");
+    var jokerChanceSel = document.getElementById("joker-chance");
+    var defPtsIn = document.getElementById("default-correct-pts-input");
+    var vTimerIn = document.getElementById("variants-timer-input");
+    var vPenaltySel = document.getElementById("variants-penalty-toggle");
+    var vWrongPenaltySel = document.getElementById("variants-wrong-penalty-toggle");
+    var vAutoNormSel = document.getElementById("variants-auto-normal-toggle");
+    var vNormDelayIn = document.getElementById("variants-normal-delay-input");
+
+    if (tIn) tIn.value = timerDuration;
+    if (dIn) dIn.value = originalDelay;
+    if (mIn) mIn.value = mixMode ? "mixed" : "normal";
+    if (modeSel) modeSel.value = gameMode;
+    if (streamSel) streamSel.value = streamAudioToPlayers ? "true" : "false";
+    if (chatModeSel) chatModeSel.value = chatMode;
+    if (scoreSel) scoreSel.value = showScoreToPlayers ? "true" : "false";
+    if (opponentScoreSel) opponentScoreSel.value = showOpponentScore ? "true" : "false";
+    if (jokerToggle) jokerToggle.value = jokerEnabled ? "true" : "false";
+    if (jokerChanceSel) jokerChanceSel.value = jokerChance.toString();
+    if (defPtsIn) defPtsIn.value = defaultCorrectPoints;
+    if (vTimerIn) vTimerIn.value = variantsTimerDuration;
+    if (vPenaltySel) vPenaltySel.value = variantsPenaltyEnabled ? "true" : "false";
+    if (vWrongPenaltySel) vWrongPenaltySel.value = variantsWrongPenaltyEnabled ? "true" : "false";
+    if (vAutoNormSel) vAutoNormSel.value = variantsAutoNormalEnabled ? "true" : "false";
+    if (vNormDelayIn) vNormDelayIn.value = variantsNormalDelay;
+
+    toggleInteractiveSettingsVisibility();
+  } catch (err) {
+    console.warn("Ошибка заполнения полей настроек:", err);
+  }
   var sMod = document.getElementById("settings-modal");
-  var statusEl = document.getElementById("manual-update-status");
-  var defPtsIn = document.getElementById("default-correct-pts-input");
-  var vTimerIn = document.getElementById("variants-timer-input");
-  var vPenaltySel = document.getElementById("variants-penalty-toggle");
-  var vWrongPenaltySel = document.getElementById("variants-wrong-penalty-toggle");
-  var vAutoNormSel = document.getElementById("variants-auto-normal-toggle");
-  var vNormDelayIn = document.getElementById("variants-normal-delay-input");
-
-  if (tIn) tIn.value = timerDuration;
-  if (dIn) dIn.value = originalDelay;
-  if (mIn) mIn.value = mixMode ? "mixed" : "normal";
-  if (modeSel) modeSel.value = gameMode;
-  if (streamSel) streamSel.value = streamAudioToPlayers ? "true" : "false";
-  if (chatModeSel) chatModeSel.value = chatMode;
-  if (scoreSel) scoreSel.value = showScoreToPlayers ? "true" : "false";
-  if (opponentScoreSel) opponentScoreSel.value = showOpponentScore ? "true" : "false";
-  if (jokerToggle) jokerToggle.value = jokerEnabled ? "true" : "false";
-  if (jokerChanceSel) jokerChanceSel.value = jokerChance.toString();
-  if (defPtsIn) defPtsIn.value = defaultCorrectPoints;
-  if (vTimerIn) vTimerIn.value = variantsTimerDuration;
-  if (vPenaltySel) vPenaltySel.value = variantsPenaltyEnabled ? "true" : "false";
-  if (vWrongPenaltySel) vWrongPenaltySel.value = variantsWrongPenaltyEnabled ? "true" : "false";
-  if (vAutoNormSel) vAutoNormSel.value = variantsAutoNormalEnabled ? "true" : "false";
-  if (vNormDelayIn) vNormDelayIn.value = variantsNormalDelay;
-
-  toggleInteractiveSettingsVisibility();
-  if (statusEl) { var currentVer = localStorage.getItem('app_version') || '11'; statusEl.textContent = "Текущая версия: v" + currentVer; }
-  if (sMod) { sMod.classList.add("active"); }
+  if (sMod) sMod.classList.add("active");
 }
 
 function closeSettings() {
   var sMod = document.getElementById("settings-modal");
-  if (sMod) { sMod.classList.remove("active"); }
-  if (document.activeElement && typeof document.activeElement.blur === "function") { document.activeElement.blur(); }
+  if (sMod) sMod.classList.remove("active");
+  if (document.activeElement && typeof document.activeElement.blur === "function") {
+    document.activeElement.blur();
+  }
 }
 
-function openQrModal() {
-  updateQuickLinkDisplays();
-  var modal = document.getElementById("qr-modal");
-  if (modal) modal.classList.add("active");
+function openQrModal() { updateQuickLinkDisplays(); document.getElementById("qr-modal").classList.add("active"); }
+function closeQrModal() { document.getElementById("qr-modal").classList.remove("active"); }
+
+function generateNewRoomPin() {
+  var newPin = Math.floor(1000 + Math.random() * 9000).toString();
+  localStorage.setItem("host_room_pin", newPin);
+  return newPin;
 }
-function closeQrModal() { var modal = document.getElementById("qr-modal"); if (modal) modal.classList.remove("active"); }
-function generateNewRoomPin() { var newPin = Math.floor(1000 + Math.random() * 9000).toString(); localStorage.setItem("host_room_pin", newPin); return newPin; }
+
+function toggleInteractiveSettingsVisibility() {
+  var modeSel = document.getElementById("game-mode-toggle");
+  var subSettings = document.getElementById("interactive-sub-settings");
+  var varSettings = document.getElementById("variants-sub-settings");
+  if (modeSel) {
+    if (subSettings) subSettings.style.display = (modeSel.value !== "offline") ? "flex" : "none";
+    if (varSettings) varSettings.style.display = (modeSel.value === "variants") ? "flex" : "none";
+  }
+}
+
+function setSettings() {
+  try {
+    var inputTimer = document.getElementById("timer-input");
+    var inputDelay = document.getElementById("original-delay-input");
+    var mode = document.getElementById("mix-mode").value;
+    var newGameMode = document.getElementById("game-mode-toggle").value;
+    var newStreamAudio = document.getElementById("stream-audio-toggle").value === "true";
+    var newChatMode = document.getElementById("chat-mode-toggle").value;
+    var newShowScore = document.getElementById("show-score-toggle").value === "true";
+    var newShowOpponent = document.getElementById("show-opponent-score-toggle").value === "true";
+    var newJokerEnabled = document.getElementById("joker-toggle").value === "true";
+    var newJokerChance = parseFloat(document.getElementById("joker-chance").value);
+    var vTimerVal = parseInt(document.getElementById("variants-timer-input").value) || 5;
+    var vPenaltyVal = document.getElementById("variants-penalty-toggle").value === "true";
+    var vWrongPenaltyVal = document.getElementById("variants-wrong-penalty-toggle").value === "true";
+    var vAutoNormVal = document.getElementById("variants-auto-normal-toggle").value === "true";
+    var vNormDelayVal = parseFloat(document.getElementById("variants-normal-delay-input").value);
+    if (isNaN(vNormDelayVal) || vNormDelayVal < 0) vNormDelayVal = 1;
+    var defPtsVal = parseFloat(document.getElementById("default-correct-pts-input").value);
+    if (isNaN(defPtsVal) || defPtsVal < 0) defPtsVal = 1;
+    defaultCorrectPoints = defPtsVal;
+    var valTimer = parseInt(inputTimer.value);
+    var valDelay = parseFloat(inputDelay.value);
+    if (isNaN(valTimer) || valTimer < 1 || valTimer > 300) return alert("Таймер: от 1 до 300 сек.");
+    if (isNaN(valDelay) || valDelay < 0 || valDelay > 30) return alert("Задержка оригинала: от 0 до 30 сек.");
+    var needReload = (newGameMode !== gameMode);
+    gameMode = newGameMode;
+    isInteractiveMode = (gameMode !== "offline");
+    isVariantsMode = (gameMode === "variants");
+    timerDuration = valTimer;
+    originalDelay = valDelay;
+    mixMode = mode === "mixed";
+    streamAudioToPlayers = newStreamAudio;
+    chatMode = newChatMode;
+    showScoreToPlayers = newShowScore;
+    showOpponentScore = newShowOpponent;
+    jokerEnabled = newJokerEnabled;
+    jokerChance = newJokerChance;
+    variantsTimerDuration = vTimerVal;
+    variantsPenaltyEnabled = vPenaltyVal;
+    variantsWrongPenaltyEnabled = vWrongPenaltyVal;
+    variantsAutoNormalEnabled = vAutoNormVal;
+    variantsNormalDelay = vNormDelayVal;
+    if (isInteractiveMode && roomRef) {
+      roomRef.update({
+        showScore: showScoreToPlayers, showOpponentScore: showOpponentScore,
+        streamAudio: streamAudioToPlayers, chatMode: chatMode, gameMode: gameMode, systemSounds: soundUrls
+      });
+      roomRef.child("audioSync").update({ jokerEnabled: jokerEnabled });
+      if (isVariantsMode) {
+        roomRef.child("variantsRound").update({
+          roundTimer: variantsTimerDuration,
+          penaltyEnabled: variantsPenaltyEnabled,
+          wrongPenaltyEnabled: variantsWrongPenaltyEnabled
+        });
+      }
+    }
+    saveState();
+    updateHostChatButtonVisibility();
+    if (needReload) { location.reload(); }
+    else { updateFolderSelectOptions(); applyGameModeUI(); showActionNotification('⚙️ Настройки сохранены'); }
+  } catch (err) { console.error("Ошибка при сохранении настроек:", err); }
+  finally { closeSettings(); }
+}
 
 function updateHostChatButtonVisibility() {
   var btn = document.getElementById("host-chat-toggle-btn");
@@ -972,7 +1047,7 @@ function initHostRoom() {
       var isTimeout = (buzzer.lastPassType === "timeout");
       showPassWavePopup(buzzer.lastPassTeamName || "Команда", isTimeout);
       
-      // СЦЕНАРИЙ 3: Если участник не успел ответить, запускаем баннер тайм-аута
+      // СЦЕНАРИЙ 3: Если участник не успел ответить, запускаем баннер тайм-аута мгновенно на 3 секунды
       if (isTimeout) {
         triggerVariantBanner(3, buzzer.pressedBy, buzzer.lastPassTeamName || "Команда");
       }
@@ -1463,6 +1538,7 @@ function unlockMobileAudio() {
 }
 document.addEventListener('click', unlockMobileAudio, { once: true });
 document.addEventListener('touchstart', unlockMobileAudio, { once: true });
+
 window.addEventListener('load', function() {
   loadPhrasesData();
   restoreSession();
@@ -1471,6 +1547,7 @@ window.addEventListener('load', function() {
   renderScoreboardGrid();
   initHostRoom();
 });
+
 function applyGameModeUI() {
   var onlineSec = document.getElementById("host-online-section");
   var localSec = document.getElementById("local-teams-section");
@@ -1490,6 +1567,7 @@ function applyGameModeUI() {
   if (gameSessionStarted) { applyLockUI(); }
   updateFolderSelectOptions();
 }
+
 function updateFolderSelectOptions() {
   var sel = document.getElementById("folder-select");
   if (!sel) return;
@@ -1515,6 +1593,7 @@ function updateFolderSelectOptions() {
   }
   updateFolderSection();
 }
+
 function restoreSession() {
   var saved = localStorage.getItem('reversQuiz');
   if (saved) {
@@ -1560,6 +1639,7 @@ function restoreSession() {
     } catch(e) { console.warn("Ошибка восстановления сессии:", e); }
   }
 }
+
 function saveState() {
   try {
     var state = {
@@ -1583,6 +1663,7 @@ function saveState() {
     localStorage.setItem('reversQuiz', JSON.stringify(state));
   } catch(e) { console.warn("Ошибка сохранения:", e); }
 }
+
 async function preloadAllSounds() {
   try {
     var rootUrl = "https://cloud-api.yandex.net/v1/disk/public/resources?public_key=" + encodeURIComponent(PUBLIC_KEY) + "&limit=100";
@@ -1601,6 +1682,7 @@ async function preloadAllSounds() {
     if (isInteractiveMode && roomRef) { roomRef.child("systemSounds").set(soundUrls); }
   } catch (e) { console.error("Ошибка загрузки системных звуков:", e); }
 }
+
 function awardJokerPoints(teamId) {
   var team = teamsData.find(function(t) { return t.id === teamId; });
   if (!team) return;
@@ -1622,6 +1704,8 @@ function awardJokerPoints(teamId) {
     roomRef.child("audioSync").update({ systemTrigger: { type: "joker", time: Date.now() } });
   }
 }
+
+/* МГНОВЕННЫЙ ЗАПУСК БАННЕРОВ (СЦЕНАРИИ 1 И 2) БЕЗ ЗАДЕРЖЕК */
 function playSound(type) {
   var url = type === 'winner' ? soundUrls.winner : soundUrls.lost;
   var audio = document.getElementById(type === 'winner' ? 'audio-winner' : 'audio-lost');
@@ -1661,15 +1745,7 @@ function playSound(type) {
       isFinal: true
     });
 
-    setTimeout(function() {
-if (isVariantsMode && roomRef) {
-    var isAnswerCorrect = (type === 'winner');
-    roomRef.child("variantsRound").update({
-      isRevealed: true,
-      isCorrect: isAnswerCorrect,
-      isFinal: true
-    });
-
+    // МГНОВЕННЫЙ ПОКАЗ БАННЕРА
     triggerVariantBanner(isAnswerCorrect ? 1 : 2, respondingTeamId, respondingTeamName);
   }
   if (isInteractiveMode && roomRef) {
@@ -1687,6 +1763,7 @@ if (isVariantsMode && roomRef) {
   originalTimeout = setTimeout(function() { startOriginalPlayback(); originalTimeout = null; }, delayMs);
   scrollToPlayerBlock();
 }
+
 async function playNormalWithAutoRecovery(audioEl, normalUrl, trackName) {
   var normalIcon = document.getElementById("normal-play-icon");
   try {
@@ -1717,6 +1794,7 @@ async function playNormalWithAutoRecovery(audioEl, normalUrl, trackName) {
     return false;
   }
 }
+
 async function startOriginalPlayback() {
   var p = document.getElementById("original-player");
   var b = document.getElementById("normal-toggle");
@@ -1728,6 +1806,7 @@ async function startOriginalPlayback() {
   var success = await playNormalWithAutoRecovery(a, trackObj.normal, currentTrackName);
   if (success && isInteractiveMode && roomRef && streamAudioToPlayers) { roomRef.child("audioSync").update({ playAction: "play_normal", currentTime: 0, startAt: Date.now() + 150 }); }
 }
+
 function formatTime(seconds) {
   if (!isFinite(seconds) || isNaN(seconds) || seconds < 0) { return "00:00"; }
   seconds = Math.floor(seconds);
@@ -1735,16 +1814,19 @@ function formatTime(seconds) {
   var secs = seconds % 60;
   return String(mins).padStart(2, '0') + ":" + String(secs).padStart(2, '0');
 }
+
 function updateReversDurationDisplay() {
   var a = document.getElementById("audio-revers");
   var durEl = document.getElementById("revers-duration");
   if (a && durEl && isFinite(a.duration) && a.duration > 0) { durEl.textContent = formatTime(a.duration); return true; }
   return false;
 }
+
 function updateFolderSection() {
   var folderSection = document.getElementById("folder-section");
   if (folderSection) { folderSection.style.display = mixMode ? "none" : "block"; }
 }
+
 async function fetchFolderFiles(path) {
   var limit = 100; var offset = 0; var allItems = []; var filesMap = {};
   try {
@@ -1779,6 +1861,7 @@ async function fetchFolderFiles(path) {
     return filesMap;
   } catch (e) { console.error("Ошибка загрузки папки:", e); return {}; }
 }
+
 async function loadFiles() {
   if (gameSessionStarted) {
     showActionNotification("🔒 Игра уже начата — загрузка треков заблокирована.");
@@ -1826,6 +1909,7 @@ async function loadFiles() {
     loadBtn.innerHTML = '<i class="fas fa-cloud-download-alt"></i> Загрузить треки';
   }
 }
+
 function updateShuffleButtonState() {
   var shuffleBtn = document.getElementById("shuffle-btn");
   var hasStarted = lastPlayedTrack !== null;
@@ -1837,6 +1921,7 @@ function updateShuffleButtonState() {
     shuffleBtn.textContent = hasStarted ? '❌ Игра начата' : '🔄 Перемешать треки';
   }
 }
+
 function shuffleTracks() {
   if (gameSessionStarted) { showActionNotification('🔒 Перемешивание заблокировано: игра начата.'); return; }
   if (lastPlayedTrack !== null) { showActionNotification('❌ Нельзя перемешивать после начала!'); return; }
@@ -1848,10 +1933,12 @@ function shuffleTracks() {
   showActionNotification('✅ Треки перемешаны!');
   updateNextTrackButton();
 }
+
 function showActionNotification(text) {
   var notif = document.getElementById("action-notification");
   if (notif) { notif.textContent = text; notif.classList.add("show"); setTimeout(function() { notif.classList.remove("show"); }, 2000); }
 }
+
 function generateSongButtons() {
   var container = document.getElementById("song-buttons");
   if (!container) return;
@@ -1869,6 +1956,7 @@ function generateSongButtons() {
   });
   updateNextTrackButton();
 }
+
 function purgeAudioBuffer(audioEl) { if (audioEl) { audioEl.pause(); audioEl.currentTime = 0; } }
 
 function playTrack(name) {
@@ -2190,7 +2278,8 @@ function endQuiz() {
       status: "game_over", revealedTrack: "",
       leaderboard: sortedTeams.map(function(t) { return { name: t.name, score: t.score }; }),
       audioSync: { trackSessionId: "", reversUrl: "", normalUrl: "", duration: 0, currentTime: 0, playAction: "stop", systemTrigger: { type: "gameOver", time: Date.now() }, startAt: 0, isJoker: false, jokerEnabled: jokerEnabled },
-      variantsRound: { active: false, correctTrack: "", options: [], answeringTeam: null, answeringTeamName: "", selectedOption: null, isFinal: false, askConfirm: false, attemptsLeft: 2, isRevealed: false, isCorrect: false, roundTimer: variantsTimerDuration, timerDeadline: 0, penaltyEnabled: variantsPenaltyEnabled }
+      variantsRound: { active: false, correctTrack: "", options: [], answeringTeam: null, answeringTeamName: "", selectedOption: null, isFinal: false, askConfirm: false, attemptsLeft: 2, isRevealed: false, isCorrect: false, roundTimer: variantsTimerDuration, timerDeadline: 0, penaltyEnabled: variantsPenaltyEnabled },
+      variantBanner: { active: false }
     });
   }
   localStorage.removeItem("host_room_pin");
@@ -2211,135 +2300,6 @@ function endQuiz() {
   restartBtn.style.cssText = 'width: 100%; padding: 16px; margin-top: 24px; background: var(--neon-cyan); color: #000; font-size: 15px; text-transform: uppercase; letter-spacing: 1px;';
   restartBtn.onclick = function() { location.reload(); };
   quizArea.appendChild(restartBtn);
-}
-
-function toggleInteractiveSettingsVisibility() {
-  var modeSel = document.getElementById("game-mode-toggle");
-  var subSettings = document.getElementById("interactive-sub-settings");
-  var varSettings = document.getElementById("variants-sub-settings");
-  if (modeSel) {
-    if (subSettings) subSettings.style.display = (modeSel.value !== "offline") ? "flex" : "none";
-    if (varSettings) varSettings.style.display = (modeSel.value === "variants") ? "flex" : "none";
-  }
-}
-
-function setSettings() {
-  try {
-    var inputTimer = document.getElementById("timer-input");
-    var inputDelay = document.getElementById("original-delay-input");
-    var mode = document.getElementById("mix-mode").value;
-    var newGameMode = document.getElementById("game-mode-toggle").value;
-    var newStreamAudio = document.getElementById("stream-audio-toggle").value === "true";
-    var newChatMode = document.getElementById("chat-mode-toggle").value;
-    var newShowScore = document.getElementById("show-score-toggle").value === "true";
-    var newShowOpponent = document.getElementById("show-opponent-score-toggle").value === "true";
-    var newJokerEnabled = document.getElementById("joker-toggle").value === "true";
-    var newJokerChance = parseFloat(document.getElementById("joker-chance").value);
-    var vTimerVal = parseInt(document.getElementById("variants-timer-input").value) || 5;
-    var vPenaltyVal = document.getElementById("variants-penalty-toggle").value === "true";
-    var vWrongPenaltyVal = document.getElementById("variants-wrong-penalty-toggle").value === "true";
-    var vAutoNormVal = document.getElementById("variants-auto-normal-toggle").value === "true";
-    var vNormDelayVal = parseFloat(document.getElementById("variants-normal-delay-input").value);
-    if (isNaN(vNormDelayVal) || vNormDelayVal < 0) vNormDelayVal = 1;
-    var defPtsVal = parseFloat(document.getElementById("default-correct-pts-input").value);
-    if (isNaN(defPtsVal) || defPtsVal < 0) defPtsVal = 1;
-    defaultCorrectPoints = defPtsVal;
-    var valTimer = parseInt(inputTimer.value);
-    var valDelay = parseFloat(inputDelay.value);
-    if (isNaN(valTimer) || valTimer < 1 || valTimer > 300) return alert("Таймер: от 1 до 300 сек.");
-    if (isNaN(valDelay) || valDelay < 0 || valDelay > 30) return alert("Задержка оригинала: от 0 до 30 сек.");
-    var needReload = (newGameMode !== gameMode);
-    gameMode = newGameMode;
-    isInteractiveMode = (gameMode !== "offline");
-    isVariantsMode = (gameMode === "variants");
-    timerDuration = valTimer;
-    originalDelay = valDelay;
-    mixMode = mode === "mixed";
-    streamAudioToPlayers = newStreamAudio;
-    chatMode = newChatMode;
-    showScoreToPlayers = newShowScore;
-    showOpponentScore = newShowOpponent;
-    jokerEnabled = newJokerEnabled;
-    jokerChance = newJokerChance;
-    variantsTimerDuration = vTimerVal;
-    variantsPenaltyEnabled = vPenaltyVal;
-    variantsWrongPenaltyEnabled = vWrongPenaltyVal;
-    variantsAutoNormalEnabled = vAutoNormVal;
-    variantsNormalDelay = vNormDelayVal;
-    if (isInteractiveMode && roomRef) {
-      roomRef.update({ showScore: showScoreToPlayers, showOpponentScore: showOpponentScore, streamAudio: streamAudioToPlayers, chatMode: chatMode, gameMode: gameMode, systemSounds: soundUrls });
-      roomRef.child("audioSync").update({ jokerEnabled: jokerEnabled });
-      if (isVariantsMode) {
-        roomRef.child("variantsRound").update({
-          roundTimer: variantsTimerDuration,
-          penaltyEnabled: variantsPenaltyEnabled
-        });
-      }
-    }
-    saveState();
-    updateHostChatButtonVisibility();
-    if (needReload) { location.reload(); }
-    else { updateFolderSelectOptions(); applyGameModeUI(); showActionNotification('⚙️ Настройки сохранены'); }
-  } catch (err) { console.error("Ошибка при сохранении настроек:", err); }
-  finally { closeSettings(); }
-}
-
-function startTimer() {
-  if (isTimerActive) return;
-  stopTimerSounds();
-  isTimerActive = true;
-  timerValue = timerDuration;
-  var circle = document.getElementById("timer-circle");
-  if (circle) circle.classList.add("active");
-  updateTimerDisplay();
-  var aStart = document.getElementById("audio-start");
-  var aFinal = document.getElementById("audio-final");
-  if (soundUrls.start && aStart) { aStart.src = soundUrls.start; aStart.currentTime = 0; aStart.play().catch(function() {}); }
-  if (isInteractiveMode && roomRef) { roomRef.child("timerState").set({ active: true, value: timerValue }); }
-  timerInterval = setInterval(function() {
-    timerValue--;
-    updateTimerDisplay();
-    if (isInteractiveMode && roomRef) { roomRef.child("timerState").update({ value: timerValue }); }
-    if (timerValue === 1) {
-      if (aStart) { aStart.pause(); aStart.currentTime = 0; }
-      if (soundUrls.final && aFinal) {
-        aFinal.src = soundUrls.final; aFinal.currentTime = 0;
-        aFinal.onended = function() { isTimerActive = false; if (circle) circle.classList.remove("active"); };
-        aFinal.play().catch(function() {});
-      }
-    }
-    if (timerValue <= 0) {
-      clearInterval(timerInterval); timerInterval = null;
-      if (isInteractiveMode && roomRef) { roomRef.child("timerState").set({ active: false, value: 0 }); }
-      if (!soundUrls.final && circle) { isTimerActive = false; circle.classList.remove("active"); }
-    }
-  }, 1000);
-}
-
-function stopTimerSounds() {
-  var aStart = document.getElementById("audio-start");
-  var aFinal = document.getElementById("audio-final");
-  if (aStart) { aStart.pause(); aStart.currentTime = 0; }
-  if (aFinal) { aFinal.onended = null; aFinal.pause(); aFinal.currentTime = 0; }
-}
-
-function stopTimer() {
-  if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
-  isTimerActive = false;
-  stopTimerSounds();
-  if (isInteractiveMode && roomRef) { roomRef.child("timerState").set({ active: false, value: 0 }); }
-  var circle = document.getElementById("timer-circle");
-  if (circle) { circle.classList.remove("active"); }
-}
-
-function updateTimerDisplay() {
-  var el = document.getElementById("timer-circle");
-  if (!el) return;
-  el.textContent = timerValue;
-  var isUrgent = timerValue <= 5;
-  el.style.borderColor = isUrgent ? "var(--neon-pink)" : "var(--neon-cyan)";
-  el.style.color = isUrgent ? "var(--neon-pink)" : "var(--neon-cyan)";
-  el.style.boxShadow = isUrgent ? "0 0 20px rgba(255, 0, 85, 0.5)" : "0 0 20px rgba(0, 229, 255, 0.4)";
 }
 </script>
 </body>
