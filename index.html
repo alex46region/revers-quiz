@@ -227,7 +227,8 @@ button:active { transform: scale(0.98); }
 .chat-msg-row .bubble { background: var(--bg-deep); border: 1px solid var(--border-subtle); padding: 8px 12px; border-radius: 12px; color: var(--text-pure); word-break: break-word; }
 .chat-msg-row.host-author .bubble { border-color: rgba(255, 234, 0, 0.3); background: rgba(255, 234, 0, 0.05); }
 .host-quick-replies { display: flex; gap: 6px; padding: 6px 10px; background: var(--bg-elevated); border-top: 1px solid var(--border-subtle); overflow-x: auto; }
-.quick-reply-btn { background: var(--bg-deep); border: 1px solid var(--border-subtle); color: #fff; padding: 5px 9px; border-radius: 8px; font-size: 11px; font-weight: 700; white-space: nowrap; cursor: pointer; flex-shrink: 0; }
+.quick-reply-btn { background: var(--bg-deep); border: 1px solid var(--border-subtle); color: #fff; padding: 5px 9px; border-radius: 8px; font-size: 11px; font-weight: 700; white-space: nowrap; cursor: pointer; flex-shrink: 0; transition: all 0.15s; }
+.quick-reply-btn:hover { border-color: var(--neon-cyan); color: var(--neon-cyan); }
 .quick-reply-btn.correct { border-color: var(--neon-lime); color: var(--neon-lime); }
 .quick-reply-btn.wrong { border-color: var(--neon-pink); color: var(--neon-pink); }
 .emoji-popover { position: absolute; bottom: 60px; left: 10px; right: 10px; background: #111520; border: 1px solid var(--neon-cyan); border-radius: 14px; padding: 10px; display: none; grid-template-columns: repeat(7, 1fr); gap: 6px; font-size: 1.4em; text-align: center; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.95); max-height: 180px; overflow-y: auto; z-index: 2600; }
@@ -285,7 +286,6 @@ button:active { transform: scale(0.98); }
 <div style="color:var(--text-dim); font-size:0.9em;">Ожидание подключения участников...</div>
 </div>
 </div>
-
 <div class="section" id="variants-control-section">
 <div class="variants-panel">
 <div class="variants-panel-title">
@@ -307,7 +307,6 @@ button:active { transform: scale(0.98); }
 </div>
 </div>
 </div>
-
 <div class="section" id="local-teams-section">
 <h2 class="section-title"><i class="fas fa-users"></i> Команды игры</h2>
 <div class="teams-input-list" id="teams-input-container"></div>
@@ -651,40 +650,32 @@ var currentBannerPhraseTimeout = null;
 
 async function loadPhrasesData() {
   try {
-    // Добавляем случайный параметр против кэша браузера
     var res = await fetch("phrases.json?nocache=" + Date.now(), { cache: "no-store" });
-    if (!res.ok) {
-      throw new Error("HTTP ошибка: " + res.status);
-    }
-    var json = await res.json();
-    if (json && (json.scenario_1_correct || json.scenario_2_wrong || json.scenario_3_timeout)) {
-      phrasesData = json;
-      console.log("✅ Успешно загружен phrases.json:", phrasesData);
-      showActionNotification("📝 Фразы из phrases.json подгружены!");
-    } else {
-      throw new Error("Неверная структура JSON файла");
+    if (res.ok) {
+      var json = await res.json();
+      if (json && (json.scenario_1_correct || json.scenario_2_wrong || json.scenario_3_timeout)) {
+        phrasesData = json;
+        console.log("✅ Успешно загружен phrases.json:", phrasesData);
+      }
     }
   } catch(e) {
-    console.error("❌ Сбой чтения phrases.json! Проверьте синтаксис/файл:", e);
-    showActionNotification("⚠️ Внимание: phrases.json не прочитан, активен дефолт");
+    console.warn("Файл phrases.json не найден или синтаксическая ошибка, активен дефолт:", e);
   }
 }
 
 function getRandomPhrase(scenarioKey) {
-  // Если phrasesData загружен и в нужном сценарии есть фразы — берем строго из него
   if (phrasesData && Array.isArray(phrasesData[scenarioKey]) && phrasesData[scenarioKey].length > 0) {
     var customPool = phrasesData[scenarioKey];
     return customPool[Math.floor(Math.random() * customPool.length)];
   }
 
-  // Запасной резерв только на случай полной недоступности файла
   var defaults = {
-    "scenario_1_correct": ["Гений чистой красоты! В яблочко!", "Уши-алмазы! Это было молниеносно!"],
-    "scenario_2_wrong": ["Эх, фальшивая нота! Но попытка зачётная!", "Мимо кассы... А ведь победа была близко!"],
-    "scenario_3_timeout": ["Тик-так... Время вышло, поезд уехал!", "Слишком долгие раздумья! Кнопка уходит дальше!"]
+    "scenario_1_correct": ["Гений чистой красоты! В яблочко!", "Уши-алмазы! Это было молниеносно!", "Музыкальный терминатор в деле!"],
+    "scenario_2_wrong": ["Эх, фальшивая нота! Но попытка зачётная!", "Мимо кассы... А ведь победа была так близко!", "Не угадали, зато красиво рисковали!"],
+    "scenario_3_timeout": ["Тик-так... Время вышло, поезд уехал!", "Слишком долгие раздумья! Кнопка уходит дальше!", "Секундомер не ждёт! Перехват хода!"]
   };
-  var fallbackPool = defaults[scenarioKey] || ["Ответ зафиксирован!"];
-  return fallbackPool[Math.floor(Math.random() * fallbackPool.length)];
+  var pool = defaults[scenarioKey] || ["Ответ зафиксирован!"];
+  return pool[Math.floor(Math.random() * pool.length)];
 }
 
 function triggerVariantBanner(scenario, teamId, teamName) {
@@ -934,7 +925,8 @@ function setSettings() {
       if (isVariantsMode) {
         roomRef.child("variantsRound").update({
           roundTimer: variantsTimerDuration,
-          penaltyEnabled: variantsPenaltyEnabled
+          penaltyEnabled: variantsPenaltyEnabled,
+          wrongPenaltyEnabled: variantsWrongPenaltyEnabled
         });
       }
     }
@@ -1721,7 +1713,7 @@ function awardJokerPoints(teamId) {
   }
 }
 
-/* МГНОВЕННЫЙ ЗАПУСК БАННЕРОВ (СЦЕНАРИИ 1 И 2) БЕЗ ЗАДЕРЖЕК */
+/* ИСПРАВЛЕНО: ПРЕДОТВРАЩЕНИЕ НАЛОЖЕНИЯ БАННЕРА СЦЕНАРИЯ 2 НА СЦЕНАРИЙ 3 ПРИ ТАЙМ-АУТЕ */
 function playSound(type) {
   var url = type === 'winner' ? soundUrls.winner : soundUrls.lost;
   var audio = document.getElementById(type === 'winner' ? 'audio-winner' : 'audio-lost');
@@ -1761,8 +1753,11 @@ function playSound(type) {
       isFinal: true
     });
 
-    // МГНОВЕННЫЙ ПОКАЗ БАННЕРА
-    triggerVariantBanner(isAnswerCorrect ? 1 : 2, respondingTeamId, respondingTeamName);
+    // Баннер Сценариев 1 и 2 запускается ТОЛЬКО если вариант был выбран!
+    // Если вариант не был выбран (тайм-аут или пас), баннер Сценария 3 уже показан и не должен перебиваться.
+    if (isAnswerCorrect || variantsState.selectedOption) {
+      triggerVariantBanner(isAnswerCorrect ? 1 : 2, respondingTeamId, respondingTeamName);
+    }
   }
   if (isInteractiveMode && roomRef) {
     roomRef.update({
@@ -1982,11 +1977,15 @@ function playTrack(name) {
   if (originalTimeout) { clearTimeout(originalTimeout); originalTimeout = null; }
   if (variantsAutoNormalTimeout) { clearTimeout(variantsAutoNormalTimeout); variantsAutoNormalTimeout = null; }
   hideOriginal(); stopAllSounds(); hideTrackPopup();
-  if (isInteractiveMode) { clearTeamHighlight(); }
+  
+  if (isInteractiveMode) { 
+    clearTeamHighlight(); 
+  }
   if (!isInteractiveMode && name !== lastPlayedTrack) {
     if (lastPlayedTrack !== null) { cycleNextOfflineTeam(); }
     lastPlayedTrack = name;
   }
+
   var audioRevers = ensureAudioPlayer("audio-revers");
   var audioNormal = ensureAudioPlayer("audio-normal");
   purgeAudioBuffer(audioRevers); purgeAudioBuffer(audioNormal);
@@ -2098,10 +2097,15 @@ function toggleRevers() {
   updateShuffleButtonState(); updateNextTrackButton();
 }
 
+/* ИСПРАВЛЕНО: СБРОС ПОДСВЕТКИ КОМАНДЫ ТОЛЬКО В ИНТЕРАКТИВНОМ РЕЖИМЕ */
 function startSynchronizedPlayback() {
   var audio = document.getElementById("audio-revers");
   var icon = document.getElementById("revers-play-icon");
-  clearTeamHighlight();
+  
+  if (isInteractiveMode) {
+    clearTeamHighlight();
+  }
+  
   audio.currentTime = 0;
   audio.play().then(function() {
     icon.classList.replace("fa-play", "fa-pause");
