@@ -285,6 +285,7 @@ button:active { transform: scale(0.98); }
 <div style="color:var(--text-dim); font-size:0.9em;">Ожидание подключения участников...</div>
 </div>
 </div>
+
 <div class="section" id="variants-control-section">
 <div class="variants-panel">
 <div class="variants-panel-title">
@@ -306,6 +307,7 @@ button:active { transform: scale(0.98); }
 </div>
 </div>
 </div>
+
 <div class="section" id="local-teams-section">
 <h2 class="section-title"><i class="fas fa-users"></i> Команды игры</h2>
 <div class="teams-input-list" id="teams-input-container"></div>
@@ -917,8 +919,7 @@ function setSettings() {
       if (isVariantsMode) {
         roomRef.child("variantsRound").update({
           roundTimer: variantsTimerDuration,
-          penaltyEnabled: variantsPenaltyEnabled,
-          wrongPenaltyEnabled: variantsWrongPenaltyEnabled
+          penaltyEnabled: variantsPenaltyEnabled
         });
       }
     }
@@ -2134,7 +2135,6 @@ function cycleNextOfflineTeam() {
 }
 
 function manualActivateTeam(teamId) { activateTeam(teamId); saveState(); }
-
 function activateTeam(teamId) {
   activeTeamId = teamId;
   document.querySelectorAll('.score-team-group').forEach(function(el) { el.classList.remove('active'); });
@@ -2300,6 +2300,64 @@ function endQuiz() {
   restartBtn.style.cssText = 'width: 100%; padding: 16px; margin-top: 24px; background: var(--neon-cyan); color: #000; font-size: 15px; text-transform: uppercase; letter-spacing: 1px;';
   restartBtn.onclick = function() { location.reload(); };
   quizArea.appendChild(restartBtn);
+}
+
+function startTimer() {
+  if (isTimerActive) return;
+  stopTimerSounds();
+  isTimerActive = true;
+  timerValue = timerDuration;
+  var circle = document.getElementById("timer-circle");
+  if (circle) circle.classList.add("active");
+  updateTimerDisplay();
+  var aStart = document.getElementById("audio-start");
+  var aFinal = document.getElementById("audio-final");
+  if (soundUrls.start && aStart) { aStart.src = soundUrls.start; aStart.currentTime = 0; aStart.play().catch(function() {}); }
+  if (isInteractiveMode && roomRef) { roomRef.child("timerState").set({ active: true, value: timerValue }); }
+  timerInterval = setInterval(function() {
+    timerValue--;
+    updateTimerDisplay();
+    if (isInteractiveMode && roomRef) { roomRef.child("timerState").update({ value: timerValue }); }
+    if (timerValue === 1) {
+      if (aStart) { aStart.pause(); aStart.currentTime = 0; }
+      if (soundUrls.final && aFinal) {
+        aFinal.src = soundUrls.final; aFinal.currentTime = 0;
+        aFinal.onended = function() { isTimerActive = false; if (circle) circle.classList.remove("active"); };
+        aFinal.play().catch(function() {});
+      }
+    }
+    if (timerValue <= 0) {
+      clearInterval(timerInterval); timerInterval = null;
+      if (isInteractiveMode && roomRef) { roomRef.child("timerState").set({ active: false, value: 0 }); }
+      if (!soundUrls.final && circle) { isTimerActive = false; circle.classList.remove("active"); }
+    }
+  }, 1000);
+}
+
+function stopTimerSounds() {
+  var aStart = document.getElementById("audio-start");
+  var aFinal = document.getElementById("audio-final");
+  if (aStart) { aStart.pause(); aStart.currentTime = 0; }
+  if (aFinal) { aFinal.onended = null; aFinal.pause(); aFinal.currentTime = 0; }
+}
+
+function stopTimer() {
+  if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+  isTimerActive = false;
+  stopTimerSounds();
+  if (isInteractiveMode && roomRef) { roomRef.child("timerState").set({ active: false, value: 0 }); }
+  var circle = document.getElementById("timer-circle");
+  if (circle) { circle.classList.remove("active"); }
+}
+
+function updateTimerDisplay() {
+  var el = document.getElementById("timer-circle");
+  if (!el) return;
+  el.textContent = timerValue;
+  var isUrgent = timerValue <= 5;
+  el.style.borderColor = isUrgent ? "var(--neon-pink)" : "var(--neon-cyan)";
+  el.style.color = isUrgent ? "var(--neon-pink)" : "var(--neon-cyan)";
+  el.style.boxShadow = isUrgent ? "0 0 20px rgba(255, 0, 85, 0.5)" : "0 0 20px rgba(0, 229, 255, 0.4)";
 }
 </script>
 </body>
