@@ -1662,10 +1662,15 @@ function playSound(type) {
     });
 
     setTimeout(function() {
-      if (isVariantsMode && roomRef) {
-        triggerVariantBanner(isAnswerCorrect ? 1 : 2, respondingTeamId, respondingTeamName);
-      }
-    }, 2000);
+if (isVariantsMode && roomRef) {
+    var isAnswerCorrect = (type === 'winner');
+    roomRef.child("variantsRound").update({
+      isRevealed: true,
+      isCorrect: isAnswerCorrect,
+      isFinal: true
+    });
+
+    triggerVariantBanner(isAnswerCorrect ? 1 : 2, respondingTeamId, respondingTeamName);
   }
   if (isInteractiveMode && roomRef) {
     roomRef.update({
