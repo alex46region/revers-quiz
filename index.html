@@ -651,25 +651,40 @@ var currentBannerPhraseTimeout = null;
 
 async function loadPhrasesData() {
   try {
-    var res = await fetch("phrases.json?t=" + Date.now(), { cache: "no-store" });
-    if (res.ok) {
-      phrasesData = await res.json();
+    // Добавляем случайный параметр против кэша браузера
+    var res = await fetch("phrases.json?nocache=" + Date.now(), { cache: "no-store" });
+    if (!res.ok) {
+      throw new Error("HTTP ошибка: " + res.status);
+    }
+    var json = await res.json();
+    if (json && (json.scenario_1_correct || json.scenario_2_wrong || json.scenario_3_timeout)) {
+      phrasesData = json;
+      console.log("✅ Успешно загружен phrases.json:", phrasesData);
+      showActionNotification("📝 Фразы из phrases.json подгружены!");
+    } else {
+      throw new Error("Неверная структура JSON файла");
     }
   } catch(e) {
-    console.warn("Файл phrases.json не найден, используются дефолтные фразы:", e);
+    console.error("❌ Сбой чтения phrases.json! Проверьте синтаксис/файл:", e);
+    showActionNotification("⚠️ Внимание: phrases.json не прочитан, активен дефолт");
   }
 }
 
 function getRandomPhrase(scenarioKey) {
+  // Если phrasesData загружен и в нужном сценарии есть фразы — берем строго из него
+  if (phrasesData && Array.isArray(phrasesData[scenarioKey]) && phrasesData[scenarioKey].length > 0) {
+    var customPool = phrasesData[scenarioKey];
+    return customPool[Math.floor(Math.random() * customPool.length)];
+  }
+
+  // Запасной резерв только на случай полной недоступности файла
   var defaults = {
-    "scenario_1_correct": ["Гений чистой красоты! В яблочко!", "Уши-алмазы! Это было молниеносно!", "Музыкальный терминатор в деле!"],
-    "scenario_2_wrong": ["Эх, фальшивая нота! Но попытка зачётная!", "Мимо кассы... А ведь победа была так близко!", "Не угадали, зато красиво рисковали!"],
-    "scenario_3_timeout": ["Тик-так... Время вышло, поезд уехал!", "Слишком долгие раздумья! Кнопка уходит дальше!", "Секундомер не ждёт! Перехват хода!"]
+    "scenario_1_correct": ["Гений чистой красоты! В яблочко!", "Уши-алмазы! Это было молниеносно!"],
+    "scenario_2_wrong": ["Эх, фальшивая нота! Но попытка зачётная!", "Мимо кассы... А ведь победа была близко!"],
+    "scenario_3_timeout": ["Тик-так... Время вышло, поезд уехал!", "Слишком долгие раздумья! Кнопка уходит дальше!"]
   };
-  var pool = (phrasesData && phrasesData[scenarioKey] && phrasesData[scenarioKey].length > 0)
-    ? phrasesData[scenarioKey]
-    : defaults[scenarioKey];
-  return pool[Math.floor(Math.random() * pool.length)];
+  var fallbackPool = defaults[scenarioKey] || ["Ответ зафиксирован!"];
+  return fallbackPool[Math.floor(Math.random() * fallbackPool.length)];
 }
 
 function triggerVariantBanner(scenario, teamId, teamName) {
