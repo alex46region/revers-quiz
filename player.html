@@ -901,6 +901,10 @@ function listenToAudioStream() {
       hasWaitedForNewTrack = true;
       updateJokerVisuals(false);
 
+      var bannerEl = document.getElementById("player-phrase-banner");
+      if (bannerEl) bannerEl.style.display = "none";
+      if (currentClientBannerTimeout) { clearTimeout(currentClientBannerTimeout); currentClientBannerTimeout = null; }
+
       var vOverlay = document.getElementById("variants-player-overlay");
       if (vOverlay) {
         vOverlay.style.display = "none";
@@ -1148,10 +1152,20 @@ function applyTimeoutPenalty() {
   if (navigator.vibrate) navigator.vibrate([150, 50, 150]);
 }
 
+/* ЗАЩИЩЁННАЯ ОТРИСОВКА ВАРИАНТОВ (ИСКЛЮЧЕН СБОЙ ПРИ МГНОВЕННОМ НАЖАТИИ) */
 function renderPlayerVariantsGrid(options, selectedOption, isMyTurn, isFinal, attemptsLeft, isRevealed, correctTrack) {
   var grid = document.getElementById("variants-buttons-grid");
   if (!grid) return;
   grid.innerHTML = "";
+
+  if (!options || options.length === 0) {
+    var loadingDiv = document.createElement("div");
+    loadingDiv.style.cssText = "color:var(--neon-yellow); padding:20px; font-weight:700; font-size:1.1em;";
+    loadingDiv.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right:8px;"></i> Загрузка вариантов...';
+    grid.appendChild(loadingDiv);
+    return;
+  }
+
   options.forEach(function(opt) {
     var btn = document.createElement("button");
     btn.className = "variant-btn-player";
@@ -1471,6 +1485,7 @@ function showGameOverScreen(leaderboard) {
   var rOverlay = document.getElementById("variant-result-overlay");
   if (rOverlay) { rOverlay.className = ""; rOverlay.style.display = "none"; }
   if (variantsCountdownTimer) { clearInterval(variantsCountdownTimer); variantsCountdownTimer = null; }
+
   localStorage.removeItem("rq_saved_pin");
   localStorage.removeItem("rq_saved_team_id");
   localStorage.removeItem("rq_saved_team_name");
