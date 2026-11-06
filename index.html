@@ -1084,33 +1084,57 @@ function extractArtistName(trackTitle) {
   return "";
 }
 
+// Функция-обёртка для обхода региональных ограничений через прокси
+async function fetchViaProxy(targetUrl) {
+  var proxies = [
+    function(u) { return "https://api.allorigins.win/raw?url=" + encodeURIComponent(u); },
+    function(u) { return "https://corsproxy.io/?" + encodeURIComponent(u); }
+  ];
+
+  for (var i = 0; i < proxies.length; i++) {
+    try {
+      var proxyUrl = proxies[i](targetUrl);
+      var controller = new AbortController();
+      var timeoutId = setTimeout(function() { controller.abort(); }, 4000); // таймаут 4 сек на попытку
+      
+      var res = await fetch(proxyUrl, { signal: controller.signal });
+      clearTimeout(timeoutId);
+
+      if (res.ok) {
+        return await res.json();
+      }
+    } catch(err) {
+      console.warn("Прокси #" + (i + 1) + " не ответил, пробуем следующий...", err);
+    }
+  }
+  return null;
+}
+
 async function fetchLastFmSimilar(artist) {
   try {
-    var url = "https://ws.audioscrobbler.com/2.0/?method=artist.getsimilar&artist=" + encodeURIComponent(artist) + "&api_key=" + LASTFM_API_KEY + "&format=json&limit=25";
-    var res = await fetch(url);
-    if (!res.ok) return [];
-    var data = await res.json();
+    var rawUrl = "https://ws.audioscrobbler.com/2.0/?method=artist.getsimilar&artist=" + encodeURIComponent(artist) + "&api_key=" + LASTFM_API_KEY + "&format=json&limit=25";
+    var data = await fetchViaProxy(rawUrl);
+    
     if (data && data.similarartists && Array.isArray(data.similarartists.artist)) {
       return data.similarartists.artist.map(function(a) { return a.name; });
     }
   } catch(e) {
-    console.warn("Last.fm getsimilar error:", e);
+    console.warn("Last.fm getsimilar proxy error:", e);
   }
   return [];
 }
 
 async function fetchLastFmTopTrack(artist) {
   try {
-    var url = "https://ws.audioscrobbler.com/2.0/?method=artist.gettoptracks&artist=" + encodeURIComponent(artist) + "&api_key=" + LASTFM_API_KEY + "&format=json&limit=5";
-    var res = await fetch(url);
-    if (!res.ok) return null;
-    var data = await res.json();
+    var rawUrl = "https://ws.audioscrobbler.com/2.0/?method=artist.gettoptracks&artist=" + encodeURIComponent(artist) + "&api_key=" + LASTFM_API_KEY + "&format=json&limit=5";
+    var data = await fetchViaProxy(rawUrl);
+    
     if (data && data.toptracks && Array.isArray(data.toptracks.track) && data.toptracks.track.length > 0) {
       var randomTrack = data.toptracks.track[Math.floor(Math.random() * Math.min(3, data.toptracks.track.length))];
       return cleanSongTitle(randomTrack.name);
     }
   } catch(e) {
-    console.warn("Last.fm gettoptracks error:", e);
+    console.warn("Last.fm gettoptracks proxy error:", e);
   }
   return null;
 }
