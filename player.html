@@ -520,7 +520,7 @@ text-shadow: 0 0 10px rgba(0, 243, 255, 0.5); opacity: 0.85;
 var firebaseConfig = {
   apiKey: ["AIzaSyC9sh7uazv", "WbudsO7TYap4", "wENjkLD3K4"].join("-"),
   authDomain: "revers-quiz.firebaseapp.com",
-  databaseURL: "[https://revers-quiz-default-rtdb.firebaseio.com](https://revers-quiz-default-rtdb.firebaseio.com)",
+  databaseURL: "https://revers-quiz-default-rtdb.firebaseio.com",
   projectId: "revers-quiz",
   storageBucket: "revers-quiz.firebasestorage.app",
   messagingSenderId: "940882425335",
@@ -798,17 +798,52 @@ function listenToVariantBanner() {
   });
 }
 
+var isJoiningRoom = false;
+
 function joinGame() {
+  if (isJoiningRoom) return;
   primeAudioElements();
   enableScreenWakeLock();
+
   var pin = document.getElementById("room-pin").value.trim();
   var inputName = document.getElementById("team-name").value.trim();
   if (!pin) { showError("Введите PIN-код комнаты!"); return; }
   if (!inputName) { showError("Укажите название вашей команды!"); return; }
-  showError("Подключение к комнате...");
+
+  isJoiningRoom = true;
+  var joinBtn = document.querySelector(".btn-join");
+  if (joinBtn) {
+    joinBtn.disabled = true;
+    joinBtn.textContent = "Подключение...";
+  }
+  showError("⏳ Подключение к комнате...");
+
+  // Страховочный таймер на 6 секунд на случай блокировки сети или обрыва связи с Firebase
+  var connectTimeout = setTimeout(function() {
+    if (isJoiningRoom) {
+      isJoiningRoom = false;
+      if (joinBtn) {
+        joinBtn.disabled = false;
+        joinBtn.textContent = "Войти в игру";
+      }
+      showError("⚠️ Сервер не отвечает. Проверьте интернет (или VPN) и попробуйте снова.");
+    }
+  }, 6000);
+
   var roomRef = db.ref("rooms/" + pin);
   roomRef.once("value").then(function(snapshot) {
-    if (!snapshot.exists()) { showError("❌ Комната с PIN " + pin + " не найдена. Проверьте код у ведущего!"); return; }
+    clearTimeout(connectTimeout);
+    isJoiningRoom = false;
+    if (joinBtn) {
+      joinBtn.disabled = false;
+      joinBtn.textContent = "Войти в игру";
+    }
+
+    if (!snapshot.exists()) {
+      showError("❌ Комната с PIN " + pin + " не найдена. Проверьте код у ведущего!");
+      return;
+    }
+
     var currentData = snapshot.val();
     isVariantsMode = (currentData.gameMode === "variants");
     var modeBadge = document.getElementById("mode-header-badge");
@@ -820,35 +855,48 @@ function joinGame() {
         modeBadge.style.display = "none";
       }
     }
+
     if (currentData && currentData.audioSync && currentData.audioSync.trackSessionId) {
       joinedTrackSessionId = currentData.audioSync.trackSessionId;
       hasWaitedForNewTrack = false;
     } else {
       hasWaitedForNewTrack = true;
     }
+
     var existingTeams = currentData.teams || {};
     var foundKey = null;
     var normalizedInput = inputName.toLowerCase();
     Object.keys(existingTeams).forEach(function(k) {
       var t = existingTeams[k];
-      if (t && t.name && t.name.trim().toLowerCase() === normalizedInput) { foundKey = k; }
+      if (t && t.name && t.name.trim().toLowerCase() === normalizedInput) {
+        foundKey = k;
+      }
     });
+
     currentRoom = pin;
     if (foundKey) {
-      myTeamId = foundKey; myTeamName = existingTeams[foundKey].name || inputName;
+      myTeamId = foundKey;
+      myTeamName = existingTeams[foundKey].name || inputName;
       roomRef.child("teams/" + myTeamId).update({ ready: true, readyToPlay: false, online: true });
     } else {
-      myTeamId = "team_" + Math.random().toString(36).substr(2, 6); myTeamName = inputName;
+      myTeamId = "team_" + Math.random().toString(36).substr(2, 6);
+      myTeamName = inputName;
       roomRef.child("teams/" + myTeamId).set({ name: myTeamName, ready: true, readyToPlay: false, score: 0, online: true });
     }
+
     var myTeamRef = roomRef.child("teams/" + myTeamId);
     var connectedRef = db.ref(".info/connected");
     connectedRef.on("value", function(snap) {
-      if (snap.val() === true) { myTeamRef.onDisconnect().update({ online: false }); myTeamRef.update({ online: true }); }
+      if (snap.val() === true) {
+        myTeamRef.onDisconnect().update({ online: false });
+        myTeamRef.update({ online: true });
+      }
     });
+
     localStorage.setItem("rq_saved_pin", pin);
     localStorage.setItem("rq_saved_team_id", myTeamId);
     localStorage.setItem("rq_saved_team_name", myTeamName);
+
     document.getElementById("login-view").style.display = "none";
     document.getElementById("game-view").style.display = "flex";
     initEmojiPicker("player-emoji-popover", "player-chat-input");
@@ -857,15 +905,16 @@ function joinGame() {
     listenToPlayerChat();
     if (isVariantsMode) { listenToVariantsState(); }
     listenToVariantBanner();
-  }).catch(function(e) { showError("Ошибка подключения: " + e.message); });
+  }).catch(function(e) {
+    clearTimeout(connectTimeout);
+    isJoiningRoom = false;
+    if (joinBtn) {
+      joinBtn.disabled = false;
+      joinBtn.textContent = "Войти в игру";
+    }
+    showError("❌ Ошибка доступа к базе: " + e.message);
+  });
 }
-
-window.addEventListener("DOMContentLoaded", function() {
-  var savedPin = localStorage.getItem("rq_saved_pin");
-  var savedName = localStorage.getItem("rq_saved_team_name");
-  if (savedPin) document.getElementById("room-pin").value = savedPin;
-  if (savedName) document.getElementById("team-name").value = savedName;
-});
 
 function showScoreDeltaAnimation(delta) {
   var popup = document.getElementById("player-score-delta-popup");
