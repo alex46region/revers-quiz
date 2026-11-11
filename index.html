@@ -127,13 +127,17 @@ button:active { transform: scale(0.98); }
 .joker-indicator { position: absolute; top: -8px; right: -8px; background: linear-gradient(135deg, var(--neon-gold), #ff8c00); color: #000; width: 32px; height: 32px; border-radius: 50%; display: none; align-items: center; justify-content: center; font-size: 1.2em; font-weight: 900; box-shadow: 0 0 20px rgba(255, 215, 0, 0.8); z-index: 10; animation: jokerSpin 3s infinite linear; }
 .player-container.joker-active .joker-indicator { display: flex; }
 @keyframes jokerSpin { 0% { transform: rotate(0deg) scale(1); } 50% { transform: rotate(180deg) scale(1.1); } 100% { transform: rotate(360deg) scale(1); } }
-.player-label { font-size: 0.85em; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--neon-cyan); margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+.player-label { font-size: 0.85em; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--neon-cyan); margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+.distortion-badge-pill { font-family: 'Ubuntu Mono', monospace; font-size: 0.78em; background: rgba(112, 0, 255, 0.25); border: 1px solid var(--neon-purple); color: #d8b4fe; padding: 2px 8px; border-radius: 6px; display: none; }
 .player-controls { display: flex; align-items: center; gap: 12px; }
 .play-btn { width: 40px; height: 40px; border-radius: 10px; background: var(--neon-cyan); color: #000; font-size: 14px; flex-shrink: 0; box-shadow: 0 0 15px rgba(0, 229, 255, 0.3); }
 .progress-bar { flex: 1; height: 6px; background: rgba(255, 255, 255, 0.1); border-radius: 4px; cursor: pointer; overflow: hidden; }
 .progress-bar-fill { height: 100%; background: var(--neon-cyan); box-shadow: 0 0 8px var(--neon-cyan); width: 0%; }
 .time-info { font-family: 'Ubuntu Mono', monospace; font-size: 0.85em; color: var(--text-dim); min-width: 85px; text-align: right; }
-#next-track-btn { width: 100%; padding: 16px; margin-top: 10px; background: var(--neon-yellow); color: #000; font-size: 15px; text-transform: uppercase; letter-spacing: 1px; }
+.player-action-row { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+#next-track-btn { flex: 2; min-width: 180px; padding: 16px; background: var(--neon-yellow); color: #000; font-size: 15px; text-transform: uppercase; letter-spacing: 1px; }
+#reroll-distortion-btn { flex: 1; min-width: 140px; padding: 14px 12px; background: rgba(112, 0, 255, 0.2); border: 1px solid var(--neon-purple); color: #e9d5ff; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; display: none; }
+#reroll-distortion-btn:active { background: var(--neon-purple); color: #fff; }
 #normal-toggle { width: 100%; padding: 12px; margin-top: 8px; background: transparent; border: 1px solid var(--border-subtle); color: var(--text-dim); }
 .song-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; margin-top: 8px; }
 .song-list button { background: var(--bg-deep); border: 1px solid var(--border-subtle); padding: 12px 14px; font-size: 13px; color: var(--text-pure); justify-content: flex-start; text-align: left; border-radius: 12px; }
@@ -199,6 +203,7 @@ button:active { transform: scale(0.98); }
 .settings-field label { font-size: 0.85em; color: var(--text-pure); font-weight: 600; margin: 0; }
 .settings-field input, .settings-field select { padding: 10px 14px; font-size: 14px; border-radius: 10px; }
 .settings-field.row select { max-width: 190px; }
+.settings-sub-box { background: rgba(112, 0, 255, 0.08); border: 1px solid rgba(112, 0, 255, 0.35); border-radius: 12px; padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; }
 .settings-save-btn { width: 100%; padding: 15px; margin-top: 10px; background: var(--neon-cyan); color: #000; font-size: 15px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; border-radius: 14px; box-shadow: 0 4px 20px rgba(0, 229, 255, 0.35); }
 .close-modal { position: absolute; top: 18px; right: 18px; background: transparent; border: none; color: var(--text-dim); font-size: 1.5em; line-height: 1; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 10; }
 .close-modal:hover { color: #fff; }
@@ -293,7 +298,6 @@ button:active { transform: scale(0.98); }
 <span id="variants-answering-badge" style="font-size:0.8em; color:var(--neon-yellow);">Ожидание ответа...</span>
 </div>
 
-<!-- МОТИВАЦИОННЫЙ БАННЕР ВЕДУЩЕГО -->
 <div id="host-phrase-banner" class="host-phrase-banner">
   <div class="host-phrase-team" id="host-phrase-team"></div>
   <div class="host-phrase-text" id="host-phrase-text"></div>
@@ -349,7 +353,10 @@ button:active { transform: scale(0.98); }
 </h2>
 <div class="player-container" id="revers-player-container">
 <div class="joker-indicator">✨</div>
-<div class="player-label"><i class="fas fa-backward"></i> Реверс трек</div>
+<div class="player-label">
+<span><i class="fas fa-backward"></i> Реверс трек</span>
+<span class="distortion-badge-pill" id="distortion-active-pill">🌀 1.0x</span>
+</div>
 <div class="player-controls">
 <button class="play-btn" onclick="toggleRevers()"><i class="fas fa-play" id="revers-play-icon"></i></button>
 <div class="progress-bar" id="revers-progress-bar" onclick="seekRevers(event)">
@@ -360,7 +367,10 @@ button:active { transform: scale(0.98); }
 </div>
 </div>
 </div>
+<div class="player-action-row">
 <button id="next-track-btn" onclick="playNextTrack()"><i class="fas fa-forward"></i> Следующий трек</button>
+<button id="reroll-distortion-btn" onclick="rerollCurrentTrackDistortion()" title="Перезапустить трек с другим искажением"><i class="fas fa-dice"></i> Сменить эффект</button>
+</div>
 <div class="player-container" id="original-player" style="display: none; margin-top: 10px;">
 <div class="player-label" style="color: var(--neon-lime);"><i class="fas fa-music"></i> Оригинал трек</div>
 <div class="player-controls">
@@ -522,10 +532,23 @@ button:active { transform: scale(0.98); }
 <div class="settings-group-title"><i class="fas fa-stopwatch"></i> Тайминги и воспроизведение</div>
 <div class="settings-field row">
 <label for="audio-distortion-toggle">Искажение реверса (анти-повтор)</label>
-<select id="audio-distortion-toggle">
+<select id="audio-distortion-toggle" onchange="toggleDistortionSubSettings()">
 <option value="false" selected>🚫 Выключено</option>
-<option value="true">🌀 Включено (скорость/питч)</option>
+<option value="true">🌀 Включено</option>
 </select>
+</div>
+<div class="settings-sub-box" id="distortion-sub-settings" style="display:none;">
+<div class="settings-field row">
+<label for="audio-distortion-level">Степень маскировки</label>
+<select id="audio-distortion-level" style="max-width:195px;">
+<option value="light">🌱 Лёгкая (разминка)</option>
+<option value="medium" selected>🔥 Средняя (оптимально)</option>
+<option value="hardcore">💀 Хардкор (+плавающая плёнка)</option>
+</select>
+</div>
+<div style="font-size:0.75em; color:#c4b5fd; line-height:1.3;" id="distortion-level-hint">
+Скорость/питч: 0.75x–1.30x, сдвиг старта: 3–8 сек.
+</div>
 </div>
 <div class="settings-field row">
 <label for="timer-input">Таймер на ответ (сек)</label>
@@ -591,8 +614,11 @@ var chatMode = "disabled";
 var jokerEnabled = false;
 var jokerChance = 0.2;
 var defaultCorrectPoints = 1;
+
 var audioDistortionEnabled = false;
-var currentTrackDistortion = { rate: 1.0, offset: 0 };
+var audioDistortionLevel = "medium";
+var currentTrackDistortion = { rate: 1.0, offset: 0, drift: false, level: "medium" };
+var vinylDriftInterval = null;
 
 var teamsData = [
   { id: 'team_1', name: 'Команда 1', score: 0, online: true },
@@ -635,22 +661,91 @@ var lastHandledPassAt = 0;
 var LASTFM_API_KEY = ["260c156d8fa38243", "bd33e6ebcf81a901"].join("");
 var STATIC_PLAYER_URL = ["https:", "", "clck.ru", "3WBWUq"].join("/");
 
-/* ГЕНЕРАЦИЯ И ПРИМЕНЕНИЕ ИСКАЖЕНИЙ РЕВЕРСА (АНТИ-ЗАУЧИВАНИЕ) */
+/* УПРАВЛЕНИЕ ПОДНАСТРОЙКОЙ ИСКАЖЕНИЯ */
+function toggleDistortionSubSettings() {
+  var toggle = document.getElementById("audio-distortion-toggle");
+  var subBox = document.getElementById("distortion-sub-settings");
+  if (toggle && subBox) {
+    subBox.style.display = (toggle.value === "true") ? "flex" : "none";
+  }
+  updateDistortionLevelHint();
+}
+
+function updateDistortionLevelHint() {
+  var lvlSel = document.getElementById("audio-distortion-level");
+  var hintEl = document.getElementById("distortion-level-hint");
+  if (!lvlSel || !hintEl) return;
+  var hints = {
+    light: "Скорость/питч: 0.86x–1.15x, сдвиг старта: 1.5–4.5 сек.",
+    medium: "Скорость/питч: 0.75x–1.30x, сдвиг старта: 3–8 сек.",
+    hardcore: "Скорость/питч: 0.65x–1.45x, сдвиг: 4–12 сек + плавающая скорость кассеты."
+  };
+  hintEl.textContent = hints[lvlSel.value] || hints.medium;
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+  var lvlSel = document.getElementById("audio-distortion-level");
+  if (lvlSel) lvlSel.addEventListener("change", updateDistortionLevelHint);
+});
+
+/* ГЕНЕРАЦИЯ И ПРИМЕНЕНИЕ ИСКАЖЕНИЙ РЕВЕРСА ПО ПРЕСЕТАМ */
 function generateTrackDistortion(duration) {
   if (!audioDistortionEnabled) {
-    return { rate: 1.0, offset: 0 };
+    return { rate: 1.0, offset: 0, drift: false, level: "off" };
   }
+  var lvl = audioDistortionLevel || "medium";
   var rate = 1.0;
-  if (Math.random() < 0.5) {
-    rate = +(0.86 + Math.random() * 0.10).toFixed(2);
-  } else {
-    rate = +(1.05 + Math.random() * 0.10).toFixed(2);
-  }
   var offset = 0;
-  if (duration && duration > 8) {
-    offset = +(1.5 + Math.random() * 3.0).toFixed(1);
+  var drift = false;
+
+  if (lvl === "light") {
+    rate = (Math.random() < 0.5)
+      ? +(0.86 + Math.random() * 0.09).toFixed(2)
+      : +(1.06 + Math.random() * 0.09).toFixed(2);
+    if (duration && duration > 7) {
+      offset = +(1.5 + Math.random() * 3.0).toFixed(1);
+    }
+  } else if (lvl === "medium") {
+    rate = (Math.random() < 0.5)
+      ? +(0.75 + Math.random() * 0.10).toFixed(2)
+      : +(1.18 + Math.random() * 0.12).toFixed(2);
+    if (duration && duration > 10) {
+      offset = +(3.0 + Math.random() * 5.0).toFixed(1);
+    } else if (duration && duration > 6) {
+      offset = +(1.5 + Math.random() * 2.5).toFixed(1);
+    }
+  } else if (lvl === "hardcore") {
+    rate = (Math.random() < 0.5)
+      ? +(0.65 + Math.random() * 0.11).toFixed(2)
+      : +(1.28 + Math.random() * 0.17).toFixed(2);
+    if (duration && duration > 15) {
+      offset = +(4.0 + Math.random() * 8.0).toFixed(1);
+    } else if (duration && duration > 8) {
+      offset = +(2.5 + Math.random() * 4.0).toFixed(1);
+    }
+    drift = true;
   }
-  return { rate: rate, offset: offset };
+
+  return { rate: rate, offset: offset, drift: drift, level: lvl };
+}
+
+function stopVinylDrift() {
+  if (vinylDriftInterval) {
+    clearInterval(vinylDriftInterval);
+    vinylDriftInterval = null;
+  }
+}
+
+function startVinylDrift(audioEl, baseRate) {
+  stopVinylDrift();
+  if (!audioEl || !currentTrackDistortion.drift) return;
+  vinylDriftInterval = setInterval(function() {
+    if (!audioEl || audioEl.paused) return;
+    var swing = (Math.random() * 0.20) - 0.10; // ±10%
+    var newRate = Math.max(0.55, Math.min(1.60, +(baseRate + swing).toFixed(2)));
+    audioEl.playbackRate = newRate;
+    updateDistortionBadgeUI({ rate: newRate, offset: currentTrackDistortion.offset, drift: true });
+  }, 1800);
 }
 
 function applyAudioDistortion(audioEl, distortion) {
@@ -660,14 +755,57 @@ function applyAudioDistortion(audioEl, distortion) {
   audioEl.preservesPitch = false;
   audioEl.mozPreservesPitch = false;
   audioEl.webkitPreservesPitch = false;
+  updateDistortionBadgeUI(distortion);
 }
 
 function resetAudioToNormalSpeed(audioEl) {
+  stopVinylDrift();
   if (!audioEl) return;
   audioEl.playbackRate = 1.0;
   audioEl.preservesPitch = true;
   audioEl.mozPreservesPitch = true;
   audioEl.webkitPreservesPitch = true;
+}
+
+function updateDistortionBadgeUI(distortion) {
+  var pill = document.getElementById("distortion-active-pill");
+  var rerollBtn = document.getElementById("reroll-distortion-btn");
+  if (!pill) return;
+  if (audioDistortionEnabled && distortion && distortion.rate !== 1.0) {
+    var driftTag = distortion.drift ? " 〰️" : "";
+    var offsetTag = distortion.offset > 0 ? (" | +" + distortion.offset + "с") : "";
+    pill.textContent = "🌀 " + distortion.rate.toFixed(2) + "x" + offsetTag + driftTag;
+    pill.style.display = "inline-block";
+    if (rerollBtn) rerollBtn.style.display = "inline-flex";
+  } else {
+    pill.style.display = "none";
+    if (rerollBtn) rerollBtn.style.display = audioDistortionEnabled ? "inline-flex" : "none";
+  }
+}
+
+function rerollCurrentTrackDistortion() {
+  if (!currentTrackName) return;
+  var audioRevers = document.getElementById("audio-revers");
+  if (!audioRevers) return;
+  var dur = (isFinite(audioRevers.duration) && audioRevers.duration > 0) ? audioRevers.duration : 15;
+  currentTrackDistortion = generateTrackDistortion(dur);
+  applyAudioDistortion(audioRevers, currentTrackDistortion);
+  audioRevers.currentTime = currentTrackDistortion.offset || 0;
+  if (!audioRevers.paused) {
+    if (currentTrackDistortion.drift) startVinylDrift(audioRevers, currentTrackDistortion.rate);
+    else stopVinylDrift();
+  }
+  if (isInteractiveMode && roomRef) {
+    roomRef.child("audioSync").update({
+      playAction: streamAudioToPlayers ? "play_revers" : "play_silent",
+      startAt: Date.now() + 100,
+      currentTime: currentTrackDistortion.offset || 0,
+      distortionRate: currentTrackDistortion.rate,
+      distortionOffset: currentTrackDistortion.offset || 0,
+      distortionDrift: currentTrackDistortion.drift === true
+    });
+  }
+  showActionNotification("🎲 Новый эффект: " + currentTrackDistortion.rate + "x (старт +" + currentTrackDistortion.offset + "с)");
 }
 
 /* ПЛАВНЫЙ СКРОЛЛ К НУЖНЫМ БЛОКАМ */
@@ -866,6 +1004,7 @@ function openSettings() {
     var vAutoNormSel = document.getElementById("variants-auto-normal-toggle");
     var vNormDelayIn = document.getElementById("variants-normal-delay-input");
     var distSel = document.getElementById("audio-distortion-toggle");
+    var distLvlSel = document.getElementById("audio-distortion-level");
 
     if (tIn) tIn.value = timerDuration;
     if (dIn) dIn.value = originalDelay;
@@ -884,8 +1023,10 @@ function openSettings() {
     if (vAutoNormSel) vAutoNormSel.value = variantsAutoNormalEnabled ? "true" : "false";
     if (vNormDelayIn) vNormDelayIn.value = variantsNormalDelay;
     if (distSel) distSel.value = audioDistortionEnabled ? "true" : "false";
+    if (distLvlSel) distLvlSel.value = audioDistortionLevel || "medium";
 
     toggleInteractiveSettingsVisibility();
+    toggleDistortionSubSettings();
   } catch (err) {
     console.warn("Ошибка заполнения полей настроек:", err);
   }
@@ -933,6 +1074,7 @@ function setSettings() {
     var newJokerEnabled = document.getElementById("joker-toggle").value === "true";
     var newJokerChance = parseFloat(document.getElementById("joker-chance").value);
     var newDistortionEnabled = document.getElementById("audio-distortion-toggle").value === "true";
+    var newDistortionLevel = document.getElementById("audio-distortion-level").value || "medium";
     var vTimerVal = parseInt(document.getElementById("variants-timer-input").value) || 5;
     var vPenaltyVal = document.getElementById("variants-penalty-toggle").value === "true";
     var vWrongPenaltyVal = document.getElementById("variants-wrong-penalty-toggle").value === "true";
@@ -960,11 +1102,21 @@ function setSettings() {
     jokerEnabled = newJokerEnabled;
     jokerChance = newJokerChance;
     audioDistortionEnabled = newDistortionEnabled;
+    audioDistortionLevel = newDistortionLevel;
     variantsTimerDuration = vTimerVal;
     variantsPenaltyEnabled = vPenaltyVal;
     variantsWrongPenaltyEnabled = vWrongPenaltyVal;
     variantsAutoNormalEnabled = vAutoNormVal;
     variantsNormalDelay = vNormDelayVal;
+
+    var rerollBtn = document.getElementById("reroll-distortion-btn");
+    if (rerollBtn) rerollBtn.style.display = audioDistortionEnabled ? "inline-flex" : "none";
+    if (!audioDistortionEnabled) {
+      stopVinylDrift();
+      var pill = document.getElementById("distortion-active-pill");
+      if (pill) pill.style.display = "none";
+    }
+
     if (isInteractiveMode && roomRef) {
       roomRef.update({
         showScore: showScoreToPlayers, showOpponentScore: showOpponentScore,
@@ -1005,6 +1157,7 @@ function resetBuzzer() {
 }
 
 function forceStopAllSounds() {
+  stopVinylDrift();
   if (originalTimeout) { clearTimeout(originalTimeout); originalTimeout = null; }
   if (variantsAutoNormalTimeout) { clearTimeout(variantsAutoNormalTimeout); variantsAutoNormalTimeout = null; }
   ["audio-revers", "audio-normal", "audio-winner", "audio-lost", "audio-ring", "audio-start", "audio-final", "audio-game-over"].forEach(function(id) {
@@ -1074,7 +1227,7 @@ function initHostRoom() {
     streamAudio: streamAudioToPlayers, chatMode: chatMode, gameMode: gameMode,
     buzzer: { locked: true, pressedBy: null, passedBy: [] }, revealedTrack: "",
     systemSounds: soundUrls, timerState: { active: false, value: 0 },
-    audioSync: { trackSessionId: "", reversUrl: "", normalUrl: "", duration: 0, currentTime: 0, playAction: "stop", startAt: 0, isJoker: false, jokerEnabled: jokerEnabled, distortionRate: 1.0, distortionOffset: 0 },
+    audioSync: { trackSessionId: "", reversUrl: "", normalUrl: "", duration: 0, currentTime: 0, playAction: "stop", startAt: 0, isJoker: false, jokerEnabled: jokerEnabled, distortionRate: 1.0, distortionOffset: 0, distortionDrift: false },
     variantsRound: { active: false, correctTrack: "", options: [], answeringTeam: null, answeringTeamName: "", selectedOption: null, isFinal: false, askConfirm: false, attemptsLeft: 2, isRevealed: false, isCorrect: false, roundTimer: variantsTimerDuration, timerDeadline: 0, penaltyEnabled: variantsPenaltyEnabled },
     variantBanner: { active: false }
   });
@@ -1503,6 +1656,7 @@ function checkAllTeamsPassed(passedBy) {
 function hideBuzzerAlert() { var popup = document.getElementById("buzzer-wave-popup"); if (popup) { popup.classList.remove("show"); popup.style.display = "none"; } }
 
 function handleBuzzerTriggered(teamId, teamName) {
+  stopVinylDrift();
   var r = document.getElementById("audio-revers");
   if (r && !r.paused) { r.pause(); document.getElementById("revers-play-icon").classList.replace("fa-pause", "fa-play"); }
   stopTimer();
@@ -1620,6 +1774,8 @@ function applyGameModeUI() {
   var localSec = document.getElementById("local-teams-section");
   var sub = document.getElementById("game-subtitle");
   var varSec = document.getElementById("variants-control-section");
+  var rerollBtn = document.getElementById("reroll-distortion-btn");
+  if (rerollBtn) rerollBtn.style.display = audioDistortionEnabled ? "inline-flex" : "none";
   if (isInteractiveMode) {
     onlineSec.style.display = "block";
     localSec.style.display = "none";
@@ -1678,6 +1834,7 @@ function restoreSession() {
       jokerEnabled = data.jokerEnabled === true;
       jokerChance = typeof data.jokerChance !== 'undefined' ? data.jokerChance : 0.2;
       audioDistortionEnabled = data.audioDistortionEnabled === true;
+      audioDistortionLevel = data.audioDistortionLevel || "medium";
       defaultCorrectPoints = typeof data.defaultCorrectPoints !== 'undefined' ? parseFloat(data.defaultCorrectPoints) : 1;
       gameSessionStarted = data.gameSessionStarted === true;
       variantsTimerDuration = typeof data.variantsTimerDuration !== 'undefined' ? data.variantsTimerDuration : 5;
@@ -1716,6 +1873,7 @@ function saveState() {
       streamAudioToPlayers: streamAudioToPlayers, chatMode: chatMode,
       jokerEnabled: jokerEnabled, jokerChance: jokerChance,
       audioDistortionEnabled: audioDistortionEnabled,
+      audioDistortionLevel: audioDistortionLevel,
       defaultCorrectPoints: defaultCorrectPoints,
       gameSessionStarted: gameSessionStarted,
       variantsTimerDuration: variantsTimerDuration,
@@ -1775,6 +1933,7 @@ function awardJokerPoints(teamId) {
 }
 
 function playSound(type) {
+  stopVinylDrift();
   var url = type === 'winner' ? soundUrls.winner : soundUrls.lost;
   var audio = document.getElementById(type === 'winner' ? 'audio-winner' : 'audio-lost');
   hideBuzzerAlert();
@@ -2035,6 +2194,7 @@ async function playTrack(name) {
   if (isTrackPreparing) return;
   isTrackPreparing = true;
 
+  stopVinylDrift();
   hideBuzzerAlert();
   hideHostPhraseBanner();
   if (currentBannerPhraseTimeout) { clearTimeout(currentBannerPhraseTimeout); currentBannerPhraseTimeout = null; }
@@ -2094,7 +2254,11 @@ async function playTrack(name) {
     audioRevers.preload = "auto";
     audioRevers.load();
 
-    audioRevers.onended = function() { if (timerDuration > 0) startTimer(); hideTrackPopup(); };
+    audioRevers.onended = function() {
+      stopVinylDrift();
+      if (timerDuration > 0) startTimer();
+      hideTrackPopup();
+    };
     audioRevers.ondurationchange = function() {
       if (audioRevers.duration && !isNaN(audioRevers.duration) && isFinite(audioRevers.duration)) {
         document.getElementById("revers-duration").textContent = formatTime(audioRevers.duration);
@@ -2137,7 +2301,8 @@ async function playTrack(name) {
           isJoker: currentTrackIsJoker,
           jokerEnabled: jokerEnabled,
           distortionRate: currentTrackDistortion.rate,
-          distortionOffset: currentTrackDistortion.offset
+          distortionOffset: currentTrackDistortion.offset,
+          distortionDrift: currentTrackDistortion.drift === true
         });
         await roomRef.child("buzzer").set({
           locked: false,
@@ -2200,6 +2365,7 @@ function toggleRevers() {
     if (audio.currentTime > (currentTrackDistortion.offset || 0) + 0.2) { resumeSynchronizedPlayback(); }
     else { startSynchronizedPlayback(); }
   } else {
+    stopVinylDrift();
     audio.pause(); icon.classList.replace("fa-pause", "fa-play"); hideTrackPopup();
     if (isInteractiveMode && roomRef) { roomRef.child("audioSync").update({ playAction: "pause", currentTime: audio.currentTime }); }
   }
@@ -2223,6 +2389,9 @@ function startSynchronizedPlayback() {
     showTrackPopup(currentTrackName);
     updateReversProgress();
     scrollToVariantsBlock();
+    if (currentTrackDistortion.drift) {
+      startVinylDrift(audio, currentTrackDistortion.rate);
+    }
     if (isInteractiveMode && roomRef) {
       roomRef.update({ status: "playing", revealedTrack: "", timerState: { active: false, value: 0 } });
       roomRef.child("audioSync").update({
@@ -2233,7 +2402,8 @@ function startSynchronizedPlayback() {
         isJoker: currentTrackIsJoker,
         jokerEnabled: jokerEnabled,
         distortionRate: currentTrackDistortion.rate,
-        distortionOffset: startOffset
+        distortionOffset: startOffset,
+        distortionDrift: currentTrackDistortion.drift === true
       });
     }
   }).catch(function(err) { console.warn("Воспроизведение ведущего ожидает разрешения:", err); });
@@ -2254,7 +2424,8 @@ function resumeSynchronizedPlayback() {
       startAt: serverStartAt,
       isJoker: currentTrackIsJoker,
       jokerEnabled: jokerEnabled,
-      distortionRate: currentTrackDistortion.rate
+      distortionRate: currentTrackDistortion.rate,
+      distortionDrift: currentTrackDistortion.drift === true
     });
   }
   var delayStart = Math.max(0, serverStartAt - Date.now());
@@ -2264,6 +2435,9 @@ function resumeSynchronizedPlayback() {
       showTrackPopup(currentTrackName);
       updateReversProgress();
       scrollToVariantsBlock();
+      if (currentTrackDistortion.drift) {
+        startVinylDrift(audio, currentTrackDistortion.rate);
+      }
     }).catch(function(err) { console.warn("Возобновление:", err); });
   }, delayStart);
 }
@@ -2329,6 +2503,7 @@ async function toggleNormal() {
   var r = document.getElementById("audio-revers");
   var i = document.getElementById("normal-play-icon");
   if (a.paused) {
+    stopVinylDrift();
     if (originalTimeout) { clearTimeout(originalTimeout); originalTimeout = null; }
     if (variantsAutoNormalTimeout) { clearTimeout(variantsAutoNormalTimeout); variantsAutoNormalTimeout = null; }
     stopTimer(); hideBuzzerAlert(); hideTrackPopup();
@@ -2392,6 +2567,7 @@ function showNotification(text, isAddition) {
 }
 
 function stopAllSounds() {
+  stopVinylDrift();
   if (originalTimeout) { clearTimeout(originalTimeout); originalTimeout = null; }
   if (variantsAutoNormalTimeout) { clearTimeout(variantsAutoNormalTimeout); variantsAutoNormalTimeout = null; }
   ["audio-revers", "audio-normal", "audio-winner", "audio-lost", "audio-ring", "audio-start", "audio-final", "audio-game-over"].forEach(function(id) {
@@ -2419,7 +2595,7 @@ function endQuiz() {
     roomRef.update({
       status: "game_over", revealedTrack: "",
       leaderboard: sortedTeams.map(function(t) { return { name: t.name, score: t.score }; }),
-      audioSync: { trackSessionId: "", reversUrl: "", normalUrl: "", duration: 0, currentTime: 0, playAction: "stop", systemTrigger: { type: "gameOver", time: Date.now() }, startAt: 0, isJoker: false, jokerEnabled: jokerEnabled, distortionRate: 1.0, distortionOffset: 0 },
+      audioSync: { trackSessionId: "", reversUrl: "", normalUrl: "", duration: 0, currentTime: 0, playAction: "stop", systemTrigger: { type: "gameOver", time: Date.now() }, startAt: 0, isJoker: false, jokerEnabled: jokerEnabled, distortionRate: 1.0, distortionOffset: 0, distortionDrift: false },
       variantsRound: { active: false, correctTrack: "", options: [], answeringTeam: null, answeringTeamName: "", selectedOption: null, isFinal: false, askConfirm: false, attemptsLeft: 2, isRevealed: false, isCorrect: false, roundTimer: variantsTimerDuration, timerDeadline: 0, penaltyEnabled: variantsPenaltyEnabled },
       variantBanner: { active: false }
     });
