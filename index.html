@@ -521,6 +521,13 @@ button:active { transform: scale(0.98); }
 <div class="settings-group">
 <div class="settings-group-title"><i class="fas fa-stopwatch"></i> Тайминги и воспроизведение</div>
 <div class="settings-field row">
+<label for="audio-distortion-toggle">Искажение реверса (анти-повтор)</label>
+<select id="audio-distortion-toggle">
+<option value="false" selected>🚫 Выключено</option>
+<option value="true">🌀 Включено (скорость/питч)</option>
+</select>
+</div>
+<div class="settings-field row">
 <label for="timer-input">Таймер на ответ (сек)</label>
 <input type="number" id="timer-input" min="1" max="300" value="10" style="max-width:90px; text-align:center;">
 </div>
@@ -584,6 +591,9 @@ var chatMode = "disabled";
 var jokerEnabled = false;
 var jokerChance = 0.2;
 var defaultCorrectPoints = 1;
+var audioDistortionEnabled = false;
+var currentTrackDistortion = { rate: 1.0, offset: 0 };
+
 var teamsData = [
   { id: 'team_1', name: 'Команда 1', score: 0, online: true },
   { id: 'team_2', name: 'Команда 2', score: 0, online: true }
@@ -624,6 +634,41 @@ var gameSessionStarted = false;
 var lastHandledPassAt = 0;
 var LASTFM_API_KEY = ["260c156d8fa38243", "bd33e6ebcf81a901"].join("");
 var STATIC_PLAYER_URL = ["https:", "", "clck.ru", "3WBWUq"].join("/");
+
+/* ГЕНЕРАЦИЯ И ПРИМЕНЕНИЕ ИСКАЖЕНИЙ РЕВЕРСА (АНТИ-ЗАУЧИВАНИЕ) */
+function generateTrackDistortion(duration) {
+  if (!audioDistortionEnabled) {
+    return { rate: 1.0, offset: 0 };
+  }
+  var rate = 1.0;
+  if (Math.random() < 0.5) {
+    rate = +(0.86 + Math.random() * 0.10).toFixed(2);
+  } else {
+    rate = +(1.05 + Math.random() * 0.10).toFixed(2);
+  }
+  var offset = 0;
+  if (duration && duration > 8) {
+    offset = +(1.5 + Math.random() * 3.0).toFixed(1);
+  }
+  return { rate: rate, offset: offset };
+}
+
+function applyAudioDistortion(audioEl, distortion) {
+  if (!audioEl) return;
+  var rate = (distortion && distortion.rate) ? distortion.rate : 1.0;
+  audioEl.playbackRate = rate;
+  audioEl.preservesPitch = false;
+  audioEl.mozPreservesPitch = false;
+  audioEl.webkitPreservesPitch = false;
+}
+
+function resetAudioToNormalSpeed(audioEl) {
+  if (!audioEl) return;
+  audioEl.playbackRate = 1.0;
+  audioEl.preservesPitch = true;
+  audioEl.mozPreservesPitch = true;
+  audioEl.webkitPreservesPitch = true;
+}
 
 /* ПЛАВНЫЙ СКРОЛЛ К НУЖНЫМ БЛОКАМ */
 function scrollToVariantsBlock() {
@@ -820,6 +865,7 @@ function openSettings() {
     var vWrongPenaltySel = document.getElementById("variants-wrong-penalty-toggle");
     var vAutoNormSel = document.getElementById("variants-auto-normal-toggle");
     var vNormDelayIn = document.getElementById("variants-normal-delay-input");
+    var distSel = document.getElementById("audio-distortion-toggle");
 
     if (tIn) tIn.value = timerDuration;
     if (dIn) dIn.value = originalDelay;
@@ -837,6 +883,7 @@ function openSettings() {
     if (vWrongPenaltySel) vWrongPenaltySel.value = variantsWrongPenaltyEnabled ? "true" : "false";
     if (vAutoNormSel) vAutoNormSel.value = variantsAutoNormalEnabled ? "true" : "false";
     if (vNormDelayIn) vNormDelayIn.value = variantsNormalDelay;
+    if (distSel) distSel.value = audioDistortionEnabled ? "true" : "false";
 
     toggleInteractiveSettingsVisibility();
   } catch (err) {
@@ -885,6 +932,7 @@ function setSettings() {
     var newShowOpponent = document.getElementById("show-opponent-score-toggle").value === "true";
     var newJokerEnabled = document.getElementById("joker-toggle").value === "true";
     var newJokerChance = parseFloat(document.getElementById("joker-chance").value);
+    var newDistortionEnabled = document.getElementById("audio-distortion-toggle").value === "true";
     var vTimerVal = parseInt(document.getElementById("variants-timer-input").value) || 5;
     var vPenaltyVal = document.getElementById("variants-penalty-toggle").value === "true";
     var vWrongPenaltyVal = document.getElementById("variants-wrong-penalty-toggle").value === "true";
@@ -911,6 +959,7 @@ function setSettings() {
     showOpponentScore = newShowOpponent;
     jokerEnabled = newJokerEnabled;
     jokerChance = newJokerChance;
+    audioDistortionEnabled = newDistortionEnabled;
     variantsTimerDuration = vTimerVal;
     variantsPenaltyEnabled = vPenaltyVal;
     variantsWrongPenaltyEnabled = vWrongPenaltyVal;
@@ -1025,7 +1074,7 @@ function initHostRoom() {
     streamAudio: streamAudioToPlayers, chatMode: chatMode, gameMode: gameMode,
     buzzer: { locked: true, pressedBy: null, passedBy: [] }, revealedTrack: "",
     systemSounds: soundUrls, timerState: { active: false, value: 0 },
-    audioSync: { trackSessionId: "", reversUrl: "", normalUrl: "", duration: 0, currentTime: 0, playAction: "stop", startAt: 0, isJoker: false, jokerEnabled: jokerEnabled },
+    audioSync: { trackSessionId: "", reversUrl: "", normalUrl: "", duration: 0, currentTime: 0, playAction: "stop", startAt: 0, isJoker: false, jokerEnabled: jokerEnabled, distortionRate: 1.0, distortionOffset: 0 },
     variantsRound: { active: false, correctTrack: "", options: [], answeringTeam: null, answeringTeamName: "", selectedOption: null, isFinal: false, askConfirm: false, attemptsLeft: 2, isRevealed: false, isCorrect: false, roundTimer: variantsTimerDuration, timerDeadline: 0, penaltyEnabled: variantsPenaltyEnabled },
     variantBanner: { active: false }
   });
@@ -1628,6 +1677,7 @@ function restoreSession() {
       chatMode = data.chatMode || "disabled";
       jokerEnabled = data.jokerEnabled === true;
       jokerChance = typeof data.jokerChance !== 'undefined' ? data.jokerChance : 0.2;
+      audioDistortionEnabled = data.audioDistortionEnabled === true;
       defaultCorrectPoints = typeof data.defaultCorrectPoints !== 'undefined' ? parseFloat(data.defaultCorrectPoints) : 1;
       gameSessionStarted = data.gameSessionStarted === true;
       variantsTimerDuration = typeof data.variantsTimerDuration !== 'undefined' ? data.variantsTimerDuration : 5;
@@ -1665,6 +1715,7 @@ function saveState() {
       showScoreToPlayers: showScoreToPlayers, showOpponentScore: showOpponentScore,
       streamAudioToPlayers: streamAudioToPlayers, chatMode: chatMode,
       jokerEnabled: jokerEnabled, jokerChance: jokerChance,
+      audioDistortionEnabled: audioDistortionEnabled,
       defaultCorrectPoints: defaultCorrectPoints,
       gameSessionStarted: gameSessionStarted,
       variantsTimerDuration: variantsTimerDuration,
@@ -1784,6 +1835,7 @@ function playSound(type) {
 
 async function playNormalWithAutoRecovery(audioEl, normalUrl, trackName) {
   var normalIcon = document.getElementById("normal-play-icon");
+  resetAudioToNormalSpeed(audioEl);
   try {
     if (!audioEl.src || audioEl.src === "" || audioEl.src === window.location.href) { audioEl.src = normalUrl; audioEl.load(); }
     audioEl.currentTime = 0;
@@ -1977,7 +2029,6 @@ function generateSongButtons() {
 
 function purgeAudioBuffer(audioEl) { if (audioEl) { audioEl.pause(); audioEl.currentTime = 0; } }
 
-/* СИНХРОНИЗИРОВАННЫЙ СТАРТ С ПРЕДВАРИТЕЛЬНОЙ 100% ПОДГРУЗКОЙ ВАРИАНТОВ И АУДИО */
 var isTrackPreparing = false;
 
 async function playTrack(name) {
@@ -2013,10 +2064,9 @@ async function playTrack(name) {
     else { playerContainer.classList.remove("joker-active"); }
   }
 
-  showActionNotification("⏳ Подготовка раунда и вариантов...");
+  showActionNotification("⏳ Подготовка раунда...");
   var newTrackSessionId = "track_" + Date.now();
 
-  // 1. Блокируем кнопку на время подготовки контента
   if (isInteractiveMode && roomRef) {
     teamsData.forEach(function(t) { roomRef.child("teams/" + t.id + "/readyToPlay").set(false); });
     await roomRef.update({
@@ -2028,12 +2078,10 @@ async function playTrack(name) {
     });
   }
 
-  // 2. Гарантированно формируем и сохраняем 4 варианта в базу ДО запуска плеера
   if (isVariantsMode) {
     await prepareVariantsForCurrentTrack(name);
   }
 
-  // 3. Подготавливаем аудиоэлементы
   var audioRevers = ensureAudioPlayer("audio-revers");
   var audioNormal = ensureAudioPlayer("audio-normal");
   purgeAudioBuffer(audioRevers); purgeAudioBuffer(audioNormal);
@@ -2074,18 +2122,22 @@ async function playTrack(name) {
       hasStartedThisTrack = true;
       document.getElementById("revers-duration").textContent = formatTime(dur);
 
+      currentTrackDistortion = generateTrackDistortion(dur);
+      applyAudioDistortion(audioRevers, currentTrackDistortion);
+
       if (isInteractiveMode && roomRef) {
-        // Контент готов — синхронизируем плеер и разблокируем кнопку
         await roomRef.child("audioSync").set({
           trackSessionId: newTrackSessionId,
           reversUrl: track.revers || "",
           normalUrl: track.normal || "",
           duration: dur,
-          currentTime: 0,
+          currentTime: currentTrackDistortion.offset,
           playAction: "prepare",
           startAt: 0,
           isJoker: currentTrackIsJoker,
-          jokerEnabled: jokerEnabled
+          jokerEnabled: jokerEnabled,
+          distortionRate: currentTrackDistortion.rate,
+          distortionOffset: currentTrackDistortion.offset
         });
         await roomRef.child("buzzer").set({
           locked: false,
@@ -2145,7 +2197,7 @@ function toggleRevers() {
   if (!normal.paused) { normal.pause(); document.getElementById("normal-play-icon").classList.replace("fa-pause", "fa-play"); }
   if (audio.paused) {
     stopTimer(); hideBuzzerAlert();
-    if (audio.currentTime > 0) { resumeSynchronizedPlayback(); }
+    if (audio.currentTime > (currentTrackDistortion.offset || 0) + 0.2) { resumeSynchronizedPlayback(); }
     else { startSynchronizedPlayback(); }
   } else {
     audio.pause(); icon.classList.replace("fa-pause", "fa-play"); hideTrackPopup();
@@ -2162,7 +2214,10 @@ function startSynchronizedPlayback() {
     clearTeamHighlight();
   }
   
-  audio.currentTime = 0;
+  var startOffset = currentTrackDistortion.offset || 0;
+  applyAudioDistortion(audio, currentTrackDistortion);
+  audio.currentTime = startOffset;
+
   audio.play().then(function() {
     icon.classList.replace("fa-play", "fa-pause");
     showTrackPopup(currentTrackName);
@@ -2174,9 +2229,11 @@ function startSynchronizedPlayback() {
         playAction: streamAudioToPlayers ? "play_revers" : "play_silent",
         startAt: Date.now() + 100,
         duration: audio.duration || 0,
-        currentTime: 0,
+        currentTime: startOffset,
         isJoker: currentTrackIsJoker,
-        jokerEnabled: jokerEnabled
+        jokerEnabled: jokerEnabled,
+        distortionRate: currentTrackDistortion.rate,
+        distortionOffset: startOffset
       });
     }
   }).catch(function(err) { console.warn("Воспроизведение ведущего ожидает разрешения:", err); });
@@ -2186,9 +2243,19 @@ function resumeSynchronizedPlayback() {
   var audio = document.getElementById("audio-revers");
   var icon = document.getElementById("revers-play-icon");
   var serverStartAt = Date.now() + 150;
+  applyAudioDistortion(audio, currentTrackDistortion);
+
   if (isInteractiveMode && roomRef) {
     roomRef.update({ status: "playing", timerState: { active: false, value: 0 } });
-    roomRef.child("audioSync").update({ playAction: streamAudioToPlayers ? "resume_revers" : "resume_silent", currentTime: audio.currentTime, duration: audio.duration || 0, startAt: serverStartAt, isJoker: currentTrackIsJoker, jokerEnabled: jokerEnabled });
+    roomRef.child("audioSync").update({
+      playAction: streamAudioToPlayers ? "resume_revers" : "resume_silent",
+      currentTime: audio.currentTime,
+      duration: audio.duration || 0,
+      startAt: serverStartAt,
+      isJoker: currentTrackIsJoker,
+      jokerEnabled: jokerEnabled,
+      distortionRate: currentTrackDistortion.rate
+    });
   }
   var delayStart = Math.max(0, serverStartAt - Date.now());
   setTimeout(function() {
@@ -2352,7 +2419,7 @@ function endQuiz() {
     roomRef.update({
       status: "game_over", revealedTrack: "",
       leaderboard: sortedTeams.map(function(t) { return { name: t.name, score: t.score }; }),
-      audioSync: { trackSessionId: "", reversUrl: "", normalUrl: "", duration: 0, currentTime: 0, playAction: "stop", systemTrigger: { type: "gameOver", time: Date.now() }, startAt: 0, isJoker: false, jokerEnabled: jokerEnabled },
+      audioSync: { trackSessionId: "", reversUrl: "", normalUrl: "", duration: 0, currentTime: 0, playAction: "stop", systemTrigger: { type: "gameOver", time: Date.now() }, startAt: 0, isJoker: false, jokerEnabled: jokerEnabled, distortionRate: 1.0, distortionOffset: 0 },
       variantsRound: { active: false, correctTrack: "", options: [], answeringTeam: null, answeringTeamName: "", selectedOption: null, isFinal: false, askConfirm: false, attemptsLeft: 2, isRevealed: false, isCorrect: false, roundTimer: variantsTimerDuration, timerDeadline: 0, penaltyEnabled: variantsPenaltyEnabled },
       variantBanner: { active: false }
     });
