@@ -60,7 +60,7 @@ text-shadow: 0 0 10px rgba(0, 243, 255, 0.5); opacity: 0.85;
 .score-delta-overlay.show .score-delta-badge { animation: retroShake 1.6s infinite ease-in-out; }
 @keyframes retroShake { 0% { transform: rotate(0deg) scale(1); } 25% { transform: rotate(-7deg) scale(1.09); } 50% { transform: rotate(6deg) scale(1.15); } 75% { transform: rotate(-4deg) scale(1.08); } 100% { transform: rotate(0deg) scale(1); } }
 .score-delta-badge.plus { color: var(--neon-green); border: 3px solid var(--neon-green); background: rgba(8, 28, 18, 0.92); box-shadow: 0 0 55px rgba(0, 255, 102, 0.7), 0 0 110px rgba(0, 255, 102, 0.35), inset 0 0 25px rgba(0, 255, 102, 0.4); text-shadow: 0 0 24px var(--neon-green); }
-.score-delta-badge.minus { color: var(--neon-magenta); border: 3px solid var(--neon-magenta); background: rgba(28, 6, 20, 0.92); box-shadow: 0 0 55px rgba(255, 0, 127, 0.7), 0 0 110px rgba(255, 0, 127, 0.35), inset 0 0 25px rgba(0, 255, 127, 0.4); text-shadow: 0 0 24px var(--neon-magenta); }
+.score-delta-badge.minus { color: var(--neon-magenta); border: 3px solid var(--neon-magenta); background: rgba(28, 6, 20, 0.92); box-shadow: 0 0 55px rgba(255, 0, 127, 0.7), 0 0 110px rgba(255, 0, 127, 0.35), inset 0 0 25px rgba(255, 0, 127, 0.4); text-shadow: 0 0 24px var(--neon-magenta); }
 .score-delta-badge.joker { color: var(--neon-gold); border: 3px solid var(--neon-gold); background: rgba(40, 30, 0, 0.95); box-shadow: 0 0 80px rgba(255, 215, 0, 0.9), 0 0 150px rgba(255, 140, 0, 0.6), inset 0 0 40px rgba(255, 215, 0, 0.5); text-shadow: 0 0 30px var(--neon-gold); }
 .score-delta-subtext { font-family: 'Orbitron', sans-serif; font-size: 0.85em; font-weight: 800; text-transform: uppercase; letter-spacing: 3px; color: #fff; margin-top: 12px; text-shadow: 0 0 10px rgba(255,255,255,0.7); }
 
@@ -557,6 +557,28 @@ var lastSeenScoreTimestamp = 0;
 var lastHandledSystemSoundTime = 0;
 var wakeLockObj = null;
 
+/* СИНХРОНИЗАЦИЯ ИСКАЖЕНИЙ (СКОРОСТЬ + ПИТЧ) */
+var currentPlaybackRate = 1.0;
+
+function applyClientAudioDistortion(audioEl, rate) {
+  if (!audioEl) return;
+  var r = rate || 1.0;
+  currentPlaybackRate = r;
+  audioEl.playbackRate = r;
+  audioEl.preservesPitch = false;
+  audioEl.mozPreservesPitch = false;
+  audioEl.webkitPreservesPitch = false;
+}
+
+function resetClientAudioSpeed(audioEl) {
+  if (!audioEl) return;
+  currentPlaybackRate = 1.0;
+  audioEl.playbackRate = 1.0;
+  audioEl.preservesPitch = true;
+  audioEl.mozPreservesPitch = true;
+  audioEl.webkitPreservesPitch = true;
+}
+
 /* РЕЖИМ ВАРИАНТЫ */
 var isVariantsMode = false;
 var variantsData = null;
@@ -852,14 +874,16 @@ function updateProgressDisplay(currentTime, totalDuration) {
   timeDisplay.textContent = formatTime(cur) + " / " + formatTime(dur);
 }
 
-function startSyntheticTimer(startFromSec, totalDur) {
+function startSyntheticTimer(startFromSec, totalDur, rate) {
   stopSyntheticTimer();
   timerRunning = true;
-  timerStartTime = Date.now() - (startFromSec * 1000);
+  var speed = rate || currentPlaybackRate || 1.0;
+  timerStartTime = Date.now();
+  var baseOffset = startFromSec || 0;
   timerTotalDuration = totalDur || currentTrackDuration || 0;
   function tick() {
     if (!timerRunning) return;
-    var elapsed = (Date.now() - timerStartTime) / 1000;
+    var elapsed = baseOffset + ((Date.now() - timerStartTime) / 1000) * speed;
     if (elapsed > timerTotalDuration) { elapsed = timerTotalDuration; timerRunning = false; }
     updateProgressDisplay(elapsed, timerTotalDuration);
     if (timerRunning) { progressAnimFrame = requestAnimationFrame(tick); }
@@ -897,6 +921,7 @@ function listenToAudioStream() {
       currentTrackDuration = 0;
       currentTrackShowStar = null;
       hasShownRevealAnimation = false;
+      currentPlaybackRate = 1.0;
       updateProgressDisplay(0, 0);
       hasWaitedForNewTrack = true;
       updateJokerVisuals(false);
@@ -966,10 +991,14 @@ function listenToAudioStream() {
       };
       setTimeout(reportReady, 2500);
     }
+
+    var distRate = sync.distortionRate || 1.0;
+    var distOffset = sync.distortionOffset || 0;
+
     if (sync.playAction === "prepare") {
       clearPendingAudioPlayback();
       stopSyntheticTimer(); aRevers.pause(); aRevers.currentTime = 0; aNormal.pause(); aNormal.currentTime = 0;
-      updateProgressDisplay(0, currentTrackDuration);
+      updateProgressDisplay(distOffset, currentTrackDuration);
     } else if (sync.playAction === "play_revers") {
       clearPendingAudioPlayback();
       aNormal.pause(); aNormal.currentTime = 0;
@@ -977,8 +1006,9 @@ function listenToAudioStream() {
       var duration = sync.duration || currentTrackDuration || 0;
       pendingPlayTimeout = setTimeout(function() {
         pendingPlayTimeout = null;
-        if (isStreamAudioAllowed) { aRevers.currentTime = 0; aRevers.play().catch(function() {}); } else { aRevers.pause(); }
-        startSyntheticTimer(0, duration);
+        applyClientAudioDistortion(aRevers, distRate);
+        if (isStreamAudioAllowed) { aRevers.currentTime = distOffset; aRevers.play().catch(function() {}); } else { aRevers.pause(); }
+        startSyntheticTimer(distOffset, duration, distRate);
       }, targetDelay);
     } else if (sync.playAction === "play_silent") {
       clearPendingAudioPlayback();
@@ -987,7 +1017,7 @@ function listenToAudioStream() {
       var duration = sync.duration || currentTrackDuration || 0;
       pendingPlayTimeout = setTimeout(function() {
         pendingPlayTimeout = null;
-        startSyntheticTimer(0, duration);
+        startSyntheticTimer(distOffset, duration, distRate);
       }, targetDelay);
     } else if (sync.playAction === "resume_revers") {
       clearPendingAudioPlayback();
@@ -997,8 +1027,9 @@ function listenToAudioStream() {
       var rDur = sync.duration || currentTrackDuration || 0;
       pendingPlayTimeout = setTimeout(function() {
         pendingPlayTimeout = null;
+        applyClientAudioDistortion(aRevers, distRate);
         if (isStreamAudioAllowed) { aRevers.currentTime = resumeTime; aRevers.play().catch(function() {}); } else { aRevers.pause(); }
-        startSyntheticTimer(resumeTime, rDur);
+        startSyntheticTimer(resumeTime, rDur, distRate);
       }, resumeDelay);
     } else if (sync.playAction === "resume_silent") {
       clearPendingAudioPlayback();
@@ -1008,7 +1039,7 @@ function listenToAudioStream() {
       var rDur = sync.duration || currentTrackDuration || 0;
       pendingPlayTimeout = setTimeout(function() {
         pendingPlayTimeout = null;
-        startSyntheticTimer(resumeTime, rDur);
+        startSyntheticTimer(resumeTime, rDur, distRate);
       }, resumeDelay);
     } else if (sync.playAction === "pause") {
       clearPendingAudioPlayback();
@@ -1018,6 +1049,7 @@ function listenToAudioStream() {
     } else if (sync.playAction === "play_normal") {
       clearPendingAudioPlayback();
       aRevers.pause(); aRevers.currentTime = 0; stopSyntheticTimer();
+      resetClientAudioSpeed(aNormal);
       var normDelay = Math.max(0, (sync.startAt || Date.now()) - Date.now());
       setTimeout(function() { if (isStreamAudioAllowed) { aNormal.currentTime = 0; aNormal.play().catch(function(e) { console.warn("Оригинал на телефоне:", e); }); } }, normDelay);
     } else if (sync.playAction === "stop") {
@@ -1152,7 +1184,6 @@ function applyTimeoutPenalty() {
   if (navigator.vibrate) navigator.vibrate([150, 50, 150]);
 }
 
-/* ЗАЩИЩЁННАЯ ОТРИСОВКА ВАРИАНТОВ (ИСКЛЮЧЕН СБОЙ ПРИ МГНОВЕННОМ НАЖАТИИ) */
 function renderPlayerVariantsGrid(options, selectedOption, isMyTurn, isFinal, attemptsLeft, isRevealed, correctTrack) {
   var grid = document.getElementById("variants-buttons-grid");
   if (!grid) return;
