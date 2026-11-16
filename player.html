@@ -98,7 +98,7 @@ text-shadow: 0 0 10px rgba(0, 243, 255, 0.5); opacity: 0.85;
 .player-chat-trigger-btn, .player-ptt-trigger-btn {
   background: var(--card-bg); backdrop-filter: blur(15px); border: 1.5px solid var(--neon-cyan);
   color: var(--neon-cyan); border-radius: 16px; padding: 0 14px; display: none;
-  align-items: center; justify-content: center; font-size: 1.25em; position: relative;
+  align-items: center; justify-content: center; font-size: 1.3em; position: relative;
   cursor: pointer; box-shadow: 0 0 20px rgba(0, 243, 255, 0.2); flex-shrink: 0;
   transition: all 0.2s ease; touch-action: none;
 }
@@ -506,7 +506,7 @@ text-shadow: 0 0 10px rgba(0, 243, 255, 0.5); opacity: 0.85;
 <div id="mode-header-badge" class="mode-header-badge" style="display:none;"></div>
 <div class="top-action-bar">
 <div class="scoreboard-arena" id="scoreboard-wrap"></div>
-<button class="player-ptt-trigger-btn" id="player-ptt-btn" title="Удерживайте, чтобы сказать в рацию"><i class="fas fa-microphone"></i></button>
+<button class="player-ptt-trigger-btn" id="player-ptt-btn" title="Удерживайте, чтобы сказать в рацию"><i class="fas fa-walkie-talkie"></i></button>
 <button class="player-chat-trigger-btn" id="player-chat-toggle-btn" onclick="togglePlayerChat()" title="Открыть чат"><i class="fas fa-comments"></i><span class="player-chat-unread-badge" id="player-chat-unread">0</span></button>
 </div>
 <div class="player-status-wrapper">
@@ -596,7 +596,6 @@ var wakeLockObj = null;
 var playerMediaRecorder = null;
 var playerAudioChunks = [];
 var isPlayerRecording = false;
-var playerRecordTimer = null;
 var lastClientWalkieId = null;
 var clientWalkieToastTimer = null;
 
@@ -630,11 +629,16 @@ function updatePlayerPttButtonState() {
     return;
   }
   btn.style.display = "flex";
-  // Блокируем рацию во время игры реверс-трека для всех, кроме отвечающей команды
-  var isBlockedDuringMusic = (currentRoomStatus === "playing" && !canBuzzerAnswerNow);
-  if (isBlockedDuringMusic) {
-    btn.classList.add("disabled");
-  } else {
+
+  if (roomWalkieMode === "host_only") {
+    // В режиме "Только ведущему" рация неактивна всегда, кроме команды, нажавшей кнопку ответа
+    if (canBuzzerAnswerNow) {
+      btn.classList.remove("disabled");
+    } else {
+      btn.classList.add("disabled");
+    }
+  } else if (roomWalkieMode === "all") {
+    // В режиме "Общий эфир" рация активна всегда
     btn.classList.remove("disabled");
   }
 }
@@ -687,10 +691,8 @@ function initPlayerWalkieTalkie() {
         reader.readAsDataURL(blob);
       };
 
+      // Без ограничения по времени — пишет, пока нажата кнопка
       playerMediaRecorder.start();
-      playerRecordTimer = setTimeout(function() {
-        if (isPlayerRecording) stopPlayerTalk();
-      }, 8000);
     }).catch(function() {
       alert("Разрешите доступ к микрофону в настройках браузера.");
     });
@@ -700,7 +702,6 @@ function initPlayerWalkieTalkie() {
     if (e && e.cancelable) e.preventDefault();
     if (!isPlayerRecording) return;
     isPlayerRecording = false;
-    if (playerRecordTimer) { clearTimeout(playerRecordTimer); playerRecordTimer = null; }
     pttBtn.classList.remove("recording");
     playWalkieBeep(true);
     if (playerMediaRecorder && playerMediaRecorder.state !== "inactive") {
@@ -721,10 +722,9 @@ function listenToPlayerWalkie() {
   db.ref("rooms/" + currentRoom + "/walkie").on("value", function(snap) {
     var w = snap.val();
     if (!w || !w.id || w.id === lastClientWalkieId) return;
-    if (Date.now() - (w.time || 0) > 15000) return;
+    if (Date.now() - (w.time || 0) > 30000) return;
     lastClientWalkieId = w.id;
     if (w.senderId === myTeamId || roomWalkieMode === "disabled") return;
-    // Если режим "Только ведущему", обычные команды не слышат другие команды (но слышат ведущего)
     if (roomWalkieMode === "host_only" && !w.isHost) return;
 
     var toast = document.getElementById("walkie-toast-player");
@@ -1633,6 +1633,14 @@ function listenToGameState() {
         });
       }
     }
+
+    var buzzer = data.buzzer || {};
+    var passedBy = buzzer.passedBy || [];
+    var haveIPassed = passedBy.indexOf(myTeamId) !== -1;
+    canBuzzerAnswerNow = (buzzer.pressedBy === myTeamId);
+    updateChatTriggerButtonState();
+    updatePlayerPttButtonState();
+
     if (!hasWaitedForNewTrack) {
       buzzerBtn.disabled = true;
       buzzerBtn.className = "buzzer-3d-btn";
@@ -1643,12 +1651,6 @@ function listenToGameState() {
       hudFooter.innerHTML = "Вы подключились посреди игры. Вход со следующего трека...";
       return;
     }
-    var buzzer = data.buzzer || {};
-    var passedBy = buzzer.passedBy || [];
-    var haveIPassed = passedBy.indexOf(myTeamId) !== -1;
-    canBuzzerAnswerNow = (buzzer.pressedBy === myTeamId);
-    updateChatTriggerButtonState();
-    updatePlayerPttButtonState();
 
     if (data.status === "playing") {
       trackBox.classList.remove("active-reveal");
@@ -1668,7 +1670,7 @@ function listenToGameState() {
       } else {
         if (buzzer.pressedBy === myTeamId) {
           buzzerBtn.disabled = true; buzzerBtn.className = "buzzer-3d-btn winner-turn";
-          buzzerBtn.innerHTML = '<i class="fas fa-microphone"></i><span>ОТВЕТ!</span>';
+          buzzerBtn.innerHTML = '<i class="fas fa-walkie-talkie"></i><span>ОТВЕТ!</span>';
           if (!isVariantsMode) {
             passBtn.style.display = "inline-flex";
           } else {
@@ -1677,7 +1679,7 @@ function listenToGameState() {
           if (isVariantsMode) {
             hudFooter.innerHTML = "🎯 <strong style='color:var(--neon-green)'>Вы нажали первым! Выберите вариант на экране:</strong>";
           } else if (roomWalkieMode !== "disabled") {
-            hudFooter.innerHTML = "🎙️ <strong style='color:var(--neon-cyan)'>Вы успели первым! Зажмите кнопку рации сверху, чтобы сказать ответ!</strong>";
+            hudFooter.innerHTML = "📻 <strong style='color:var(--neon-cyan)'>Вы успели первым! Зажмите кнопку рации сверху, чтобы сказать ответ!</strong>";
           } else if (roomChatMode !== "disabled") {
             hudFooter.innerHTML = "🏆 <strong style='color:var(--neon-cyan)'>Вы успели первым! Напишите ответ в чат:</strong>";
             if (!isChatOpen) { openPlayerChat(); }
