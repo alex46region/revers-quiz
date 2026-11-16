@@ -74,6 +74,7 @@ text-shadow: 0 0 10px rgba(0, 243, 255, 0.5); opacity: 0.85;
 .input-box input:focus { border-color: var(--neon-magenta); box-shadow: 0 0 25px rgba(255, 0, 127, 0.4); background: rgba(18, 10, 42, 0.95); }
 .btn-join { width: 100%; padding: 18px; margin-top: 6px; background: linear-gradient(90deg, var(--neon-magenta), var(--neon-purple)); color: #fff; border: none; border-radius: 16px; font-family: 'Orbitron', sans-serif; font-size: 16px; font-weight: 900; text-transform: uppercase; letter-spacing: 2px; cursor: pointer; box-shadow: 0 0 30px rgba(255, 0, 127, 0.5); transition: transform 0.15s ease, box-shadow 0.15s ease; }
 .btn-join:active { transform: scale(0.97); }
+.btn-join:disabled { opacity: 0.55; cursor: not-allowed; }
 .error-banner { color: var(--neon-magenta); background: rgba(255, 0, 127, 0.12); border: 1px solid rgba(255, 0, 127, 0.4); padding: 10px 14px; border-radius: 12px; font-size: 0.9em; font-weight: 700; margin-top: 14px; display: none; }
 
 #game-view { display: none; flex-direction: column; flex: 1; max-width: 480px; width: 100%; margin: 0 auto; justify-content: space-between; gap: 10px; position: relative; }
@@ -94,11 +95,42 @@ text-shadow: 0 0 10px rgba(0, 243, 255, 0.5); opacity: 0.85;
 .my-card .score-team-pts { color: #fff; text-shadow: 0 0 15px var(--neon-cyan); }
 .opponent-card .score-team-pts { color: var(--neon-magenta); text-shadow: 0 0 12px var(--neon-magenta); }
 
-.player-chat-trigger-btn { background: var(--card-bg); backdrop-filter: blur(15px); border: 1.5px solid var(--neon-cyan); color: var(--neon-cyan); border-radius: 16px; padding: 0 16px; display: none; align-items: center; justify-content: center; font-size: 1.25em; position: relative; cursor: pointer; box-shadow: 0 0 20px rgba(0, 243, 255, 0.2); flex-shrink: 0; transition: all 0.2s ease; }
-.player-chat-trigger-btn.disabled { opacity: 0.35; filter: grayscale(1); border-color: rgba(255, 255, 255, 0.2); color: #888; }
+.player-chat-trigger-btn, .player-ptt-trigger-btn {
+  background: var(--card-bg); backdrop-filter: blur(15px); border: 1.5px solid var(--neon-cyan);
+  color: var(--neon-cyan); border-radius: 16px; padding: 0 14px; display: none;
+  align-items: center; justify-content: center; font-size: 1.25em; position: relative;
+  cursor: pointer; box-shadow: 0 0 20px rgba(0, 243, 255, 0.2); flex-shrink: 0;
+  transition: all 0.2s ease; touch-action: none;
+}
+.player-ptt-trigger-btn {
+  border-color: var(--neon-purple); color: #d8b4fe;
+  box-shadow: 0 0 20px rgba(157, 0, 255, 0.25);
+}
+.player-ptt-trigger-btn.recording {
+  background: radial-gradient(circle, #ff007f, #800040) !important;
+  border-color: #fff !important; color: #fff !important;
+  transform: scale(1.1); box-shadow: 0 0 30px var(--neon-magenta);
+}
+.player-chat-trigger-btn.disabled, .player-ptt-trigger-btn.disabled {
+  opacity: 0.35; filter: grayscale(1); border-color: rgba(255, 255, 255, 0.2); color: #888; pointer-events: none;
+}
 .player-chat-trigger-btn.has-pulse { animation: chatGlowPulse 1.2s infinite alternate; }
 @keyframes chatGlowPulse { 0% { transform: scale(1); box-shadow: 0 0 15px var(--neon-cyan); } 100% { transform: scale(1.08); box-shadow: 0 0 35px var(--neon-magenta), 0 0 60px rgba(255, 0, 127, 0.7); } }
 .player-chat-unread-badge { position: absolute; top: -4px; right: -4px; background: var(--neon-magenta); color: #fff; font-size: 10px; font-weight: 900; padding: 2px 6px; border-radius: 10px; box-shadow: 0 0 10px var(--neon-magenta); display: none; }
+
+/* ПЛАШКА ВХОДЯЩЕЙ РАЦИИ У ИГРОКА */
+.walkie-toast-player {
+  position: fixed; top: 72px; left: 50%; transform: translateX(-50%);
+  background: rgba(12, 6, 30, 0.96); backdrop-filter: blur(20px);
+  border: 2px solid var(--neon-green); border-radius: 16px;
+  padding: 10px 16px; display: none; align-items: center; gap: 10px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.9), 0 0 25px rgba(0, 255, 102, 0.4);
+  z-index: 8800; max-width: 90vw; animation: modalEnter 0.25s ease;
+}
+.walkie-toast-player-text {
+  font-family: 'Orbitron', sans-serif; font-size: 0.85em; font-weight: 800;
+  color: var(--neon-green); letter-spacing: 0.5px;
+}
 
 .player-status-wrapper { display: flex; flex-direction: column; gap: 8px; }
 .status-pill { background: var(--card-bg); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 16px; padding: 9px 16px; text-align: center; font-family: 'Orbitron', sans-serif; font-size: 0.85em; font-weight: 800; color: #b7aedb; text-transform: uppercase; letter-spacing: 2px; display: flex; align-items: center; justify-content: center; gap: 8px; }
@@ -402,6 +434,12 @@ text-shadow: 0 0 10px rgba(0, 243, 255, 0.5); opacity: 0.85;
 <audio id="player-sound-lost" preload="auto" playsinline style="display:none;"></audio>
 <audio id="player-sound-ring" preload="auto" playsinline style="display:none;"></audio>
 <audio id="player-sound-game-over" preload="auto" playsinline style="display:none;"></audio>
+<audio id="player-walkie-in" playsinline style="display:none;"></audio>
+
+<div class="walkie-toast-player" id="walkie-toast-player">
+  <i class="fas fa-broadcast-tower" style="color:var(--neon-green); font-size:1.1em;"></i>
+  <div class="walkie-toast-player-text" id="walkie-toast-player-text">В эфире: Ведущий</div>
+</div>
 
 <div class="player-countdown-badge" id="player-timer-badge">
 <i class="fas fa-stopwatch"></i>
@@ -468,6 +506,7 @@ text-shadow: 0 0 10px rgba(0, 243, 255, 0.5); opacity: 0.85;
 <div id="mode-header-badge" class="mode-header-badge" style="display:none;"></div>
 <div class="top-action-bar">
 <div class="scoreboard-arena" id="scoreboard-wrap"></div>
+<button class="player-ptt-trigger-btn" id="player-ptt-btn" title="Удерживайте, чтобы сказать в рацию"><i class="fas fa-microphone"></i></button>
 <button class="player-chat-trigger-btn" id="player-chat-toggle-btn" onclick="togglePlayerChat()" title="Открыть чат"><i class="fas fa-comments"></i><span class="player-chat-unread-badge" id="player-chat-unread">0</span></button>
 </div>
 <div class="player-status-wrapper">
@@ -518,7 +557,7 @@ text-shadow: 0 0 10px rgba(0, 243, 255, 0.5); opacity: 0.85;
 </div>
 <script>
 var firebaseConfig = {
-  apiKey: ["AIzaSyC9sh7uazv", "WbudsO7TYap4", "wENjkLD3K4"].join("-"),
+  apiKey: ["AIzaSyC9sh7uazv", "WbudsO7TYap4", "_wENjkLD3K4"].join("-"),
   authDomain: "revers-quiz.firebaseapp.com",
   databaseURL: "https://revers-quiz-default-rtdb.firebaseio.com",
   projectId: "revers-quiz",
@@ -544,6 +583,7 @@ var timerStartTime = 0;
 var timerTotalDuration = 0;
 var isStreamAudioAllowed = false;
 var roomChatMode = "disabled";
+var roomWalkieMode = "disabled";
 var currentRoomStatus = "idle";
 var canBuzzerAnswerNow = false;
 var isChatOpen = false;
@@ -551,6 +591,160 @@ var unreadChatCount = 0;
 var lastSeenScoreTimestamp = 0;
 var lastHandledSystemSoundTime = 0;
 var wakeLockObj = null;
+
+/* РАЦИЯ УЧАСТНИКА (PUSH-TO-TALK) */
+var playerMediaRecorder = null;
+var playerAudioChunks = [];
+var isPlayerRecording = false;
+var playerRecordTimer = null;
+var lastClientWalkieId = null;
+var clientWalkieToastTimer = null;
+
+function playWalkieBeep(isEnd) {
+  try {
+    var ctx = new (window.AudioContext || window.webkitAudioContext)();
+    var osc = ctx.createOscillator();
+    var gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = "sine";
+    if (!isEnd) {
+      osc.frequency.setValueAtTime(950, ctx.currentTime);
+      osc.frequency.setValueAtTime(1250, ctx.currentTime + 0.05);
+    } else {
+      osc.frequency.setValueAtTime(1100, ctx.currentTime);
+      osc.frequency.setValueAtTime(750, ctx.currentTime + 0.06);
+    }
+    gain.gain.setValueAtTime(0.12, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.14);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.14);
+  } catch(e) {}
+}
+
+function updatePlayerPttButtonState() {
+  var btn = document.getElementById("player-ptt-btn");
+  if (!btn) return;
+  if (roomWalkieMode === "disabled") {
+    btn.style.display = "none";
+    return;
+  }
+  btn.style.display = "flex";
+  // Блокируем рацию во время игры реверс-трека для всех, кроме отвечающей команды
+  var isBlockedDuringMusic = (currentRoomStatus === "playing" && !canBuzzerAnswerNow);
+  if (isBlockedDuringMusic) {
+    btn.classList.add("disabled");
+  } else {
+    btn.classList.remove("disabled");
+  }
+}
+
+function initPlayerWalkieTalkie() {
+  var pttBtn = document.getElementById("player-ptt-btn");
+  if (!pttBtn) return;
+
+  function startPlayerTalk(e) {
+    if (e.cancelable) e.preventDefault();
+    if (roomWalkieMode === "disabled" || isPlayerRecording || !currentRoom || !myTeamId) return;
+    if (pttBtn.classList.contains("disabled")) return;
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      alert("Микрофон недоступен в этом браузере или по HTTP.");
+      return;
+    }
+
+    navigator.mediaDevices.getUserMedia({ audio: true }).then(function(stream) {
+      isPlayerRecording = true;
+      playerAudioChunks = [];
+      pttBtn.classList.add("recording");
+      playWalkieBeep(false);
+      if (navigator.vibrate) navigator.vibrate(40);
+
+      var mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus") ? "audio/webm;codecs=opus" : "";
+      playerMediaRecorder = mimeType ? new MediaRecorder(stream, { mimeType: mimeType, audioBitsPerSecond: 24000 }) : new MediaRecorder(stream);
+
+      playerMediaRecorder.ondataavailable = function(ev) {
+        if (ev.data && ev.data.size > 0) playerAudioChunks.push(ev.data);
+      };
+
+      playerMediaRecorder.onstop = function() {
+        stream.getTracks().forEach(function(t) { t.stop(); });
+        var blob = new Blob(playerAudioChunks, { type: playerMediaRecorder.mimeType || "audio/webm" });
+        if (blob.size < 400) return;
+        var reader = new FileReader();
+        reader.onloadend = function() {
+          var base64Audio = reader.result;
+          var msgId = "ptt_" + myTeamId + "_" + Date.now();
+          lastClientWalkieId = msgId;
+          db.ref("rooms/" + currentRoom + "/walkie").set({
+            id: msgId,
+            senderId: myTeamId,
+            senderName: myTeamName,
+            isHost: false,
+            audioData: base64Audio,
+            time: Date.now()
+          });
+        };
+        reader.readAsDataURL(blob);
+      };
+
+      playerMediaRecorder.start();
+      playerRecordTimer = setTimeout(function() {
+        if (isPlayerRecording) stopPlayerTalk();
+      }, 8000);
+    }).catch(function() {
+      alert("Разрешите доступ к микрофону в настройках браузера.");
+    });
+  }
+
+  function stopPlayerTalk(e) {
+    if (e && e.cancelable) e.preventDefault();
+    if (!isPlayerRecording) return;
+    isPlayerRecording = false;
+    if (playerRecordTimer) { clearTimeout(playerRecordTimer); playerRecordTimer = null; }
+    pttBtn.classList.remove("recording");
+    playWalkieBeep(true);
+    if (playerMediaRecorder && playerMediaRecorder.state !== "inactive") {
+      playerMediaRecorder.stop();
+    }
+  }
+
+  pttBtn.addEventListener("mousedown", startPlayerTalk);
+  pttBtn.addEventListener("mouseup", stopPlayerTalk);
+  pttBtn.addEventListener("mouseleave", stopPlayerTalk);
+  pttBtn.addEventListener("touchstart", startPlayerTalk, { passive: false });
+  pttBtn.addEventListener("touchend", stopPlayerTalk, { passive: false });
+  pttBtn.addEventListener("touchcancel", stopPlayerTalk, { passive: false });
+}
+
+function listenToPlayerWalkie() {
+  if (!currentRoom) return;
+  db.ref("rooms/" + currentRoom + "/walkie").on("value", function(snap) {
+    var w = snap.val();
+    if (!w || !w.id || w.id === lastClientWalkieId) return;
+    if (Date.now() - (w.time || 0) > 15000) return;
+    lastClientWalkieId = w.id;
+    if (w.senderId === myTeamId || roomWalkieMode === "disabled") return;
+    // Если режим "Только ведущему", обычные команды не слышат другие команды (но слышат ведущего)
+    if (roomWalkieMode === "host_only" && !w.isHost) return;
+
+    var toast = document.getElementById("walkie-toast-player");
+    var textEl = document.getElementById("walkie-toast-player-text");
+    if (toast && textEl) {
+      textEl.textContent = "📻 В эфире: " + (w.senderName || "Участник");
+      toast.style.display = "flex";
+      if (clientWalkieToastTimer) clearTimeout(clientWalkieToastTimer);
+      clientWalkieToastTimer = setTimeout(function() { toast.style.display = "none"; }, 8000);
+    }
+
+    playWalkieBeep(false);
+    var audioEl = document.getElementById("player-walkie-in");
+    if (audioEl && w.audioData) {
+      audioEl.src = w.audioData;
+      audioEl.onended = function() { playWalkieBeep(true); };
+      audioEl.play().catch(function() {});
+    }
+  });
+}
 
 /* СИНХРОНИЗАЦИЯ ИСКАЖЕНИЙ (СКОРОСТЬ + ПИТЧ + ПЛАВАЮЩАЯ ПЛЁНКА) */
 var currentPlaybackRate = 1.0;
@@ -628,7 +822,7 @@ async function enableScreenWakeLock() {
       wakeLockObj = await navigator.wakeLock.request('screen');
       wakeLockObj.addEventListener('release', function() { wakeLockObj = null; });
     }
-  } catch(err) { console.warn("Wake Lock не поддерживается или отклонён:", err); }
+  } catch(err) {}
 }
 document.addEventListener('visibilitychange', async function() {
   if (document.visibilityState === 'visible' && currentRoom) { await enableScreenWakeLock(); }
@@ -718,7 +912,7 @@ function bufferSystemSound(audioId, url) {
 function playLocalSystemSound(audioId) {
   if (!isStreamAudioAllowed) return;
   var a = document.getElementById(audioId);
-  if (a && a.src) { a.currentTime = 0; a.play().catch(function(err) { console.warn("Воспроизведение системного звука:", err); }); }
+  if (a && a.src) { a.currentTime = 0; a.play().catch(function() {}); }
 }
 function showJokerAnimation() {
   var overlay = document.getElementById("joker-overlay");
@@ -818,7 +1012,6 @@ function joinGame() {
   }
   showError("⏳ Подключение к комнате...");
 
-  // Страховочный таймер на 6 секунд на случай блокировки сети или обрыва связи с Firebase
   var connectTimeout = setTimeout(function() {
     if (isJoiningRoom) {
       isJoiningRoom = false;
@@ -868,29 +1061,22 @@ function joinGame() {
     var normalizedInput = inputName.toLowerCase();
     Object.keys(existingTeams).forEach(function(k) {
       var t = existingTeams[k];
-      if (t && t.name && t.name.trim().toLowerCase() === normalizedInput) {
-        foundKey = k;
-      }
+      if (t && t.name && t.name.trim().toLowerCase() === normalizedInput) { foundKey = k; }
     });
 
     currentRoom = pin;
     if (foundKey) {
-      myTeamId = foundKey;
-      myTeamName = existingTeams[foundKey].name || inputName;
+      myTeamId = foundKey; myTeamName = existingTeams[foundKey].name || inputName;
       roomRef.child("teams/" + myTeamId).update({ ready: true, readyToPlay: false, online: true });
     } else {
-      myTeamId = "team_" + Math.random().toString(36).substr(2, 6);
-      myTeamName = inputName;
+      myTeamId = "team_" + Math.random().toString(36).substr(2, 6); myTeamName = inputName;
       roomRef.child("teams/" + myTeamId).set({ name: myTeamName, ready: true, readyToPlay: false, score: 0, online: true });
     }
 
     var myTeamRef = roomRef.child("teams/" + myTeamId);
     var connectedRef = db.ref(".info/connected");
     connectedRef.on("value", function(snap) {
-      if (snap.val() === true) {
-        myTeamRef.onDisconnect().update({ online: false });
-        myTeamRef.update({ online: true });
-      }
+      if (snap.val() === true) { myTeamRef.onDisconnect().update({ online: false }); myTeamRef.update({ online: true }); }
     });
 
     localStorage.setItem("rq_saved_pin", pin);
@@ -900,9 +1086,11 @@ function joinGame() {
     document.getElementById("login-view").style.display = "none";
     document.getElementById("game-view").style.display = "flex";
     initEmojiPicker("player-emoji-popover", "player-chat-input");
+    initPlayerWalkieTalkie();
     listenToGameState();
     listenToAudioStream();
     listenToPlayerChat();
+    listenToPlayerWalkie();
     if (isVariantsMode) { listenToVariantsState(); }
     listenToVariantBanner();
   }).catch(function(e) {
@@ -915,6 +1103,13 @@ function joinGame() {
     showError("❌ Ошибка доступа к базе: " + e.message);
   });
 }
+
+window.addEventListener("DOMContentLoaded", function() {
+  var savedPin = localStorage.getItem("rq_saved_pin");
+  var savedName = localStorage.getItem("rq_saved_team_name");
+  if (savedPin) document.getElementById("room-pin").value = savedPin;
+  if (savedName) document.getElementById("team-name").value = savedName;
+});
 
 function showScoreDeltaAnimation(delta) {
   var popup = document.getElementById("player-score-delta-popup");
@@ -1128,7 +1323,7 @@ function listenToAudioStream() {
       aRevers.pause(); aRevers.currentTime = 0; stopSyntheticTimer();
       resetClientAudioSpeed(aNormal);
       var normDelay = Math.max(0, (sync.startAt || Date.now()) - Date.now());
-      setTimeout(function() { if (isStreamAudioAllowed) { aNormal.currentTime = 0; aNormal.play().catch(function(e) { console.warn("Оригинал на телефоне:", e); }); } }, normDelay);
+      setTimeout(function() { if (isStreamAudioAllowed) { aNormal.currentTime = 0; aNormal.play().catch(function() {}); } }, normDelay);
     } else if (sync.playAction === "stop") {
       clearPendingAudioPlayback();
       stopClientVinylDrift();
@@ -1376,6 +1571,7 @@ function listenToGameState() {
     }
     currentRoomStatus = data.status || "idle";
     roomChatMode = data.chatMode || "disabled";
+    roomWalkieMode = data.walkieMode || "disabled";
     isStreamAudioAllowed = (data.streamAudio === true);
     if (data.systemSounds && isStreamAudioAllowed) {
       bufferSystemSound("player-sound-winner", data.systemSounds.winner);
@@ -1452,6 +1648,8 @@ function listenToGameState() {
     var haveIPassed = passedBy.indexOf(myTeamId) !== -1;
     canBuzzerAnswerNow = (buzzer.pressedBy === myTeamId);
     updateChatTriggerButtonState();
+    updatePlayerPttButtonState();
+
     if (data.status === "playing") {
       trackBox.classList.remove("active-reveal");
       roundStatusPill.className = "status-pill playing";
@@ -1478,6 +1676,8 @@ function listenToGameState() {
           }
           if (isVariantsMode) {
             hudFooter.innerHTML = "🎯 <strong style='color:var(--neon-green)'>Вы нажали первым! Выберите вариант на экране:</strong>";
+          } else if (roomWalkieMode !== "disabled") {
+            hudFooter.innerHTML = "🎙️ <strong style='color:var(--neon-cyan)'>Вы успели первым! Зажмите кнопку рации сверху, чтобы сказать ответ!</strong>";
           } else if (roomChatMode !== "disabled") {
             hudFooter.innerHTML = "🏆 <strong style='color:var(--neon-cyan)'>Вы успели первым! Напишите ответ в чат:</strong>";
             if (!isChatOpen) { openPlayerChat(); }
