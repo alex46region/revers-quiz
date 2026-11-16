@@ -436,7 +436,7 @@ button:active { transform: scale(0.98); }
 </div>
 
 <!-- КНОПКА РАЦИИ ВЕДУЩЕГО (УДЕРЖАНИЕ) -->
-<button id="host-ptt-btn" title="Удерживайте, чтобы сказать в рацию"><i class="fas fa-microphone"></i></button>
+<button id="host-ptt-btn" title="Удерживайте, чтобы сказать в рацию"><i class="fas fa-walkie-talkie"></i></button>
 
 <button id="host-chat-toggle-btn" onclick="toggleHostChat()">
 <i class="fas fa-comments"></i>
@@ -804,9 +804,6 @@ function initHostWalkieTalkie() {
       };
 
       hostMediaRecorder.start();
-      hostRecordTimer = setTimeout(function() {
-        if (isHostRecording) stopHostTalk();
-      }, 8000); // Максимум 8 секунд
     }).catch(function(err) {
       console.warn("Ошибка доступа к микрофону:", err);
       showActionNotification("❌ Нет доступа к микрофону");
