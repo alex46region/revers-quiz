@@ -217,10 +217,42 @@ button:active { transform: scale(0.98); }
 .settings-update-box { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border-subtle); text-align: center; }
 .settings-update-box button { background: transparent !important; border: 1px solid var(--neon-cyan) !important; color: var(--neon-cyan) !important; padding: 10px 14px !important; font-size: 0.85em !important; text-transform: uppercase; letter-spacing: 1px; }
 .update-status-msg { font-family: 'Ubuntu Mono', monospace; font-size: 0.8em; color: var(--neon-yellow); margin-top: 6px; min-height: 1.2em; }
+
+/* КНОПКИ ЧАТА И РАЦИИ ВЕДУЩЕГО */
 #host-chat-toggle-btn { position: fixed; bottom: 20px; right: 20px; width: 52px; height: 52px; border-radius: 50%; background: linear-gradient(135deg, var(--neon-cyan), #0077ff); color: #000; display: none; align-items: center; justify-content: center; font-size: 1.3em; cursor: pointer; z-index: 2500; box-shadow: 0 8px 25px rgba(0, 229, 255, 0.4); border: none; transition: transform 0.2s ease, box-shadow 0.2s ease; }
 #host-chat-toggle-btn.has-pulse { animation: chatButtonGlowPulse 1.4s infinite alternate; }
 @keyframes chatButtonGlowPulse { 0% { box-shadow: 0 0 15px rgba(0, 229, 255, 0.6), 0 0 30px rgba(0, 229, 255, 0.3); transform: scale(1); } 100% { box-shadow: 0 0 35px var(--neon-pink), 0 0 60px rgba(255, 0, 85, 0.6); transform: scale(1.08); } }
 .chat-unread-badge { position: absolute; top: -4px; right: -4px; background: var(--neon-pink); color: #fff; font-size: 11px; font-weight: 800; padding: 2px 7px; border-radius: 10px; box-shadow: 0 0 10px rgba(255, 0, 85, 0.6); display: none; }
+
+#host-ptt-btn {
+  position: fixed; bottom: 20px; right: 84px; width: 52px; height: 52px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--neon-purple), #4f46e5); color: #fff;
+  display: none; align-items: center; justify-content: center; font-size: 1.25em;
+  cursor: pointer; z-index: 2500; box-shadow: 0 8px 25px rgba(112, 0, 255, 0.45);
+  border: 2px solid rgba(255, 255, 255, 0.2); user-select: none; touch-action: none;
+  transition: transform 0.15s ease, background 0.2s ease;
+}
+#host-ptt-btn.recording {
+  background: radial-gradient(circle, #ff0055, #990033); border-color: #fff;
+  transform: scale(1.16); box-shadow: 0 0 35px var(--neon-pink), 0 0 60px rgba(255, 0, 85, 0.7);
+  animation: pttPulse 0.8s infinite alternate;
+}
+@keyframes pttPulse { 0% { transform: scale(1.12); } 100% { transform: scale(1.22); } }
+
+/* ВСПЛЫВАЮЩАЯ ПЛАШКА ВХОДЯЩЕЙ РАЦИИ У ВЕДУЩЕГО */
+.walkie-toast-host {
+  position: fixed; bottom: 84px; left: 50%; transform: translateX(-50%);
+  background: rgba(14, 18, 26, 0.96); backdrop-filter: blur(16px);
+  border: 2px solid var(--neon-lime); border-radius: 18px;
+  padding: 12px 18px; display: none; align-items: center; gap: 12px;
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.9), 0 0 25px rgba(0, 255, 102, 0.35);
+  z-index: 4000; max-width: 92vw; animation: phraseFadeIn 0.25s ease;
+}
+.walkie-toast-info { display: flex; flex-direction: column; min-width: 0; }
+.walkie-toast-title { font-family: 'Syne', sans-serif; font-size: 0.95em; font-weight: 800; color: var(--neon-lime); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.walkie-toast-sub { font-size: 0.8em; color: var(--text-dim); }
+.walkie-replay-btn { background: rgba(0, 255, 102, 0.15); border: 1px solid var(--neon-lime); color: var(--neon-lime); width: 38px; height: 38px; border-radius: 10px; font-size: 1em; flex-shrink: 0; cursor: pointer; }
+
 #host-chat-box { position: fixed; bottom: 82px; right: 20px; width: min(350px, calc(100vw - 32px)); height: 420px; background: var(--bg-surface); border: 1px solid var(--border-glow); border-radius: 20px; box-shadow: 0 15px 40px rgba(0, 0, 0, 0.9); display: none; flex-direction: column; z-index: 2500; overflow: hidden; backdrop-filter: blur(16px); }
 .host-chat-head { background: var(--bg-elevated); padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-subtle); font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.95em; }
 .host-chat-msgs { flex: 1; padding: 12px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
@@ -392,6 +424,20 @@ button:active { transform: scale(0.98); }
 <button id="end-quiz-btn" onclick="endQuiz()"><i class="fas fa-flag-checkered"></i> Завершить игру</button>
 </div>
 </div>
+
+<!-- ПЛАШКА ВХОДЯЩЕЙ РАЦИИ У ВЕДУЩЕГО -->
+<div class="walkie-toast-host" id="walkie-toast-host">
+  <i class="fas fa-broadcast-tower" style="color:var(--neon-lime); font-size:1.3em;"></i>
+  <div class="walkie-toast-info">
+    <div class="walkie-toast-title" id="walkie-toast-sender">Рация: Команда</div>
+    <div class="walkie-toast-sub">Голосовое сообщение</div>
+  </div>
+  <button class="walkie-replay-btn" onclick="replayLastWalkieMessage()" title="Прослушать повторно"><i class="fas fa-redo"></i></button>
+</div>
+
+<!-- КНОПКА РАЦИИ ВЕДУЩЕГО (УДЕРЖАНИЕ) -->
+<button id="host-ptt-btn" title="Удерживайте, чтобы сказать в рацию"><i class="fas fa-microphone"></i></button>
+
 <button id="host-chat-toggle-btn" onclick="toggleHostChat()">
 <i class="fas fa-comments"></i>
 <span class="chat-unread-badge" id="host-unread-badge">0</span>
@@ -423,6 +469,8 @@ button:active { transform: scale(0.98); }
 <audio id="audio-start" preload="auto" playsinline style="display:none;"></audio>
 <audio id="audio-final" preload="auto" playsinline style="display:none;"></audio>
 <audio id="audio-game-over" preload="auto" playsinline style="display:none;"></audio>
+<audio id="audio-walkie-in" playsinline style="display:none;"></audio>
+
 <div id="settings-btn" onclick="openSettings()"><i class="fas fa-sliders-h"></i></div>
 <div id="timer-circle">0</div>
 <div id="settings-modal" onclick="if(event.target === this) closeSettings();">
@@ -485,6 +533,14 @@ button:active { transform: scale(0.98); }
 <select id="stream-audio-toggle">
 <option value="false">❌ Выкл (звук у ведущего)</option>
 <option value="true">🔊 Вкл (звук у всех)</option>
+</select>
+</div>
+<div class="settings-field row">
+<label for="walkie-mode-toggle">Режим рации (Push-to-Talk)</label>
+<select id="walkie-mode-toggle">
+<option value="disabled" selected>🚫 Выключена</option>
+<option value="host_only">🎙️ Только ведущему (ответы)</option>
+<option value="all">📻 Общий эфир (слышат все)</option>
 </select>
 </div>
 <div class="settings-field row">
@@ -592,7 +648,7 @@ button:active { transform: scale(0.98); }
 </div>
 <script>
 var firebaseConfig = {
-  apiKey: ["AIzaSyC9sh7uazv", "WbudsO7TYap4", "wENjkLD3K4"].join("-"),
+  apiKey: ["AIzaSyC9sh7uazv", "WbudsO7TYap4", "_wENjkLD3K4"].join("-"),
   authDomain: "revers-quiz.firebaseapp.com",
   databaseURL: "https://revers-quiz-default-rtdb.firebaseio.com",
   projectId: "revers-quiz",
@@ -611,6 +667,7 @@ var showScoreToPlayers = true;
 var showOpponentScore = true;
 var streamAudioToPlayers = false;
 var chatMode = "disabled";
+var walkieMode = "disabled";
 var jokerEnabled = false;
 var jokerChance = 0.2;
 var defaultCorrectPoints = 1;
@@ -619,6 +676,15 @@ var audioDistortionEnabled = false;
 var audioDistortionLevel = "medium";
 var currentTrackDistortion = { rate: 1.0, offset: 0, drift: false, level: "medium" };
 var vinylDriftInterval = null;
+
+/* ПЕРЕМЕННЫЕ РАЦИИ (PUSH-TO-TALK) */
+var hostMediaRecorder = null;
+var hostAudioChunks = [];
+var isHostRecording = false;
+var hostRecordTimer = null;
+var lastWalkieMsgId = null;
+var lastWalkieAudioData = null;
+var walkieToastTimer = null;
 
 var teamsData = [
   { id: 'team_1', name: 'Команда 1', score: 0, online: true },
@@ -660,6 +726,150 @@ var gameSessionStarted = false;
 var lastHandledPassAt = 0;
 var LASTFM_API_KEY = ["260c156d8fa38243", "bd33e6ebcf81a901"].join("");
 var STATIC_PLAYER_URL = ["https:", "", "clck.ru", "3WBWUq"].join("/");
+
+/* ЗВУКОВОЙ СИГНАЛ РАЦИИ (РОДЖЕР-БИП) */
+function playWalkieBeep(isEnd) {
+  try {
+    var ctx = new (window.AudioContext || window.webkitAudioContext)();
+    var osc = ctx.createOscillator();
+    var gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = "sine";
+    if (!isEnd) {
+      osc.frequency.setValueAtTime(950, ctx.currentTime);
+      osc.frequency.setValueAtTime(1250, ctx.currentTime + 0.05);
+    } else {
+      osc.frequency.setValueAtTime(1100, ctx.currentTime);
+      osc.frequency.setValueAtTime(750, ctx.currentTime + 0.06);
+    }
+    gain.gain.setValueAtTime(0.12, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.14);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.14);
+  } catch(e) {}
+}
+
+function updateHostPttButtonVisibility() {
+  var btn = document.getElementById("host-ptt-btn");
+  if (!btn) return;
+  btn.style.display = (isInteractiveMode && walkieMode !== "disabled") ? "flex" : "none";
+}
+
+function initHostWalkieTalkie() {
+  var pttBtn = document.getElementById("host-ptt-btn");
+  if (!pttBtn) return;
+
+  function startHostTalk(e) {
+    if (e.cancelable) e.preventDefault();
+    if (!isInteractiveMode || walkieMode === "disabled" || isHostRecording || !roomRef) return;
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      showActionNotification("⚠️ Микрофон недоступен (требуется HTTPS)");
+      return;
+    }
+    navigator.mediaDevices.getUserMedia({ audio: true }).then(function(stream) {
+      isHostRecording = true;
+      hostAudioChunks = [];
+      pttBtn.classList.add("recording");
+      playWalkieBeep(false);
+      if (navigator.vibrate) navigator.vibrate(40);
+
+      var mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus") ? "audio/webm;codecs=opus" : "";
+      hostMediaRecorder = mimeType ? new MediaRecorder(stream, { mimeType: mimeType, audioBitsPerSecond: 24000 }) : new MediaRecorder(stream);
+
+      hostMediaRecorder.ondataavailable = function(ev) {
+        if (ev.data && ev.data.size > 0) hostAudioChunks.push(ev.data);
+      };
+
+      hostMediaRecorder.onstop = function() {
+        stream.getTracks().forEach(function(t) { t.stop(); });
+        var blob = new Blob(hostAudioChunks, { type: hostMediaRecorder.mimeType || "audio/webm" });
+        if (blob.size < 400) return; // Слишком короткое нажатие
+        var reader = new FileReader();
+        reader.onloadend = function() {
+          var base64Audio = reader.result;
+          var msgId = "ptt_host_" + Date.now();
+          lastWalkieMsgId = msgId;
+          roomRef.child("walkie").set({
+            id: msgId,
+            senderId: "host",
+            senderName: "🎙️ Ведущий",
+            isHost: true,
+            audioData: base64Audio,
+            time: Date.now()
+          });
+          showActionNotification("📻 Сообщение отправлено в эфир!");
+        };
+        reader.readAsDataURL(blob);
+      };
+
+      hostMediaRecorder.start();
+      hostRecordTimer = setTimeout(function() {
+        if (isHostRecording) stopHostTalk();
+      }, 8000); // Максимум 8 секунд
+    }).catch(function(err) {
+      console.warn("Ошибка доступа к микрофону:", err);
+      showActionNotification("❌ Нет доступа к микрофону");
+    });
+  }
+
+  function stopHostTalk(e) {
+    if (e && e.cancelable) e.preventDefault();
+    if (!isHostRecording) return;
+    isHostRecording = false;
+    if (hostRecordTimer) { clearTimeout(hostRecordTimer); hostRecordTimer = null; }
+    pttBtn.classList.remove("recording");
+    playWalkieBeep(true);
+    if (hostMediaRecorder && hostMediaRecorder.state !== "inactive") {
+      hostMediaRecorder.stop();
+    }
+  }
+
+  pttBtn.addEventListener("mousedown", startHostTalk);
+  pttBtn.addEventListener("mouseup", stopHostTalk);
+  pttBtn.addEventListener("mouseleave", stopHostTalk);
+  pttBtn.addEventListener("touchstart", startHostTalk, { passive: false });
+  pttBtn.addEventListener("touchend", stopHostTalk, { passive: false });
+  pttBtn.addEventListener("touchcancel", stopHostTalk, { passive: false });
+}
+
+function listenToHostWalkie() {
+  if (!roomRef) return;
+  roomRef.child("walkie").on("value", function(snap) {
+    var w = snap.val();
+    if (!w || !w.id || w.id === lastWalkieMsgId) return;
+    if (Date.now() - (w.time || 0) > 15000) return; // Игнорируем старые записи при перезагрузке
+    lastWalkieMsgId = w.id;
+    if (w.senderId === "host" || walkieMode === "disabled") return;
+
+    lastWalkieAudioData = w.audioData;
+    var toast = document.getElementById("walkie-toast-host");
+    var senderEl = document.getElementById("walkie-toast-sender");
+    if (toast && senderEl) {
+      senderEl.textContent = "📻 В эфире: " + (w.senderName || "Команда");
+      toast.style.display = "flex";
+      if (walkieToastTimer) clearTimeout(walkieToastTimer);
+      walkieToastTimer = setTimeout(function() { toast.style.display = "none"; }, 9000);
+    }
+
+    playWalkieBeep(false);
+    var audioEl = document.getElementById("audio-walkie-in");
+    if (audioEl && w.audioData) {
+      audioEl.src = w.audioData;
+      audioEl.onended = function() { playWalkieBeep(true); };
+      audioEl.play().catch(function(e) { console.warn("Автозапуск рации:", e); });
+    }
+  });
+}
+
+function replayLastWalkieMessage() {
+  var audioEl = document.getElementById("audio-walkie-in");
+  if (audioEl && lastWalkieAudioData) {
+    audioEl.src = lastWalkieAudioData;
+    audioEl.currentTime = 0;
+    audioEl.play().catch(function() {});
+  }
+}
 
 /* УПРАВЛЕНИЕ ПОДНАСТРОЙКОЙ ИСКАЖЕНИЯ */
 function toggleDistortionSubSettings() {
@@ -741,7 +951,7 @@ function startVinylDrift(audioEl, baseRate) {
   if (!audioEl || !currentTrackDistortion.drift) return;
   vinylDriftInterval = setInterval(function() {
     if (!audioEl || audioEl.paused) return;
-    var swing = (Math.random() * 0.20) - 0.10; // ±10%
+    var swing = (Math.random() * 0.20) - 0.10;
     var newRate = Math.max(0.55, Math.min(1.60, +(baseRate + swing).toFixed(2)));
     audioEl.playbackRate = newRate;
     updateDistortionBadgeUI({ rate: newRate, offset: currentTrackDistortion.offset, drift: true });
@@ -839,12 +1049,9 @@ async function loadPhrasesData() {
       var json = await res.json();
       if (json && (json.scenario_1_correct || json.scenario_2_wrong || json.scenario_3_timeout)) {
         phrasesData = json;
-        console.log("✅ Успешно загружен phrases.json:", phrasesData);
       }
     }
-  } catch(e) {
-    console.warn("Файл phrases.json не найден или синтаксическая ошибка, активен дефолт:", e);
-  }
+  } catch(e) {}
 }
 
 function getRandomPhrase(scenarioKey) {
@@ -852,7 +1059,6 @@ function getRandomPhrase(scenarioKey) {
     var customPool = phrasesData[scenarioKey];
     return customPool[Math.floor(Math.random() * customPool.length)];
   }
-
   var defaults = {
     "scenario_1_correct": ["Гений чистой красоты! В яблочко!", "Уши-алмазы! Это было молниеносно!", "Музыкальный терминатор в деле!"],
     "scenario_2_wrong": ["Эх, фальшивая нота! Но попытка зачётная!", "Мимо кассы... А ведь победа была так близко!", "Не угадали, зато красиво рисковали!"],
@@ -993,6 +1199,7 @@ function openSettings() {
     var modeSel = document.getElementById("game-mode-toggle");
     var streamSel = document.getElementById("stream-audio-toggle");
     var chatModeSel = document.getElementById("chat-mode-toggle");
+    var walkieModeSel = document.getElementById("walkie-mode-toggle");
     var scoreSel = document.getElementById("show-score-toggle");
     var opponentScoreSel = document.getElementById("show-opponent-score-toggle");
     var jokerToggle = document.getElementById("joker-toggle");
@@ -1012,6 +1219,7 @@ function openSettings() {
     if (modeSel) modeSel.value = gameMode;
     if (streamSel) streamSel.value = streamAudioToPlayers ? "true" : "false";
     if (chatModeSel) chatModeSel.value = chatMode;
+    if (walkieModeSel) walkieModeSel.value = walkieMode;
     if (scoreSel) scoreSel.value = showScoreToPlayers ? "true" : "false";
     if (opponentScoreSel) opponentScoreSel.value = showOpponentScore ? "true" : "false";
     if (jokerToggle) jokerToggle.value = jokerEnabled ? "true" : "false";
@@ -1069,6 +1277,7 @@ function setSettings() {
     var newGameMode = document.getElementById("game-mode-toggle").value;
     var newStreamAudio = document.getElementById("stream-audio-toggle").value === "true";
     var newChatMode = document.getElementById("chat-mode-toggle").value;
+    var newWalkieMode = document.getElementById("walkie-mode-toggle").value;
     var newShowScore = document.getElementById("show-score-toggle").value === "true";
     var newShowOpponent = document.getElementById("show-opponent-score-toggle").value === "true";
     var newJokerEnabled = document.getElementById("joker-toggle").value === "true";
@@ -1097,6 +1306,7 @@ function setSettings() {
     mixMode = mode === "mixed";
     streamAudioToPlayers = newStreamAudio;
     chatMode = newChatMode;
+    walkieMode = newWalkieMode;
     showScoreToPlayers = newShowScore;
     showOpponentScore = newShowOpponent;
     jokerEnabled = newJokerEnabled;
@@ -1120,7 +1330,7 @@ function setSettings() {
     if (isInteractiveMode && roomRef) {
       roomRef.update({
         showScore: showScoreToPlayers, showOpponentScore: showOpponentScore,
-        streamAudio: streamAudioToPlayers, chatMode: chatMode, gameMode: gameMode, systemSounds: soundUrls
+        streamAudio: streamAudioToPlayers, chatMode: chatMode, walkieMode: walkieMode, gameMode: gameMode, systemSounds: soundUrls
       });
       roomRef.child("audioSync").update({ jokerEnabled: jokerEnabled });
       if (isVariantsMode) {
@@ -1133,6 +1343,7 @@ function setSettings() {
     }
     saveState();
     updateHostChatButtonVisibility();
+    updateHostPttButtonVisibility();
     if (needReload) { location.reload(); }
     else { updateFolderSelectOptions(); applyGameModeUI(); showActionNotification('⚙️ Настройки сохранены'); }
   } catch (err) { console.error("Ошибка при сохранении настроек:", err); }
@@ -1224,7 +1435,7 @@ function initHostRoom() {
   roomRef = db.ref("rooms/" + currentRoomPin);
   roomRef.update({
     status: "idle", showScore: showScoreToPlayers, showOpponentScore: showOpponentScore,
-    streamAudio: streamAudioToPlayers, chatMode: chatMode, gameMode: gameMode,
+    streamAudio: streamAudioToPlayers, chatMode: chatMode, walkieMode: walkieMode, gameMode: gameMode,
     buzzer: { locked: true, pressedBy: null, passedBy: [] }, revealedTrack: "",
     systemSounds: soundUrls, timerState: { active: false, value: 0 },
     audioSync: { trackSessionId: "", reversUrl: "", normalUrl: "", duration: 0, currentTime: 0, playAction: "stop", startAt: 0, isJoker: false, jokerEnabled: jokerEnabled, distortionRate: 1.0, distortionOffset: 0, distortionDrift: false },
@@ -1235,6 +1446,9 @@ function initHostRoom() {
   renderHostTeamsList();
   renderScoreboardGrid();
   updateHostChatButtonVisibility();
+  updateHostPttButtonVisibility();
+  initHostWalkieTalkie();
+  listenToHostWalkie();
   initEmojiPicker("host-emoji-popover", "host-chat-input");
   listenToChatMessages();
   roomRef.child("teams").on("value", function(snapshot) {
@@ -1297,9 +1511,7 @@ async function fetchLastFmSimilar(artist) {
     if (data && data.similarartists && Array.isArray(data.similarartists.artist)) {
       return data.similarartists.artist.map(function(a) { return a.name; });
     }
-  } catch(e) {
-    console.warn("Last.fm getsimilar error:", e);
-  }
+  } catch(e) {}
   return [];
 }
 
@@ -1316,9 +1528,7 @@ async function fetchLastFmTopTrack(artist) {
       var randomTrack = data.toptracks.track[Math.floor(Math.random() * Math.min(3, data.toptracks.track.length))];
       return cleanSongTitle(randomTrack.name);
     }
-  } catch(e) {
-    console.warn("Last.fm gettoptracks error:", e);
-  }
+  } catch(e) {}
   return null;
 }
 
@@ -1831,6 +2041,7 @@ function restoreSession() {
       showOpponentScore = data.showOpponentScore !== false;
       streamAudioToPlayers = data.streamAudioToPlayers === true;
       chatMode = data.chatMode || "disabled";
+      walkieMode = data.walkieMode || "disabled";
       jokerEnabled = data.jokerEnabled === true;
       jokerChance = typeof data.jokerChance !== 'undefined' ? data.jokerChance : 0.2;
       audioDistortionEnabled = data.audioDistortionEnabled === true;
@@ -1870,7 +2081,7 @@ function saveState() {
     var state = {
       gameMode: gameMode, isInteractiveMode: isInteractiveMode,
       showScoreToPlayers: showScoreToPlayers, showOpponentScore: showOpponentScore,
-      streamAudioToPlayers: streamAudioToPlayers, chatMode: chatMode,
+      streamAudioToPlayers: streamAudioToPlayers, chatMode: chatMode, walkieMode: walkieMode,
       jokerEnabled: jokerEnabled, jokerChance: jokerChance,
       audioDistortionEnabled: audioDistortionEnabled,
       audioDistortionLevel: audioDistortionLevel,
@@ -2004,7 +2215,6 @@ async function playNormalWithAutoRecovery(audioEl, normalUrl, trackName) {
     updateNormalProgress();
     return true;
   } catch (err) {
-    console.warn("Мягкий перезапуск аудио оригинала:", err);
     try {
       var folder = selectedFolder || (mixMode ? "/Русские" : "");
       var targetPath = folder + "/" + trackName + "_NORMAL.mp3";
@@ -2019,7 +2229,7 @@ async function playNormalWithAutoRecovery(audioEl, normalUrl, trackName) {
         if (files[trackName]) files[trackName].normal = data.href;
         return true;
       }
-    } catch (recoverErr) { console.error("Восстановление трека не удалось:", recoverErr); }
+    } catch (recoverErr) {}
     return false;
   }
 }
@@ -2029,7 +2239,7 @@ async function startOriginalPlayback() {
   var b = document.getElementById("normal-toggle");
   var a = ensureAudioPlayer("audio-normal");
   var trackObj = files[currentTrackName];
-  if (!currentTrackName || !trackObj || !trackObj.normal) { console.warn("Файл оригинала не найден для:", currentTrackName); return; }
+  if (!currentTrackName || !trackObj || !trackObj.normal) return;
   if (p) p.style.display = "block";
   if (b) b.textContent = "Скрыть оригинал";
   var success = await playNormalWithAutoRecovery(a, trackObj.normal, currentTrackName);
@@ -2088,7 +2298,7 @@ async function fetchFolderFiles(path) {
       }
     });
     return filesMap;
-  } catch (e) { console.error("Ошибка загрузки папки:", e); return {}; }
+  } catch (e) { return {}; }
 }
 
 async function loadFiles() {
@@ -2131,7 +2341,6 @@ async function loadFiles() {
     preloadAllSounds();
     showActionNotification('✅ Треки загружены и перемешаны!');
   } catch (e) {
-    console.error("КРИТИЧЕСКАЯ ОШИБКА ЗАГРУЗКИ:", e);
     alert("Ошибка загрузки.");
   }
   if (!gameSessionStarted) {
@@ -2215,7 +2424,6 @@ async function playTrack(name) {
   currentTrackIsJoker = false;
   if (jokerEnabled && track && track.revers) {
     currentTrackIsJoker = Math.random() < jokerChance;
-    if (currentTrackIsJoker) { console.log("🃏 ДЖОКЕР активирован для трека:", name); }
   }
 
   var playerContainer = document.getElementById("revers-player-container");
@@ -2406,7 +2614,7 @@ function startSynchronizedPlayback() {
         distortionDrift: currentTrackDistortion.drift === true
       });
     }
-  }).catch(function(err) { console.warn("Воспроизведение ведущего ожидает разрешения:", err); });
+  }).catch(function(err) {});
 }
 
 function resumeSynchronizedPlayback() {
@@ -2438,7 +2646,7 @@ function resumeSynchronizedPlayback() {
       if (currentTrackDistortion.drift) {
         startVinylDrift(audio, currentTrackDistortion.rate);
       }
-    }).catch(function(err) { console.warn("Возобновление:", err); });
+    }).catch(function(err) {});
   }, delayStart);
 }
 
