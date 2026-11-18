@@ -466,6 +466,7 @@ button:active { transform: scale(0.98); }
 <audio id="audio-winner" preload="auto" playsinline style="display:none;"></audio>
 <audio id="audio-lost" preload="auto" playsinline style="display:none;"></audio>
 <audio id="audio-ring" preload="auto" playsinline style="display:none;"></audio>
+<audio id="audio-otvet" preload="auto" playsinline style="display:none;"></audio>
 <audio id="audio-start" preload="auto" playsinline style="display:none;"></audio>
 <audio id="audio-final" preload="auto" playsinline style="display:none;"></audio>
 <audio id="audio-game-over" preload="auto" playsinline style="display:none;"></audio>
@@ -708,7 +709,7 @@ var timerInterval = null;
 var isTimerActive = false;
 var lastPlayedTrack = null;
 var trackOrder = {};
-var soundUrls = { winner: null, lost: null, ring: null, start: null, final: null, gameOver: null };
+var soundUrls = { winner: null, lost: null, ring: null, otvet: null, start: null, final: null, gameOver: null };
 var variantsTimerDuration = 5;
 var variantsPenaltyEnabled = false;
 var variantsWrongPenaltyEnabled = false;
@@ -1869,7 +1870,23 @@ function handleBuzzerTriggered(teamId, teamName) {
   stopTimer();
   if (isInteractiveMode && roomRef) { roomRef.child("audioSync").update({ playAction: "pause", currentTime: r ? r.currentTime : 0 }); }
   activateTeam(teamId);
-  if (soundUrls.ring) { var a = document.getElementById("audio-ring"); a.src = soundUrls.ring; a.currentTime = 0; a.play().catch(function() {}); }
+
+  if (soundUrls.otvet) {
+    var aOtvet = document.getElementById("audio-otvet");
+    if (aOtvet) {
+      if (aOtvet.src !== soundUrls.otvet) aOtvet.src = soundUrls.otvet;
+      aOtvet.currentTime = 0;
+      aOtvet.play().catch(function() {});
+    }
+  } else if (soundUrls.ring) {
+    var aRing = document.getElementById("audio-ring");
+    if (aRing) {
+      aRing.src = soundUrls.ring;
+      aRing.currentTime = 0;
+      aRing.play().catch(function() {});
+    }
+  }
+
   showWaveHandPopup(teamName);
   scrollToVariantsBlock();
   if (isVariantsMode && roomRef) {
@@ -1961,7 +1978,7 @@ function formatScore(val) {
   return formatted.replace('.', ',');
 }
 function unlockMobileAudio() {
-  var audios = ['audio-revers', 'audio-normal', 'audio-winner', 'audio-lost', 'audio-ring', 'audio-start', 'audio-final', 'audio-game-over'];
+  var audios = ['audio-revers', 'audio-normal', 'audio-winner', 'audio-lost', 'audio-ring', 'audio-otvet', 'audio-start', 'audio-final', 'audio-game-over'];
   audios.forEach(function(id) { var a = document.getElementById(id); if (a) { a.play().catch(function() {}); a.pause(); } });
 }
 document.addEventListener('click', unlockMobileAudio, { once: true });
@@ -2111,8 +2128,21 @@ async function preloadAllSounds() {
       if (n.indexOf("time_final") !== -1 && n.endsWith(".mp3")) soundUrls.final = f.file;
       if (n.indexOf("winner") !== -1 && n.endsWith(".mp3")) soundUrls.winner = f.file;
       if (n.indexOf("lost") !== -1 && n.endsWith(".mp3")) soundUrls.lost = f.file;
-      if (n.indexOf("ring_score") !== -1 && n.endsWith(".mp3")) soundUrls.ring = f.file;
-      if (n.indexOf("game_over") !== -1 && n.endsWith(".mp3")) { soundUrls.gameOver = f.file; var aGameOver = document.getElementById("audio-game-over"); if (aGameOver) { aGameOver.src = f.file; aGameOver.load(); } }
+      if (n.indexOf("ring_score") !== -1 && n.endsWith(".mp3")) {
+        soundUrls.ring = f.file;
+        var aRing = document.getElementById("audio-ring");
+        if (aRing) { aRing.src = f.file; aRing.load(); }
+      }
+      if (n.indexOf("otvet") !== -1 && n.endsWith(".mp3")) {
+        soundUrls.otvet = f.file;
+        var aOtvet = document.getElementById("audio-otvet");
+        if (aOtvet) { aOtvet.src = f.file; aOtvet.load(); }
+      }
+      if (n.indexOf("game_over") !== -1 && n.endsWith(".mp3")) {
+        soundUrls.gameOver = f.file;
+        var aGameOver = document.getElementById("audio-game-over");
+        if (aGameOver) { aGameOver.src = f.file; aGameOver.load(); }
+      }
     });
     if (isInteractiveMode && roomRef) { roomRef.child("systemSounds").set(soundUrls); }
   } catch (e) { console.error("Ошибка загрузки системных звуков:", e); }
