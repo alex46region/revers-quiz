@@ -65,6 +65,43 @@ h1 i { -webkit-text-fill-color: var(--neon-cyan); filter: drop-shadow(0 0 12px v
 .team-pill.ready { border-color: var(--neon-lime); color: var(--neon-lime); }
 .team-pill.offline { border-color: rgba(255, 255, 255, 0.15); color: var(--text-dim); opacity: 0.65; filter: grayscale(1); }
 
+/* ПАНЕЛЬ СЛЕПЫХ СТАВОК У ВЕДУЩЕГО */
+.bidding-host-panel {
+  display: none; background: linear-gradient(135deg, rgba(255, 215, 0, 0.1) 0%, rgba(112, 0, 255, 0.12) 100%);
+  border: 2px solid var(--neon-gold); border-radius: 18px; padding: 18px; margin: 16px 20px;
+  box-shadow: 0 0 30px rgba(255, 215, 0, 0.25);
+}
+.bidding-host-header {
+  display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;
+}
+.bidding-host-title {
+  font-family: 'Syne', sans-serif; font-size: 1.05em; font-weight: 800; color: var(--neon-gold);
+  text-transform: uppercase; letter-spacing: 1.5px; display: flex; align-items: center; gap: 8px;
+}
+.bidding-pot-badge {
+  font-family: 'Ubuntu Mono', monospace; font-size: 1.1em; font-weight: 900;
+  background: rgba(255, 215, 0, 0.2); border: 1px solid var(--neon-gold); color: var(--neon-gold);
+  padding: 4px 12px; border-radius: 10px;
+}
+.bidding-teams-status-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 8px; margin-top: 8px; margin-bottom: 12px;
+}
+.bidding-team-chip {
+  background: var(--bg-deep); border: 1px solid var(--border-subtle); border-radius: 10px;
+  padding: 8px 12px; font-size: 0.85em; display: flex; justify-content: space-between; align-items: center;
+}
+.bidding-team-chip.decided-bet { border-color: var(--neon-gold); color: var(--neon-gold); }
+.bidding-team-chip.decided-pass { border-color: var(--text-dim); color: var(--text-dim); }
+.bidding-force-btn {
+  width: 100%; padding: 12px; border-radius: 12px; background: var(--neon-lime); color: #000;
+  font-size: 0.9em; font-weight: 800; text-transform: uppercase; cursor: pointer;
+}
+.bidding-countdown-banner {
+  display: none; text-align: center; font-family: 'Ubuntu Mono', monospace; font-size: 1.4em;
+  font-weight: 900; color: var(--neon-lime); background: rgba(0, 255, 102, 0.12);
+  border: 1px solid var(--neon-lime); border-radius: 12px; padding: 10px; margin-top: 10px;
+}
+
 .buzzer-wave-overlay { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.8); z-index: 5000; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 12px; pointer-events: none; opacity: 0; transition: opacity 0.25s ease, transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
 .buzzer-wave-overlay.show { display: flex; opacity: 1; transform: translate(-50%, -50%) scale(1); }
 .wave-hand-halo { width: clamp(100px, 24vw, 150px); height: clamp(100px, 24vw, 150px); background: rgba(14, 18, 26, 0.85); backdrop-filter: blur(16px); border: 2px solid var(--neon-pink); border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 30px rgba(255, 0, 85, 0.5), 0 0 60px rgba(255, 0, 85, 0.25); }
@@ -73,7 +110,6 @@ h1 i { -webkit-text-fill-color: var(--neon-cyan); filter: drop-shadow(0 0 12px v
 .wave-team-badge { background: rgba(5, 6, 10, 0.9); backdrop-filter: blur(14px); border: 1px solid var(--neon-cyan); color: #fff; padding: 10px 22px; border-radius: 16px; font-family: 'Syne', sans-serif; font-size: clamp(0.95em, 3.2vw, 1.35em); font-weight: 800; text-transform: uppercase; letter-spacing: 1px; text-align: center; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8), 0 0 20px rgba(0, 229, 255, 0.3); max-width: 85vw; word-break: break-word; overflow-wrap: anywhere; line-height: 1.3; }
 .wave-team-badge span { color: var(--neon-cyan); text-shadow: 0 0 10px rgba(0, 229, 255, 0.5); }
 
-/* МОТИВАЦИОННЫЙ БАННЕР ВЕДУЩЕГО */
 .host-phrase-banner {
   display: none; background: rgba(14, 18, 26, 0.92); border: 2px solid var(--neon-cyan);
   border-radius: 16px; padding: 14px 18px; margin-bottom: 12px; text-align: center;
@@ -239,7 +275,6 @@ button:active { transform: scale(0.98); }
 }
 @keyframes pttPulse { 0% { transform: scale(1.12); } 100% { transform: scale(1.22); } }
 
-/* ВСПЛЫВАЮЩАЯ ПЛАШКА ВХОДЯЩЕЙ РАЦИИ У ВЕДУЩЕГО */
 .walkie-toast-host {
   position: fixed; bottom: 84px; left: 50%; transform: translateX(-50%);
   background: rgba(14, 18, 26, 0.96); backdrop-filter: blur(16px);
@@ -321,6 +356,18 @@ button:active { transform: scale(0.98); }
 <div class="connected-teams-list" id="host-teams-container">
 <div style="color:var(--text-dim); font-size:0.9em;">Ожидание подключения участников...</div>
 </div>
+</div>
+
+<!-- ПАНЕЛЬ СЛЕПЫХ СТАВОК У ВЕДУЩЕГО -->
+<div class="bidding-host-panel" id="bidding-host-panel">
+  <div class="bidding-host-header">
+    <div class="bidding-host-title"><i class="fas fa-coins"></i> Слепые ставки перед раундом</div>
+    <div class="bidding-pot-badge" id="host-bidding-pot">Банк: 0</div>
+  </div>
+  <div style="font-size:0.8em; color:var(--text-dim); text-transform:uppercase; letter-spacing:1px;">Ставки команд:</div>
+  <div class="bidding-teams-status-grid" id="host-bidding-teams-grid"></div>
+  <button class="bidding-force-btn" onclick="forceFinishBidding()"><i class="fas fa-play"></i> Завершить ставки и запустить трек</button>
+  <div class="bidding-countdown-banner" id="host-bidding-countdown">Старт трека через: 3</div>
 </div>
 
 <div class="section" id="variants-control-section">
@@ -425,7 +472,6 @@ button:active { transform: scale(0.98); }
 </div>
 </div>
 
-<!-- ПЛАШКА ВХОДЯЩЕЙ РАЦИИ У ВЕДУЩЕГО -->
 <div class="walkie-toast-host" id="walkie-toast-host">
   <i class="fas fa-broadcast-tower" style="color:var(--neon-lime); font-size:1.3em;"></i>
   <div class="walkie-toast-info">
@@ -435,7 +481,6 @@ button:active { transform: scale(0.98); }
   <button class="walkie-replay-btn" onclick="replayLastWalkieMessage()" title="Прослушать повторно"><i class="fas fa-redo"></i></button>
 </div>
 
-<!-- КНОПКА РАЦИИ ВЕДУЩЕГО (УДЕРЖАНИЕ) -->
 <button id="host-ptt-btn" title="Удерживайте, чтобы сказать в рацию"><i class="fas fa-walkie-talkie"></i></button>
 
 <button id="host-chat-toggle-btn" onclick="toggleHostChat()">
@@ -493,6 +538,21 @@ button:active { transform: scale(0.98); }
 </div>
 <div class="settings-group" id="variants-sub-settings" style="display:none;">
 <div class="settings-group-title"><i class="fas fa-list-check"></i> Настройки режима «Варианты»</div>
+
+<div class="settings-field row">
+<label for="bidding-mode-toggle">Слепые ставки перед раундом</label>
+<select id="bidding-mode-toggle" onchange="toggleBiddingSubSettings()">
+<option value="false" selected>❌ Выкл (обычный запуск)</option>
+<option value="true">💰 Вкл (торги вслепую)</option>
+</select>
+</div>
+<div class="settings-sub-box" id="bidding-sub-settings" style="display:none;">
+<div class="settings-field row">
+<label for="bidding-start-bank-input">Стартовый банк команд (баллы)</label>
+<input type="number" id="bidding-start-bank-input" min="1" max="100" step="1" value="5" style="max-width:90px; text-align:center;">
+</div>
+</div>
+
 <div class="settings-field row">
 <label for="variants-timer-input">Время на выбор ответа (сек)</label>
 <input type="number" id="variants-timer-input" min="1" max="60" value="5" style="max-width:90px; text-align:center;">
@@ -673,6 +733,18 @@ var jokerEnabled = false;
 var jokerChance = 0.2;
 var defaultCorrectPoints = 1;
 
+/* НАСТРОЙКИ СЛЕПЫХ СТАВОК */
+var biddingModeEnabled = false;
+var biddingStartBank = 5;
+var biddingState = {
+  active: false,
+  pot: 0,
+  bets: {},
+  countdownActive: false,
+  countdownDeadline: 0
+};
+var biddingCountdownInterval = null;
+
 var audioDistortionEnabled = false;
 var audioDistortionLevel = "medium";
 var currentTrackDistortion = { rate: 1.0, offset: 0, drift: false, level: "medium" };
@@ -785,7 +857,7 @@ function initHostWalkieTalkie() {
       hostMediaRecorder.onstop = function() {
         stream.getTracks().forEach(function(t) { t.stop(); });
         var blob = new Blob(hostAudioChunks, { type: hostMediaRecorder.mimeType || "audio/webm" });
-        if (blob.size < 400) return; // Слишком короткое нажатие
+        if (blob.size < 400) return;
         var reader = new FileReader();
         reader.onloadend = function() {
           var base64Audio = reader.result;
@@ -836,7 +908,7 @@ function listenToHostWalkie() {
   roomRef.child("walkie").on("value", function(snap) {
     var w = snap.val();
     if (!w || !w.id || w.id === lastWalkieMsgId) return;
-    if (Date.now() - (w.time || 0) > 15000) return; // Игнорируем старые записи при перезагрузке
+    if (Date.now() - (w.time || 0) > 15000) return;
     lastWalkieMsgId = w.id;
     if (w.senderId === "host" || walkieMode === "disabled") return;
 
@@ -869,6 +941,186 @@ function replayLastWalkieMessage() {
   }
 }
 
+/* СЛЕПЫЕ СТАВКИ ПЕРЕД РАУНДОМ */
+function toggleBiddingSubSettings() {
+  var toggle = document.getElementById("bidding-mode-toggle");
+  var subBox = document.getElementById("bidding-sub-settings");
+  if (toggle && subBox) {
+    subBox.style.display = (toggle.value === "true") ? "flex" : "none";
+  }
+}
+
+function applyStartBankToTeams(forceReset) {
+  if (!isInteractiveMode || !roomRef) return;
+  teamsData.forEach(function(t) {
+    if (forceReset || !t.bankInitialized) {
+      t.score = biddingStartBank;
+      t.bankInitialized = true;
+      roomRef.child("teams/" + t.id).update({
+        score: biddingStartBank,
+        bankInitialized: true
+      });
+    }
+  });
+  renderScoreboardGrid();
+  renderHostTeamsList();
+}
+
+function updateBiddingHostUI() {
+  var panel = document.getElementById("bidding-host-panel");
+  if (!panel) return;
+  if (!isVariantsMode || !biddingModeEnabled || !biddingState.active) {
+    panel.style.display = "none";
+    return;
+  }
+  panel.style.display = "block";
+
+  var betsObj = biddingState.bets || {};
+  var totalPot = 0;
+  Object.keys(betsObj).forEach(function(tid) {
+    totalPot += parseFloat(betsObj[tid].amount) || 0;
+  });
+  totalPot = Math.round(totalPot * 10) / 10;
+
+  var potEl = document.getElementById("host-bidding-pot");
+  if (potEl) potEl.textContent = "Банк раунда: " + formatScore(totalPot);
+
+  var grid = document.getElementById("host-bidding-teams-grid");
+  if (grid) {
+    grid.innerHTML = "";
+    teamsData.forEach(function(t) {
+      var chip = document.createElement("div");
+      var decision = betsObj[t.id];
+      if (!decision) {
+        chip.className = "bidding-team-chip";
+        chip.innerHTML = '<span>' + t.name + '</span><span style="color:var(--neon-yellow);">⏳ Ставит...</span>';
+      } else if (decision.passed) {
+        chip.className = "bidding-team-chip decided-pass";
+        chip.innerHTML = '<span>' + t.name + '</span><span>⏭️ Пас (0)</span>';
+      } else {
+        chip.className = "bidding-team-chip decided-bet";
+        chip.innerHTML = '<span>' + t.name + '</span><span>💰 ' + formatScore(decision.amount) + '</span>';
+      }
+      grid.appendChild(chip);
+    });
+  }
+}
+
+function checkAllTeamsDecidedBidding() {
+  if (!biddingState.active || biddingState.countdownActive) return;
+  var onlineTeams = teamsData.filter(function(t) { return t.online !== false; });
+  if (onlineTeams.length === 0) return;
+  var betsObj = biddingState.bets || {};
+  var everyoneDecided = onlineTeams.every(function(t) { return !!betsObj[t.id]; });
+  if (everyoneDecided) {
+    startBiddingCountdown();
+  }
+}
+
+function forceFinishBidding() {
+  if (!biddingState.active || biddingState.countdownActive) return;
+  startBiddingCountdown();
+}
+
+function startBiddingCountdown() {
+  if (!roomRef) return;
+  if (biddingCountdownInterval) clearInterval(biddingCountdownInterval);
+
+  var betsObj = biddingState.bets || {};
+  var totalPot = 0;
+  Object.keys(betsObj).forEach(function(tid) {
+    totalPot += parseFloat(betsObj[tid].amount) || 0;
+  });
+  totalPot = Math.round(totalPot * 10) / 10;
+
+  var deadline = Date.now() + 3000;
+  roomRef.child("biddingRound").update({
+    pot: totalPot,
+    countdownActive: true,
+    countdownDeadline: deadline
+  });
+
+  var banner = document.getElementById("host-bidding-countdown");
+  if (banner) {
+    banner.style.display = "block";
+    banner.textContent = "Старт трека через: 3";
+  }
+
+  biddingCountdownInterval = setInterval(function() {
+    var secLeft = Math.ceil((deadline - Date.now()) / 1000);
+    if (banner) {
+      banner.textContent = "Старт трека через: " + Math.max(0, secLeft);
+    }
+    if (secLeft <= 0) {
+      clearInterval(biddingCountdownInterval);
+      biddingCountdownInterval = null;
+      if (banner) banner.style.display = "none";
+      roomRef.child("biddingRound").update({
+        active: false,
+        countdownActive: false,
+        pot: totalPot
+      });
+      roomRef.child("buzzer").set({
+        locked: false,
+        pressedBy: null,
+        pressedByName: null,
+        passedBy: []
+      });
+      toggleRevers();
+    }
+  }, 200);
+}
+
+function resolveBiddingPot(isCorrect, answeringTeamId) {
+  var betsObj = biddingState.bets || {};
+  var totalPot = 0;
+  Object.keys(betsObj).forEach(function(tid) {
+    totalPot += parseFloat(betsObj[tid].amount) || 0;
+  });
+  totalPot = Math.round(totalPot * 10) / 10;
+
+  var ansBetInfo = answeringTeamId ? betsObj[answeringTeamId] : null;
+  var ansBetAmount = (ansBetInfo && !ansBetInfo.passed) ? (parseFloat(ansBetInfo.amount) || 0) : 0;
+
+  if (isCorrect && answeringTeamId) {
+    if (ansBetAmount > 0) {
+      // Команда делала ставку и угадала: забирает весь банк (ставки соперников переходят ей)
+      teamsData.forEach(function(t) {
+        if (t.id === answeringTeamId) {
+          var netWin = Math.round((totalPot - ansBetAmount) * 10) / 10;
+          if (netWin > 0) {
+            changeScore(t.id, netWin);
+          } else {
+            showNotification('✅ Ставка сохранена! (' + t.name + ')', true);
+          }
+        } else {
+          var otherBet = (betsObj[t.id] && !betsObj[t.id].passed) ? (parseFloat(betsObj[t.id].amount) || 0) : 0;
+          if (otherBet > 0) {
+            changeScore(t.id, -otherBet);
+          }
+        }
+      });
+    } else {
+      // Команда нажала "Пас" (ставка 0), но нажала кнопку ответа и угадала:
+      // получает +1 балл, ставки всех остальных возвращаются им без потери
+      changeScore(answeringTeamId, 1);
+      showActionNotification("🎯 Ответ без ставки! +1 балл, ставки соперников возвращены.");
+    }
+  } else if (!isCorrect && answeringTeamId) {
+    if (ansBetAmount > 0) {
+      // Команда делала ставку и ошиблась: её ставка сгорает, остальным возвращается
+      changeScore(answeringTeamId, -ansBetAmount);
+      showActionNotification("💥 Ставка " + formatScore(ansBetAmount) + " сгорела! Остальным ставки возвращены.");
+    } else if (variantsWrongPenaltyEnabled) {
+      changeScore(answeringTeamId, -0.5);
+    }
+  }
+
+  biddingState = { active: false, pot: 0, bets: {}, countdownActive: false, countdownDeadline: 0 };
+  if (roomRef) {
+    roomRef.child("biddingRound").set(biddingState);
+  }
+}
 /* УПРАВЛЕНИЕ ПОДНАСТРОЙКОЙ ИСКАЖЕНИЯ */
 function toggleDistortionSubSettings() {
   var toggle = document.getElementById("audio-distortion-toggle");
@@ -1210,6 +1462,8 @@ function openSettings() {
     var vNormDelayIn = document.getElementById("variants-normal-delay-input");
     var distSel = document.getElementById("audio-distortion-toggle");
     var distLvlSel = document.getElementById("audio-distortion-level");
+    var bidSel = document.getElementById("bidding-mode-toggle");
+    var bidBankIn = document.getElementById("bidding-start-bank-input");
 
     if (tIn) tIn.value = timerDuration;
     if (dIn) dIn.value = originalDelay;
@@ -1230,9 +1484,12 @@ function openSettings() {
     if (vNormDelayIn) vNormDelayIn.value = variantsNormalDelay;
     if (distSel) distSel.value = audioDistortionEnabled ? "true" : "false";
     if (distLvlSel) distLvlSel.value = audioDistortionLevel || "medium";
+    if (bidSel) bidSel.value = biddingModeEnabled ? "true" : "false";
+    if (bidBankIn) bidBankIn.value = biddingStartBank;
 
     toggleInteractiveSettingsVisibility();
     toggleDistortionSubSettings();
+    toggleBiddingSubSettings();
   } catch (err) {
     console.warn("Ошибка заполнения полей настроек:", err);
   }
@@ -1291,14 +1548,24 @@ function setSettings() {
     var defPtsVal = parseFloat(document.getElementById("default-correct-pts-input").value);
     if (isNaN(defPtsVal) || defPtsVal < 0) defPtsVal = 1;
     defaultCorrectPoints = defPtsVal;
+
+    var newBiddingEnabled = document.getElementById("bidding-mode-toggle").value === "true";
+    var newBiddingBank = parseFloat(document.getElementById("bidding-start-bank-input").value);
+    if (isNaN(newBiddingBank) || newBiddingBank < 1) newBiddingBank = 5;
+
     var valTimer = parseInt(inputTimer.value);
     var valDelay = parseFloat(inputDelay.value);
     if (isNaN(valTimer) || valTimer < 1 || valTimer > 300) return alert("Таймер: от 1 до 300 сек.");
     if (isNaN(valDelay) || valDelay < 0 || valDelay > 30) return alert("Задержка оригинала: от 0 до 30 сек.");
+
     var needReload = (newGameMode !== gameMode);
+    var biddingJustEnabled = (newBiddingEnabled && !biddingModeEnabled);
+
     gameMode = newGameMode;
     isInteractiveMode = (gameMode !== "offline");
     isVariantsMode = (gameMode === "variants");
+    biddingModeEnabled = newBiddingEnabled;
+    biddingStartBank = newBiddingBank;
     timerDuration = valTimer;
     originalDelay = valDelay;
     mixMode = mode === "mixed";
@@ -1328,7 +1595,9 @@ function setSettings() {
     if (isInteractiveMode && roomRef) {
       roomRef.update({
         showScore: showScoreToPlayers, showOpponentScore: showOpponentScore,
-        streamAudio: streamAudioToPlayers, chatMode: chatMode, walkieMode: walkieMode, gameMode: gameMode, systemSounds: soundUrls
+        streamAudio: streamAudioToPlayers, chatMode: chatMode, walkieMode: walkieMode,
+        gameMode: gameMode, biddingMode: (isVariantsMode && biddingModeEnabled),
+        biddingStartBank: biddingStartBank, systemSounds: soundUrls
       });
       roomRef.child("audioSync").update({ jokerEnabled: jokerEnabled });
       if (isVariantsMode) {
@@ -1337,6 +1606,9 @@ function setSettings() {
           penaltyEnabled: variantsPenaltyEnabled,
           wrongPenaltyEnabled: variantsWrongPenaltyEnabled
         });
+        if (biddingModeEnabled && (biddingJustEnabled || !gameSessionStarted)) {
+          applyStartBankToTeams(true);
+        }
       }
     }
     saveState();
@@ -1369,7 +1641,8 @@ function forceStopAllSounds() {
   stopVinylDrift();
   if (originalTimeout) { clearTimeout(originalTimeout); originalTimeout = null; }
   if (variantsAutoNormalTimeout) { clearTimeout(variantsAutoNormalTimeout); variantsAutoNormalTimeout = null; }
-  ["audio-revers", "audio-normal", "audio-winner", "audio-lost", "audio-ring", "audio-start", "audio-final", "audio-game-over"].forEach(function(id) {
+  if (biddingCountdownInterval) { clearInterval(biddingCountdownInterval); biddingCountdownInterval = null; }
+  ["audio-revers", "audio-normal", "audio-winner", "audio-lost", "audio-ring", "audio-otvet", "audio-start", "audio-final", "audio-game-over"].forEach(function(id) {
     var el = document.getElementById(id);
     if (el) { try { el.pause(); } catch(e) {} try { el.currentTime = 0; } catch(e) {} }
   });
@@ -1434,10 +1707,12 @@ function initHostRoom() {
   roomRef.update({
     status: "idle", showScore: showScoreToPlayers, showOpponentScore: showOpponentScore,
     streamAudio: streamAudioToPlayers, chatMode: chatMode, walkieMode: walkieMode, gameMode: gameMode,
+    biddingMode: (isVariantsMode && biddingModeEnabled), biddingStartBank: biddingStartBank,
     buzzer: { locked: true, pressedBy: null, passedBy: [] }, revealedTrack: "",
     systemSounds: soundUrls, timerState: { active: false, value: 0 },
     audioSync: { trackSessionId: "", reversUrl: "", normalUrl: "", duration: 0, currentTime: 0, playAction: "stop", startAt: 0, isJoker: false, jokerEnabled: jokerEnabled, distortionRate: 1.0, distortionOffset: 0, distortionDrift: false },
     variantsRound: { active: false, correctTrack: "", options: [], answeringTeam: null, answeringTeamName: "", selectedOption: null, isFinal: false, askConfirm: false, attemptsLeft: 2, isRevealed: false, isCorrect: false, roundTimer: variantsTimerDuration, timerDeadline: 0, penaltyEnabled: variantsPenaltyEnabled },
+    biddingRound: { active: false, pot: 0, bets: {}, countdownActive: false, countdownDeadline: 0 },
     variantBanner: { active: false }
   });
   teamsData = [];
@@ -1449,17 +1724,45 @@ function initHostRoom() {
   listenToHostWalkie();
   initEmojiPicker("host-emoji-popover", "host-chat-input");
   listenToChatMessages();
+
   roomRef.child("teams").on("value", function(snapshot) {
     var rawTeams = snapshot.val() || {};
     var cloudKeys = Object.keys(rawTeams);
     if (cloudKeys.length > 0) {
       teamsData = cloudKeys.map(function(key) {
-        return { id: key, name: rawTeams[key].name || "Команда", score: typeof rawTeams[key].score !== 'undefined' ? rawTeams[key].score : 0, readyToPlay: rawTeams[key].readyToPlay || false, online: rawTeams[key].online !== false };
+        var tObj = rawTeams[key];
+        var sc = typeof tObj.score !== 'undefined' ? tObj.score : 0;
+        var isInit = tObj.bankInitialized === true;
+        if (isVariantsMode && biddingModeEnabled && !isInit && sc === 0) {
+          sc = biddingStartBank;
+          roomRef.child("teams/" + key).update({ score: biddingStartBank, bankInitialized: true });
+        }
+        return {
+          id: key,
+          name: tObj.name || "Команда",
+          score: sc,
+          bankInitialized: isInit,
+          readyToPlay: tObj.readyToPlay || false,
+          online: tObj.online !== false
+        };
       });
     } else { teamsData = []; }
     renderHostTeamsList();
     renderScoreboardGrid();
+    updateBiddingHostUI();
   });
+
+  roomRef.child("biddingRound").on("value", function(snapshot) {
+    var br = snapshot.val();
+    if (br) {
+      biddingState = br;
+      updateBiddingHostUI();
+      if (br.active && !br.countdownActive) {
+        checkAllTeamsDecidedBidding();
+      }
+    }
+  });
+
   roomRef.child("buzzer").on("value", function(snapshot) {
     var buzzer = snapshot.val();
     if (!buzzer) return;
@@ -1468,14 +1771,13 @@ function initHostRoom() {
       lastHandledPassAt = buzzer.lastPassAt;
       var isTimeout = (buzzer.lastPassType === "timeout");
       showPassWavePopup(buzzer.lastPassTeamName || "Команда", isTimeout);
-      
       if (isTimeout) {
         triggerVariantBanner(3, buzzer.pressedBy, buzzer.lastPassTeamName || "Команда");
       }
-      
       checkAllTeamsPassed(buzzer.passedBy || []);
     }
   });
+
   roomRef.child("variantsRound").on("value", function(snapshot) {
     var vr = snapshot.val();
     if (vr) {
@@ -2003,7 +2305,9 @@ function applyGameModeUI() {
   if (isInteractiveMode) {
     onlineSec.style.display = "block";
     localSec.style.display = "none";
-    if (isVariantsMode) { sub.textContent = "🎯 Режим «Варианты»"; }
+    if (isVariantsMode) {
+      sub.textContent = biddingModeEnabled ? "💰 Режим «Варианты: Торги»" : "🎯 Режим «Варианты»";
+    }
     else { sub.textContent = "Интерактивный режим ведущего"; }
   } else {
     onlineSec.style.display = "none";
@@ -2051,6 +2355,8 @@ function restoreSession() {
       else { gameMode = "offline"; }
       isInteractiveMode = (gameMode !== "offline");
       isVariantsMode = (gameMode === "variants");
+      biddingModeEnabled = data.biddingModeEnabled === true;
+      biddingStartBank = typeof data.biddingStartBank !== 'undefined' ? parseFloat(data.biddingStartBank) : 5;
       showScoreToPlayers = data.showScoreToPlayers !== false;
       showOpponentScore = data.showOpponentScore !== false;
       streamAudioToPlayers = data.streamAudioToPlayers === true;
@@ -2094,6 +2400,7 @@ function saveState() {
   try {
     var state = {
       gameMode: gameMode, isInteractiveMode: isInteractiveMode,
+      biddingModeEnabled: biddingModeEnabled, biddingStartBank: biddingStartBank,
       showScoreToPlayers: showScoreToPlayers, showOpponentScore: showOpponentScore,
       streamAudioToPlayers: streamAudioToPlayers, chatMode: chatMode, walkieMode: walkieMode,
       jokerEnabled: jokerEnabled, jokerChance: jokerChance,
@@ -2138,11 +2445,7 @@ async function preloadAllSounds() {
         var aOtvet = document.getElementById("audio-otvet");
         if (aOtvet) { aOtvet.src = f.file; aOtvet.load(); }
       }
-      if (n.indexOf("game_over") !== -1 && n.endsWith(".mp3")) {
-        soundUrls.gameOver = f.file;
-        var aGameOver = document.getElementById("audio-game-over");
-        if (aGameOver) { aGameOver.src = f.file; aGameOver.load(); }
-      }
+      if (n.indexOf("game_over") !== -1 && n.endsWith(".mp3")) { soundUrls.gameOver = f.file; var aGameOver = document.getElementById("audio-game-over"); if (aGameOver) { aGameOver.src = f.file; aGameOver.load(); } }
     });
     if (isInteractiveMode && roomRef) { roomRef.child("systemSounds").set(soundUrls); }
   } catch (e) { console.error("Ошибка загрузки системных звуков:", e); }
@@ -2185,23 +2488,28 @@ function playSound(type) {
   var respondingTeam = teamsData.find(function(t) { return t.id === respondingTeamId; });
   var respondingTeamName = respondingTeam ? respondingTeam.name : (variantsState.answeringTeamName || "Команда");
 
-  if (type === 'winner' && activeTeamId) {
-    if (respondingTeam) {
-      if (currentTrackIsJoker) {
-        awardJokerPoints(activeTeamId);
-        showJokerAnimation(respondingTeam.name);
-      } else if (isInteractiveMode && defaultCorrectPoints > 0) {
-        changeScore(activeTeamId, defaultCorrectPoints);
+  if (isVariantsMode && biddingModeEnabled) {
+    resolveBiddingPot(type === 'winner', respondingTeamId);
+  } else {
+    if (type === 'winner' && activeTeamId) {
+      if (respondingTeam) {
+        if (currentTrackIsJoker) {
+          awardJokerPoints(activeTeamId);
+          showJokerAnimation(respondingTeam.name);
+        } else if (isInteractiveMode && defaultCorrectPoints > 0) {
+          changeScore(activeTeamId, defaultCorrectPoints);
+        }
+      }
+    }
+    if (type === 'lost' && isVariantsMode && variantsWrongPenaltyEnabled) {
+      var ansTeamId = variantsState.answeringTeam;
+      var selOpt = variantsState.selectedOption;
+      if (ansTeamId && selOpt) {
+        changeScore(ansTeamId, -0.5);
       }
     }
   }
-  if (type === 'lost' && isVariantsMode && variantsWrongPenaltyEnabled) {
-    var ansTeamId = variantsState.answeringTeam;
-    var selOpt = variantsState.selectedOption;
-    if (ansTeamId && selOpt) {
-      changeScore(ansTeamId, -0.5);
-    }
-  }
+
   if (isVariantsMode && roomRef) {
     var isAnswerCorrect = (type === 'winner');
     roomRef.child("variantsRound").update({
@@ -2436,6 +2744,7 @@ async function playTrack(name) {
   if (currentBannerPhraseTimeout) { clearTimeout(currentBannerPhraseTimeout); currentBannerPhraseTimeout = null; }
   if (originalTimeout) { clearTimeout(originalTimeout); originalTimeout = null; }
   if (variantsAutoNormalTimeout) { clearTimeout(variantsAutoNormalTimeout); variantsAutoNormalTimeout = null; }
+  if (biddingCountdownInterval) { clearInterval(biddingCountdownInterval); biddingCountdownInterval = null; }
   hideOriginal(); stopAllSounds(); hideTrackPopup();
   
   if (isInteractiveMode) { 
@@ -2449,7 +2758,7 @@ async function playTrack(name) {
   currentTrackName = name;
   var track = files[name];
   currentTrackIsJoker = false;
-  if (jokerEnabled && track && track.revers) {
+  if (jokerEnabled && !biddingModeEnabled && track && track.revers) {
     currentTrackIsJoker = Math.random() < jokerChance;
   }
 
@@ -2459,13 +2768,13 @@ async function playTrack(name) {
     else { playerContainer.classList.remove("joker-active"); }
   }
 
-  showActionNotification("⏳ Подготовка раунда...");
+  showActionNotification(biddingModeEnabled && isVariantsMode ? "💰 Открыты торги перед раундом..." : "⏳ Подготовка раунда...");
   var newTrackSessionId = "track_" + Date.now();
 
   if (isInteractiveMode && roomRef) {
     teamsData.forEach(function(t) { roomRef.child("teams/" + t.id + "/readyToPlay").set(false); });
     await roomRef.update({
-      status: "idle",
+      status: (isVariantsMode && biddingModeEnabled) ? "bidding" : "idle",
       revealedTrack: "",
       timerState: { active: false, value: 0 },
       buzzer: { locked: true, pressedBy: null, pressedByName: null, passedBy: [] },
@@ -2475,6 +2784,21 @@ async function playTrack(name) {
 
   if (isVariantsMode) {
     await prepareVariantsForCurrentTrack(name);
+  }
+
+  if (isVariantsMode && biddingModeEnabled && roomRef) {
+    var banner = document.getElementById("host-bidding-countdown");
+    if (banner) banner.style.display = "none";
+
+    biddingState = {
+      active: true,
+      pot: 0,
+      bets: {},
+      countdownActive: false,
+      countdownDeadline: 0
+    };
+    await roomRef.child("biddingRound").set(biddingState);
+    updateBiddingHostUI();
   }
 
   var audioRevers = ensureAudioPlayer("audio-revers");
@@ -2534,11 +2858,24 @@ async function playTrack(name) {
           playAction: "prepare",
           startAt: 0,
           isJoker: currentTrackIsJoker,
-          jokerEnabled: jokerEnabled,
+          jokerEnabled: (jokerEnabled && !biddingModeEnabled),
           distortionRate: currentTrackDistortion.rate,
           distortionOffset: currentTrackDistortion.offset,
           distortionDrift: currentTrackDistortion.drift === true
         });
+      }
+
+      isTrackPreparing = false;
+
+      if (isVariantsMode && biddingModeEnabled) {
+        var panel = document.getElementById("bidding-host-panel");
+        if (panel) {
+          setTimeout(function() { panel.scrollIntoView({ behavior: "smooth", block: "center" }); }, 200);
+        }
+        return;
+      }
+
+      if (isInteractiveMode && roomRef) {
         await roomRef.child("buzzer").set({
           locked: false,
           pressedBy: null,
@@ -2546,8 +2883,6 @@ async function playTrack(name) {
           passedBy: []
         });
       }
-
-      isTrackPreparing = false;
       toggleRevers();
     }
 
@@ -2635,7 +2970,7 @@ function startSynchronizedPlayback() {
         duration: audio.duration || 0,
         currentTime: startOffset,
         isJoker: currentTrackIsJoker,
-        jokerEnabled: jokerEnabled,
+        jokerEnabled: (jokerEnabled && !biddingModeEnabled),
         distortionRate: currentTrackDistortion.rate,
         distortionOffset: startOffset,
         distortionDrift: currentTrackDistortion.drift === true
@@ -2658,7 +2993,7 @@ function resumeSynchronizedPlayback() {
       duration: audio.duration || 0,
       startAt: serverStartAt,
       isJoker: currentTrackIsJoker,
-      jokerEnabled: jokerEnabled,
+      jokerEnabled: (jokerEnabled && !biddingModeEnabled),
       distortionRate: currentTrackDistortion.rate,
       distortionDrift: currentTrackDistortion.drift === true
     });
@@ -2805,7 +3140,7 @@ function stopAllSounds() {
   stopVinylDrift();
   if (originalTimeout) { clearTimeout(originalTimeout); originalTimeout = null; }
   if (variantsAutoNormalTimeout) { clearTimeout(variantsAutoNormalTimeout); variantsAutoNormalTimeout = null; }
-  ["audio-revers", "audio-normal", "audio-winner", "audio-lost", "audio-ring", "audio-start", "audio-final", "audio-game-over"].forEach(function(id) {
+  ["audio-revers", "audio-normal", "audio-winner", "audio-lost", "audio-ring", "audio-otvet", "audio-start", "audio-final", "audio-game-over"].forEach(function(id) {
     var el = document.getElementById(id); if (el) { el.pause(); el.currentTime = 0; }
   });
   stopTimer();
@@ -2832,6 +3167,7 @@ function endQuiz() {
       leaderboard: sortedTeams.map(function(t) { return { name: t.name, score: t.score }; }),
       audioSync: { trackSessionId: "", reversUrl: "", normalUrl: "", duration: 0, currentTime: 0, playAction: "stop", systemTrigger: { type: "gameOver", time: Date.now() }, startAt: 0, isJoker: false, jokerEnabled: jokerEnabled, distortionRate: 1.0, distortionOffset: 0, distortionDrift: false },
       variantsRound: { active: false, correctTrack: "", options: [], answeringTeam: null, answeringTeamName: "", selectedOption: null, isFinal: false, askConfirm: false, attemptsLeft: 2, isRevealed: false, isCorrect: false, roundTimer: variantsTimerDuration, timerDeadline: 0, penaltyEnabled: variantsPenaltyEnabled },
+      biddingRound: { active: false, pot: 0, bets: {}, countdownActive: false, countdownDeadline: 0 },
       variantBanner: { active: false }
     });
   }
