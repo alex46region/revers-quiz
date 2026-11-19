@@ -132,6 +132,88 @@ text-shadow: 0 0 10px rgba(0, 243, 255, 0.5); opacity: 0.85;
   color: var(--neon-green); letter-spacing: 0.5px;
 }
 
+/* ОВЕРЛЕЙ СЛЕПЫХ СТАВОК */
+#bidding-player-overlay {
+  position: fixed; inset: 0; background: rgba(6, 2, 20, 0.96);
+  backdrop-filter: blur(18px); z-index: 5800; display: none;
+  flex-direction: column; align-items: center; justify-content: center;
+  padding: 16px; animation: modalEnter 0.3s ease;
+}
+.bidding-card-player {
+  width: 100%; max-width: 410px; background: rgba(18, 11, 44, 0.94);
+  border: 2px solid var(--neon-gold); border-radius: 24px; padding: 24px 18px;
+  box-shadow: 0 0 45px rgba(255, 215, 0, 0.35); display: flex; flex-direction: column; gap: 16px;
+}
+.bidding-header-row {
+  display: flex; justify-content: space-between; align-items: center; gap: 8px;
+}
+.bidding-title-badge {
+  font-family: 'Orbitron', sans-serif; font-size: 1.05em; font-weight: 900;
+  color: var(--neon-gold); text-transform: uppercase; letter-spacing: 1px;
+  display: flex; align-items: center; gap: 6px;
+}
+.bidding-pot-pill {
+  font-family: 'Orbitron', monospace; font-size: 0.95em; font-weight: 900;
+  background: rgba(255, 215, 0, 0.18); border: 1.5px solid var(--neon-gold);
+  color: var(--neon-gold); padding: 5px 12px; border-radius: 12px;
+}
+.bidding-sub-desc {
+  text-align: center; font-size: 0.95em; color: #b7aedb; font-weight: 600; line-height: 1.35;
+}
+.bidding-balance-info {
+  text-align: center; font-size: 1em; color: #c4b5fd; font-weight: 700;
+}
+.bidding-balance-info strong { color: var(--neon-green); font-family: 'Orbitron', monospace; font-size: 1.2em; }
+.bidding-selector-box {
+  display: flex; align-items: center; justify-content: center; gap: 14px;
+}
+.bet-step-btn {
+  width: 48px; height: 48px; border-radius: 14px; background: rgba(0, 243, 255, 0.15);
+  border: 1.5px solid var(--neon-cyan); color: var(--neon-cyan);
+  font-family: 'Orbitron', monospace; font-size: 1.35em; font-weight: 900; cursor: pointer;
+}
+.bet-step-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.bet-amount-display {
+  font-family: 'Orbitron', monospace; font-size: 2em; font-weight: 900;
+  color: var(--neon-gold); min-width: 90px; text-align: center;
+  text-shadow: 0 0 15px rgba(255, 215, 0, 0.6);
+}
+.bidding-quick-chips {
+  display: flex; gap: 8px; justify-content: center;
+}
+.bet-chip-btn {
+  flex: 1; padding: 9px 4px; border-radius: 10px; background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 215, 0, 0.4); color: var(--neon-gold);
+  font-family: 'Orbitron', monospace; font-size: 0.82em; font-weight: 800; cursor: pointer;
+}
+.bet-chip-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+.bidding-confirm-row {
+  display: flex; gap: 10px;
+}
+.btn-place-bet {
+  flex: 1.4; padding: 15px 10px; border-radius: 14px; border: none;
+  background: linear-gradient(135deg, var(--neon-gold), #ff8c00); color: #000;
+  font-family: 'Orbitron', sans-serif; font-size: 0.88em; font-weight: 900;
+  text-transform: uppercase; cursor: pointer; box-shadow: 0 0 25px rgba(255, 215, 0, 0.45);
+}
+.btn-place-bet:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
+.btn-pass-bet {
+  flex: 1; padding: 15px 10px; border-radius: 14px;
+  background: rgba(255, 255, 255, 0.08); border: 1.5px solid #9d93c4; color: #e2e8f0;
+  font-family: 'Orbitron', sans-serif; font-size: 0.85em; font-weight: 800;
+  text-transform: uppercase; cursor: pointer;
+}
+.bidding-locked-status {
+  display: none; text-align: center; padding: 14px; border-radius: 14px;
+  background: rgba(0, 255, 102, 0.12); border: 1.5px solid var(--neon-green);
+  color: var(--neon-green); font-weight: 800; font-size: 1em;
+}
+.bidding-countdown-box {
+  display: none; text-align: center; padding: 14px; border-radius: 16px;
+  background: rgba(255, 0, 127, 0.18); border: 2px solid var(--neon-magenta);
+}
+.bidding-countdown-label { font-size: 0.85em; text-transform: uppercase; color: #ffb3d9; font-weight: 800; letter-spacing: 1px; }
+.bidding-countdown-num { font-family: 'Orbitron', monospace; font-size: 2.8em; font-weight: 900; color: var(--neon-yellow); line-height: 1.1; }
 .player-status-wrapper { display: flex; flex-direction: column; gap: 8px; }
 .status-pill { background: var(--card-bg); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 16px; padding: 9px 16px; text-align: center; font-family: 'Orbitron', sans-serif; font-size: 0.85em; font-weight: 800; color: #b7aedb; text-transform: uppercase; letter-spacing: 2px; display: flex; align-items: center; justify-content: center; gap: 8px; }
 .status-pill.playing { border-color: var(--neon-yellow); color: var(--neon-yellow); background: rgba(255, 230, 0, 0.12); box-shadow: 0 0 30px rgba(255, 230, 0, 0.25); }
@@ -441,6 +523,45 @@ text-shadow: 0 0 10px rgba(0, 243, 255, 0.5); opacity: 0.85;
   <div class="walkie-toast-player-text" id="walkie-toast-player-text">В эфире: Ведущий</div>
 </div>
 
+<!-- ОВЕРЛЕЙ СЛЕПЫХ СТАВОК -->
+<div id="bidding-player-overlay">
+  <div class="bidding-card-player">
+    <div class="bidding-header-row">
+      <div class="bidding-title-badge"><i class="fas fa-coins"></i> Слепые ставки</div>
+      <div class="bidding-pot-pill" id="player-bidding-pot">Банк: 0</div>
+    </div>
+    <div class="bidding-sub-desc">
+      Сделайте ставку вслепую до запуска трека или нажмите «Пас»
+    </div>
+    <div class="bidding-balance-info">
+      Ваш баланс: <strong id="player-bidding-balance">0</strong>
+    </div>
+    <div id="player-bidding-controls">
+      <div class="bidding-selector-box">
+        <button class="bet-step-btn" id="btn-bet-minus" onclick="adjustPlayerBet(-0.5)">-</button>
+        <div class="bet-amount-display" id="player-bet-amount">1</div>
+        <button class="bet-step-btn" id="btn-bet-plus" onclick="adjustPlayerBet(0.5)">+</button>
+      </div>
+      <div class="bidding-quick-chips" style="margin-top:8px;">
+        <button class="bet-chip-btn" id="chip-bet-1" onclick="setPlayerBetQuick(1)">1 б.</button>
+        <button class="bet-chip-btn" id="chip-bet-2" onclick="setPlayerBetQuick(2)">2 б.</button>
+        <button class="bet-chip-btn" id="chip-bet-allin" onclick="setPlayerBetAllIn()">Ва-банк</button>
+      </div>
+      <div class="bidding-confirm-row" style="margin-top:12px;">
+        <button class="btn-place-bet" id="btn-submit-bet" onclick="submitPlayerBet()"><i class="fas fa-coins"></i> Поставить</button>
+        <button class="btn-pass-bet" id="btn-pass-bet" onclick="submitPlayerPassBet()"><i class="fas fa-forward"></i> Пас (без ставки)</button>
+      </div>
+    </div>
+    <div class="bidding-locked-status" id="player-bidding-locked-status">
+      ✅ Решение принято! Ожидаем остальные команды...
+    </div>
+    <div class="bidding-countdown-box" id="player-bidding-countdown-box">
+      <div class="bidding-countdown-label">Все ставки приняты! Музыка через:</div>
+      <div class="bidding-countdown-num" id="player-bidding-countdown-num">3</div>
+    </div>
+  </div>
+</div>
+
 <div class="player-countdown-badge" id="player-timer-badge">
 <i class="fas fa-stopwatch"></i>
 <span id="player-timer-badge-num">10</span>
@@ -571,6 +692,7 @@ var db = firebase.database();
 var currentRoom = null;
 var myTeamId = null;
 var myTeamName = "";
+var myCurrentBalance = 0;
 var gameOverTimer = null;
 var scoreDeltaTimer = null;
 var currentLoadedReversUrl = "";
@@ -591,6 +713,155 @@ var unreadChatCount = 0;
 var lastSeenScoreTimestamp = 0;
 var lastHandledSystemSoundTime = 0;
 var wakeLockObj = null;
+
+/* СЛЕПЫЕ СТАВКИ ПЕРЕД РАУНДОМ */
+var isBiddingMode = false;
+var currentSelectedBet = 1;
+var clientBiddingCountdownTimer = null;
+
+function updatePlayerBetDisplay() {
+  var amtEl = document.getElementById("player-bet-amount");
+  var minusBtn = document.getElementById("btn-bet-minus");
+  var plusBtn = document.getElementById("btn-bet-plus");
+  var submitBtn = document.getElementById("btn-submit-bet");
+  var chip1 = document.getElementById("chip-bet-1");
+  var chip2 = document.getElementById("chip-bet-2");
+  var chipAll = document.getElementById("chip-bet-allin");
+
+  var maxBet = Math.max(0, Math.floor(myCurrentBalance * 2) / 2);
+  if (currentSelectedBet > maxBet) currentSelectedBet = maxBet;
+  if (currentSelectedBet < 0.5 && maxBet >= 0.5) currentSelectedBet = 0.5;
+
+  if (amtEl) amtEl.textContent = formatScoreDisplay(currentSelectedBet);
+  if (minusBtn) minusBtn.disabled = (currentSelectedBet <= 0.5 || maxBet < 0.5);
+  if (plusBtn) plusBtn.disabled = (currentSelectedBet >= maxBet || maxBet < 0.5);
+  if (submitBtn) {
+    submitBtn.disabled = (maxBet < 0.5 || currentSelectedBet <= 0);
+    submitBtn.innerHTML = maxBet < 0.5
+      ? '<i class="fas fa-ban"></i> Нет баллов'
+      : '<i class="fas fa-coins"></i> Поставить ' + formatScoreDisplay(currentSelectedBet);
+  }
+  if (chip1) chip1.disabled = (maxBet < 1);
+  if (chip2) chip2.disabled = (maxBet < 2);
+  if (chipAll) chipAll.disabled = (maxBet < 0.5);
+}
+
+function adjustPlayerBet(delta) {
+  var maxBet = Math.max(0, Math.floor(myCurrentBalance * 2) / 2);
+  var next = Math.round((currentSelectedBet + delta) * 10) / 10;
+  if (next < 0.5) next = 0.5;
+  if (next > maxBet) next = maxBet;
+  currentSelectedBet = next;
+  updatePlayerBetDisplay();
+}
+
+function setPlayerBetQuick(val) {
+  var maxBet = Math.max(0, Math.floor(myCurrentBalance * 2) / 2);
+  currentSelectedBet = Math.min(val, maxBet);
+  updatePlayerBetDisplay();
+}
+
+function setPlayerBetAllIn() {
+  var maxBet = Math.max(0, Math.floor(myCurrentBalance * 2) / 2);
+  currentSelectedBet = maxBet;
+  updatePlayerBetDisplay();
+}
+
+function submitPlayerBet() {
+  if (!currentRoom || !myTeamId) return;
+  var maxBet = Math.max(0, Math.floor(myCurrentBalance * 2) / 2);
+  if (currentSelectedBet <= 0 || currentSelectedBet > maxBet) return;
+  if (navigator.vibrate) navigator.vibrate([40]);
+  db.ref("rooms/" + currentRoom + "/biddingRound/bets/" + myTeamId).set({
+    amount: currentSelectedBet,
+    passed: false,
+    time: Date.now()
+  });
+}
+
+function submitPlayerPassBet() {
+  if (!currentRoom || !myTeamId) return;
+  if (navigator.vibrate) navigator.vibrate([25]);
+  db.ref("rooms/" + currentRoom + "/biddingRound/bets/" + myTeamId).set({
+    amount: 0,
+    passed: true,
+    time: Date.now()
+  });
+}
+
+function listenToBiddingState() {
+  if (!currentRoom) return;
+  db.ref("rooms/" + currentRoom + "/biddingRound").on("value", function(snap) {
+    var br = snap.val();
+    var overlay = document.getElementById("bidding-player-overlay");
+    if (!overlay) return;
+
+    if (!br || !br.active) {
+      overlay.style.display = "none";
+      if (clientBiddingCountdownTimer) {
+        clearInterval(clientBiddingCountdownTimer);
+        clientBiddingCountdownTimer = null;
+      }
+      return;
+    }
+
+    overlay.style.display = "flex";
+
+    var betsObj = br.bets || {};
+    var totalPot = 0;
+    Object.keys(betsObj).forEach(function(tid) {
+      totalPot += parseFloat(betsObj[tid].amount) || 0;
+    });
+    totalPot = Math.round(totalPot * 10) / 10;
+
+    var potEl = document.getElementById("player-bidding-pot");
+    if (potEl) potEl.textContent = "Банк: " + formatScoreDisplay(totalPot);
+
+    var balEl = document.getElementById("player-bidding-balance");
+    if (balEl) balEl.textContent = formatScoreDisplay(myCurrentBalance);
+
+    var myDecision = betsObj[myTeamId];
+    var controlsBox = document.getElementById("player-bidding-controls");
+    var lockedBox = document.getElementById("player-bidding-locked-status");
+    var cdBox = document.getElementById("player-bidding-countdown-box");
+
+    if (br.countdownActive && br.countdownDeadline > Date.now()) {
+      if (controlsBox) controlsBox.style.display = "none";
+      if (lockedBox) lockedBox.style.display = "none";
+      if (cdBox) cdBox.style.display = "block";
+      startClientBiddingCountdown(br.countdownDeadline);
+    } else if (myDecision) {
+      if (controlsBox) controlsBox.style.display = "none";
+      if (cdBox) cdBox.style.display = "none";
+      if (lockedBox) {
+        lockedBox.style.display = "block";
+        lockedBox.textContent = myDecision.passed
+          ? "⏭️ Вы нажали ПАС (ставка 0). Ожидаем соперников..."
+          : ("💰 Ваша ставка " + formatScoreDisplay(myDecision.amount) + " принята! Ожидаем соперников...");
+      }
+    } else {
+      if (controlsBox) controlsBox.style.display = "block";
+      if (lockedBox) lockedBox.style.display = "none";
+      if (cdBox) cdBox.style.display = "none";
+      updatePlayerBetDisplay();
+    }
+  });
+}
+
+function startClientBiddingCountdown(deadline) {
+  if (clientBiddingCountdownTimer) clearInterval(clientBiddingCountdownTimer);
+  var numEl = document.getElementById("player-bidding-countdown-num");
+  function tick() {
+    var rem = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+    if (numEl) numEl.textContent = rem;
+    if (rem <= 0) {
+      clearInterval(clientBiddingCountdownTimer);
+      clientBiddingCountdownTimer = null;
+    }
+  }
+  tick();
+  clientBiddingCountdownTimer = setInterval(tick, 150);
+}
 
 /* РАЦИЯ УЧАСТНИКА (PUSH-TO-TALK) */
 var playerMediaRecorder = null;
@@ -631,14 +902,12 @@ function updatePlayerPttButtonState() {
   btn.style.display = "flex";
 
   if (roomWalkieMode === "host_only") {
-    // В режиме "Только ведущему" рация неактивна всегда, кроме команды, нажавшей кнопку ответа
     if (canBuzzerAnswerNow) {
       btn.classList.remove("disabled");
     } else {
       btn.classList.add("disabled");
     }
   } else if (roomWalkieMode === "all") {
-    // В режиме "Общий эфир" рация активна всегда
     btn.classList.remove("disabled");
   }
 }
@@ -691,7 +960,6 @@ function initPlayerWalkieTalkie() {
         reader.readAsDataURL(blob);
       };
 
-      // Без ограничения по времени — пишет, пока нажата кнопка
       playerMediaRecorder.start();
     }).catch(function() {
       alert("Разрешите доступ к микрофону в настройках браузера.");
@@ -775,7 +1043,7 @@ function applyClientAudioDistortion(audioEl, rate, isDrift) {
   currentPlaybackRate = r;
   audioEl.playbackRate = r;
   audioEl.preservesPitch = false;
-  audioEl.mozPreservesPitch = false;
+  audioEl.mozPresPitch = false;
   audioEl.webkitPreservesPitch = false;
   if (isDrift && r !== 1.0) {
     startClientVinylDrift(audioEl, r);
@@ -1039,9 +1307,15 @@ function joinGame() {
 
     var currentData = snapshot.val();
     isVariantsMode = (currentData.gameMode === "variants");
+    isBiddingMode = (isVariantsMode && currentData.biddingMode === true);
+    var startBankVal = parseFloat(currentData.biddingStartBank) || 5;
+
     var modeBadge = document.getElementById("mode-header-badge");
     if (modeBadge) {
-      if (isVariantsMode) {
+      if (isBiddingMode) {
+        modeBadge.textContent = "💰 Режим «Варианты: Торги»";
+        modeBadge.style.display = "block";
+      } else if (isVariantsMode) {
         modeBadge.textContent = "🎯 Режим «Варианты»";
         modeBadge.style.display = "block";
       } else {
@@ -1066,11 +1340,35 @@ function joinGame() {
 
     currentRoom = pin;
     if (foundKey) {
-      myTeamId = foundKey; myTeamName = existingTeams[foundKey].name || inputName;
-      roomRef.child("teams/" + myTeamId).update({ ready: true, readyToPlay: false, online: true });
+      myTeamId = foundKey;
+      myTeamName = existingTeams[foundKey].name || inputName;
+      var existingScore = typeof existingTeams[foundKey].score !== 'undefined' ? existingTeams[foundKey].score : 0;
+      var wasBankInit = existingTeams[foundKey].bankInitialized === true;
+      if (isBiddingMode && !wasBankInit && existingScore === 0) {
+        existingScore = startBankVal;
+        wasBankInit = true;
+      }
+      myCurrentBalance = existingScore;
+      roomRef.child("teams/" + myTeamId).update({
+        ready: true,
+        readyToPlay: false,
+        online: true,
+        score: existingScore,
+        bankInitialized: wasBankInit
+      });
     } else {
-      myTeamId = "team_" + Math.random().toString(36).substr(2, 6); myTeamName = inputName;
-      roomRef.child("teams/" + myTeamId).set({ name: myTeamName, ready: true, readyToPlay: false, score: 0, online: true });
+      myTeamId = "team_" + Math.random().toString(36).substr(2, 6);
+      myTeamName = inputName;
+      var initialScore = isBiddingMode ? startBankVal : 0;
+      myCurrentBalance = initialScore;
+      roomRef.child("teams/" + myTeamId).set({
+        name: myTeamName,
+        ready: true,
+        readyToPlay: false,
+        score: initialScore,
+        bankInitialized: isBiddingMode,
+        online: true
+      });
     }
 
     var myTeamRef = roomRef.child("teams/" + myTeamId);
@@ -1091,7 +1389,10 @@ function joinGame() {
     listenToAudioStream();
     listenToPlayerChat();
     listenToPlayerWalkie();
-    if (isVariantsMode) { listenToVariantsState(); }
+    if (isVariantsMode) {
+      listenToVariantsState();
+      listenToBiddingState();
+    }
     listenToVariantBanner();
   }).catch(function(e) {
     clearTimeout(connectTimeout);
@@ -1188,6 +1489,7 @@ function listenToAudioStream() {
       currentTrackShowStar = null;
       hasShownRevealAnimation = false;
       currentPlaybackRate = 1.0;
+      currentSelectedBet = Math.min(1, Math.max(0, Math.floor(myCurrentBalance * 2) / 2));
       updateProgressDisplay(0, 0);
       hasWaitedForNewTrack = true;
       updateJokerVisuals(false);
@@ -1572,7 +1874,14 @@ function listenToGameState() {
     currentRoomStatus = data.status || "idle";
     roomChatMode = data.chatMode || "disabled";
     roomWalkieMode = data.walkieMode || "disabled";
+    isBiddingMode = (data.gameMode === "variants" && data.biddingMode === true);
     isStreamAudioAllowed = (data.streamAudio === true);
+
+    var modeBadge = document.getElementById("mode-header-badge");
+    if (modeBadge && isVariantsMode) {
+      modeBadge.textContent = isBiddingMode ? "💰 Режим «Варианты: Торги»" : "🎯 Режим «Варианты»";
+    }
+
     if (data.systemSounds && isStreamAudioAllowed) {
       bufferSystemSound("player-sound-winner", data.systemSounds.winner);
       bufferSystemSound("player-sound-lost", data.systemSounds.lost);
@@ -1605,6 +1914,13 @@ function listenToGameState() {
     var showOppScore = data.showOpponentScore !== false;
     var teams = data.teams || {};
     var teamKeys = Object.keys(teams);
+
+    if (teams[myTeamId] && typeof teams[myTeamId].score !== 'undefined') {
+      myCurrentBalance = parseFloat(teams[myTeamId].score) || 0;
+      var balEl = document.getElementById("player-bidding-balance");
+      if (balEl) balEl.textContent = formatScoreDisplay(myCurrentBalance);
+    }
+
     if (!showMyScore && !showOppScore) {
       scoreboardWrap.style.display = "none";
     } else {
@@ -1619,7 +1935,7 @@ function listenToGameState() {
         if (myTeamData.lastScoreChangeAt && myTeamData.lastScoreChangeAt > lastSeenScoreTimestamp) {
           lastSeenScoreTimestamp = myTeamData.lastScoreChangeAt;
           if (typeof myTeamData.lastScoreDelta !== 'undefined') {
-            if (myTeamData.lastScoreDelta >= 3) { showJokerScoreDelta(); }
+            if (myTeamData.lastScoreDelta >= 3 && !isBiddingMode) { showJokerScoreDelta(); }
             else { showScoreDeltaAnimation(myTeamData.lastScoreDelta); }
           }
         }
@@ -1652,7 +1968,15 @@ function listenToGameState() {
       return;
     }
 
-    if (data.status === "playing") {
+    if (data.status === "bidding") {
+      passBtn.style.display = "none";
+      buzzerBtn.disabled = true; buzzerBtn.className = "buzzer-3d-btn";
+      buzzerBtn.innerHTML = '<i class="fas fa-coins"></i><span>ТОРГИ</span>';
+      roundStatusPill.className = "status-pill";
+      roundStatusPill.innerHTML = '<i class="fas fa-coins"></i> <span>Идут ставки</span>';
+      trackBox.classList.remove("active-reveal");
+      hudFooter.innerHTML = "Сделайте ставку вслепую или нажмите «Пас»!";
+    } else if (data.status === "playing") {
       trackBox.classList.remove("active-reveal");
       roundStatusPill.className = "status-pill playing";
       roundStatusPill.innerHTML = '<i class="fas fa-volume-up"></i> <span>Трек играет!</span>';
@@ -1789,6 +2113,8 @@ function showGameOverScreen(leaderboard) {
   if (aNormal) { aNormal.pause(); aNormal.currentTime = 0; aNormal.removeAttribute("src"); aNormal.load(); }
   stopSyntheticTimer();
   closePlayerChat();
+  var bOverlay = document.getElementById("bidding-player-overlay");
+  if (bOverlay) bOverlay.style.display = "none";
   var vOverlay = document.getElementById("variants-player-overlay");
   if (vOverlay) {
     vOverlay.style.display = "none";
@@ -1797,6 +2123,7 @@ function showGameOverScreen(leaderboard) {
   var rOverlay = document.getElementById("variant-result-overlay");
   if (rOverlay) { rOverlay.className = ""; rOverlay.style.display = "none"; }
   if (variantsCountdownTimer) { clearInterval(variantsCountdownTimer); variantsCountdownTimer = null; }
+  if (clientBiddingCountdownTimer) { clearInterval(clientBiddingCountdownTimer); clientBiddingCountdownTimer = null; }
 
   localStorage.removeItem("rq_saved_pin");
   localStorage.removeItem("rq_saved_team_id");
